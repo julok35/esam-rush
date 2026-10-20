@@ -93,8 +93,20 @@ async def navigateur(tmp, iv):
         box = await pg.locator("#rCv").bounding_box()
         tx, ty = box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.27
         await pg.mouse.move(tx, ty); await pg.mouse.down(); await pg.mouse.move(tx, ty + 120, steps=6); await pg.mouse.up()
-        await pg.click('#rEdit [data-rsize="1.18"]'); await pg.wait_for_timeout(300)
+        await pg.fill("#rElSize", "130"); await pg.dispatch_event("#rElSize", "input")
+        await pg.click('#rEdit [data-rcol="#F9DD10"]'); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1d_titre.png"))
+        # flèche rouge tournée, puis texte libre sans fond
+        await pg.click('#rEdit [data-radd-el="fleche"]'); await pg.wait_for_timeout(500)
+        await pg.fill("#rElRot", "135"); await pg.dispatch_event("#rElRot", "input")
+        await pg.click('#rEdit [data-rcol="#E20C0F"]'); await pg.click('#rEdit [data-rel-dur="5"]'); await pg.wait_for_timeout(300)
+        await pg.click('#rEdit [data-radd-el="texte"]'); await pg.wait_for_timeout(500)
+        await pg.fill("#rElTxt", "Le chien est ici"); await pg.click('#rEdit [data-rfond="0"]'); await pg.wait_for_timeout(300)
+        await pg.locator("#rCv").scroll_into_view_if_needed(); await pg.wait_for_timeout(300)
+        box = await pg.locator("#rCv").bounding_box()
+        await pg.mouse.move(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.5); await pg.mouse.down()
+        await pg.mouse.move(box["x"] + box["width"] * 0.35, box["y"] + box["height"] * 0.62, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(300)
+        await pg.screenshot(path=str(tmp / "r1e_formes.png"))
         await pg.click('#rEdit [data-runsel]')
         await pg.click("#rMode .chip >> nth=1"); await pg.wait_for_timeout(500)
         await pg.click("#rPlay"); await pg.wait_for_timeout(1800); await pg.click("#rPlay")
@@ -105,7 +117,9 @@ async def navigateur(tmp, iv):
         etat = api("api/etat?d=" + urllib.parse.quote(iv))
         reel = etat["meta"]["reel"]
         print("titre :", reel["titreBox"], reel["titreDur"], "logo :", reel["logo"], "flous :", [len(x.get("flous") or []) for x in reel["items"]], [len(f["keys"]) for x in reel["items"] for f in (x.get("flous") or [])])
-        assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] > 1 and reel["titreDur"] == 8
+        print("éléments :", reel["elems"])
+        assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] == 1.3 and reel["titreBox"]["c"] == "#F9DD10" and reel["titreDur"] == 8
+        assert [e["kind"] for e in reel["elems"]] == ["fleche", "texte"] and reel["elems"][0]["rot"] == 135 and reel["elems"][1]["x"] < 0.45
         assert any(x.get("photo") for x in reel["items"]) and any(len(f["keys"]) >= 2 for x in reel["items"] for f in (x.get("flous") or []))
         print("enregistré :", len(reel["items"]), "passages,", [len(x.get("keys") or []) for x in reel["items"]], "points, vitesses", [x.get("vit") for x in reel["items"]], "musique", reel.get("musique"))
         for story in (False, True):
