@@ -12,7 +12,7 @@ import base64, json, math, os, re, shutil, struct, subprocess, sys, tempfile, th
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.10"
+VERSION = "0.11"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -473,20 +473,30 @@ def x_expr(keys, course):
     if course <= 0: return "0"
     return "(%s)*%d" % (key_expr(keys, "x"), course)
 
-MOSAIC = 10   # flous : zone réduite à 10 x 10 pavés, comme dans le navigateur
+BLUR, FEATHER = 0.1, 0.4   # flous : écart type du flou et largeur du fondu de bord, en fraction de la zone (comme le navigateur)
 
-def blur_chain(flous, w, h):
-    """Zones de flou (mosaïque) suivies, appliquées à l'image source avant le cadrage : filtre de [0:v] vers [s]."""
-    fc, last = "", "[0:v]"
+def blur_mask(work, zs):
+    """Masque d'ellipse aux bords fondus (niveaux de gris) pour une zone de zs pixels, fait une fois par taille."""
+    out = work / ("masque_%d.png" % zs)
+    if not out.exists():
+        a = "255*clip((1-hypot((X-W/2)/(W/2),(Y-H/2)/(H/2)))/%g,0,1)" % FEATHER
+        run([FFMPEG, "-f", "lavfi", "-i", "color=c=black:s=%dx%d,format=gray" % (zs, zs), "-vf", "geq=lum='%s'" % a, "-frames:v", "1", str(out)])
+    return out
+
+def blur_chain(flous, w, h, work, first):
+    """Zones de flou suivies, appliquées à l'image source avant le cadrage : (entrées ffmpeg des masques, filtre de [0:v] vers la suite)."""
+    fc, last, args = "", "[0:v]", []
     for j, z in enumerate(flous or []):
-        zs = max(MOSAIC, int(float(z.get("s") or 0.2) * h) // 2 * 2)
+        zs = max(8, int(float(z.get("s") or 0.2) * h) // 2 * 2)
         if zs > min(w, h): zs = min(w, h) // 2 * 2
         ex = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "x"), w, zs // 2, w - zs)
         ey = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "y"), h, zs // 2, h - zs)
-        fc += ("%ssplit[fa%d][fb%d];[fb%d]crop=%d:%d:x='%s':y='%s',scale=%d:%d,scale=%d:%d:flags=neighbor[fz%d];"
-               "[fa%d][fz%d]overlay=x='%s':y='%s'[fo%d];") % (last, j, j, j, zs, zs, ex, ey, MOSAIC, MOSAIC, zs, zs, j, j, j, ex, ey, j)
+        args += ["-loop", "1", "-i", str(blur_mask(work, zs))]
+        fc += ("%ssplit[fa%d][fb%d];[fb%d]crop=%d:%d:x='%s':y='%s',gblur=sigma=%.1f,format=yuva420p[fc%d];[%d:v]format=gray[fm%d];"
+               "[fc%d][fm%d]alphamerge[fz%d];[fa%d][fz%d]overlay=x='%s':y='%s':shortest=1[fo%d];") % (
+               last, j, j, j, zs, zs, ex, ey, zs * BLUR, j, first + j, j, j, j, j, j, j, ex, ey, j)
         last = "[fo%d]" % j
-    return fc + last
+    return args, fc + last
 
 def story_cuts(total, bounds, limit):
     cuts, last = [0.0], 0.0
@@ -590,10 +600,11 @@ def do_reel(job):
                 else:
                     info = srcs[pc["fichier"]]
                     cw, ch, course, y = crop_box(info["w"], info["h"])
-                    fc = blur_chain(pc.get("flous"), info["w"], info["h"]) + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b]"
+                    bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
+                    fc = bfc + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b]"
                           % (cw, ch, x_expr(pc.get("cles"), course), y, RW, RH, vit))
-                    cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])]
-                oargs, ofc = over(at, dur, 1)
+                    cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])] + bargs
+                oargs, ofc = over(at, dur, 1 + len(bargs) // 4)
                 cmd += oargs + ["-filter_complex", fc + ofc, "-map", "[v]", "-t", "%.3f" % dur]
             cmd += ENC["final"] + ["-g", "60", "-an", "-r", "30", str(out)]
             base = acc
