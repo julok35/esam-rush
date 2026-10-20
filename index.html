@@ -353,7 +353,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rtot small{display:block;font-size:12px;color:var(--muted)}
 .rstage{scroll-margin-top:64px;position:relative;background:#000;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
 .rstage canvas{display:block;max-width:100%;width:100%;height:auto;cursor:grab}
-.rstage.v canvas{width:auto;height:min(62vh,640px);cursor:default}
+.rstage.v canvas{width:auto;height:min(62vh,640px)}
 .rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
 .rtrans{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 .rplay{flex:none;width:48px;padding:0}
@@ -390,6 +390,13 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rlist.add .rn{background:var(--soft);color:var(--ink);border:1.5px dashed var(--muted)}
 .radd{margin-top:10px}
 .radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:40px}
+.rbar .k.fz{background:#F9DD10;border:1px solid var(--ink)}
+.rstage.v canvas{cursor:pointer}
+.rphotos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.rphotos:empty{display:none}
+.rphotos button{width:100%;padding:0;border:1.5px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);overflow:hidden;cursor:pointer;display:block}
+.rphotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#000}
+.rphotos small{display:block;font-size:11px;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rmus{font-size:14px}
 .rmus.miss{color:var(--red);font-weight:600}
 #rReel .hint,.rside .hint{font-size:12px;color:var(--muted);margin:8px 0 0}
@@ -422,9 +429,10 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <button type="button" class="ver" id="ver" title="Version de l'appli">v</button>
   </header>
 
-  <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV">
+  <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
   <input type="file" id="mdIn" accept=".md,.json,text/markdown,application/json,text/plain">
   <input type="file" id="rMusIn" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
+  <input type="file" id="rPhotoIn" multiple accept="image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
 
   <section id="empty" class="empty">
   <div id="localBox">
@@ -575,10 +583,23 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       <h3 class="rh">Montage</h3>
       <ol class="rlist" id="rList"></ol>
       <details class="radd" id="rAddBox"><summary id="rAddSum">Ajouter des passages</summary><ul class="rlist add" id="rAdd"></ul></details>
+      <details class="radd" id="rPhBox"><summary id="rPhSum">Ajouter des photos</summary>
+        <ul class="rphotos" id="rPhList"></ul>
+        <p class="hint" id="rPhEmpty" hidden></p>
+        <div class="actions" style="margin-top:8px" id="rPhPick"><label class="btn small ghost" for="rPhotoIn">Choisir des photos JPEG</label></div>
+      </details>
       <h3 class="rh">Habillage</h3>
       <div class="grp">
-        <label class="lbl" for="rTitre">Titre d'accroche (3 premières secondes)</label>
+        <label class="lbl" for="rTitre">Titre d'accroche</label>
         <input class="field" id="rTitre" maxlength="70" autocomplete="off" placeholder="Ex. : Perdu depuis 3 jours, retrouvé par le drone">
+        <span class="lbl" style="margin-top:10px;display:block">Durée du titre</span>
+        <div class="chips" id="rTitreDur"></div>
+        <div class="rbtns"><button type="button" class="btn small ghost" id="rTitrePlace">Placer et agrandir sur l'image</button></div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Logo ESAM</span>
+        <div class="chips" id="rLogo"></div>
+        <div class="rbtns"><button type="button" class="btn small ghost" id="rLogoPlace">Placer et agrandir sur l'image</button></div>
       </div>
       <div class="grp">
         <span class="lbl">Carton de fin ESAM (3 s)</span>
@@ -697,7 +718,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <script>
 (function(){
 "use strict";
-var APP_VERSION = "0.9";
+var APP_VERSION = "0.10";
 var LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 var ORDER = ["W","Z","T","V","N","S"];
 var THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
@@ -820,10 +841,12 @@ function readDuration(url){
   });
 }
 async function addFiles(list){
+  var nph = phFiles(list);
+  if(nph) toast(nph+" photo"+(nph > 1 ? "s" : "")+" JPEG disponible"+(nph > 1 ? "s" : "")+" dans l'onglet Réel.");
   var files = Array.prototype.filter.call(list, function(f){
     return /^video\//.test(f.type) || /\.(mp4|mov|m4v)$/i.test(f.name);
   }).filter(function(f){ return !S.clips.some(function(c){ return c.name === f.name && c.size === f.size; }); });
-  if(!files.length){ toast("Aucune nouvelle vidéo dans la sélection."); return; }
+  if(!files.length){ if(!nph) toast("Aucune nouvelle vidéo dans la sélection."); return; }
   var prog = $("prog"); prog.hidden = false;
   for(var i=0;i<files.length;i++){
     prog.textContent = "Lecture des fichiers : "+(i+1)+" sur "+files.length;
@@ -1680,7 +1703,13 @@ $("dirOpen").onclick = async function(){
     if(ent.kind !== "file") continue;
     if(/\.(mp4|mov|m4v)$/i.test(ent.name) && !/^ESAM_(Compilation|Reel|Story)/.test(ent.name)) files.push(await ent.getFile());
     else if(/^ESAM_Derushage_.*\.md$/.test(ent.name)) fiche = ent;
+    else if(/\.jpe?g$/i.test(ent.name)) phAdd([{name:clean(ent.name), file:await ent.getFile()}]);
   }
+  try {
+    for await (var pe of (await dir.getDirectoryHandle("Photos")).values()){
+      if(pe.kind === "file" && /\.jpe?g$/i.test(pe.name)) phAdd([{name:"Photos/"+clean(pe.name), file:await pe.getFile()}]);
+    }
+  } catch(e){}
   if(!files.length){ toast("Aucune vidéo dans ce dossier."); return; }
   S.dirHandle = dir; S.verBumped = false;
   await addFiles(files);
@@ -2427,6 +2456,7 @@ function clearFlight(){
   S.clips.forEach(function(c){ if(!c.remote) URL.revokeObjectURL(c.url); (c.thumbs || []).forEach(function(t){ try { t.bmp.close(); } catch(e){} }); });
   S.clips = []; S.tracks = []; S.markers = []; S.meta = {intervention:"",version:0,log:[]}; S.offsets = {}; S.key = null; S.t = 0; S.cur = null; S.zoom = 1;
   S.verBumped = false; clearTimeout(ficheT); setSave("");
+  if(typeof PH !== "undefined"){ PH.list.forEach(function(p){ if(p.thumb && p.thumb !== "x") URL.revokeObjectURL(p.thumb); }); PH.list = []; PH.img = {}; PH.ready = {}; PH.baked = {}; }
 }
 async function openRemote(name){
   var man = await api("api/manifest?d="+enc(name));
@@ -2438,6 +2468,7 @@ async function openRemote(name){
       start:p ? p.start : (m.cree || null), dur:m.dur, ok:m.dur > 0, media:null, thumbs:[], thumbsDone:true, sheet:m.thumbs};
   });
   rebuild();
+  phAdd((man.photos || []).map(function(p){ return {name:p.nom, t:p.heure}; }));
   var st = {};
   try { st = await api("api/etat?d="+enc(name)); } catch(e){}
   if(st && Array.isArray(st.markers)){
@@ -2583,8 +2614,13 @@ $("reset").onclick = function(){
   if(SRV){ SRVD = null; $("cmpResult").hidden = false; $("cmpSave").hidden = false; refreshList(); }
 };
 /* ---------- réel et story (vertical 9:16) ---------- */
-var RW = 1080, RH = 1920, RTITLE = 3, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8];
-var REEL = {sel:null, mode:"cadrage", t:0, o:0, playing:false, cur:null, music:null, drag:null, raf:0, showing:false, out:null, fonts:false};
+var RW = 1080, RH = 1920, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
+var RTDURS = [3,5,8,0], RXDURS = [0,3,5,8], RPDURS = [2,3,4,5,6,8], RLOGOS = ["cartouche","logo","non"];
+/* places par défaut (centre en fraction de l'image, taille) : hors des zones couvertes par Instagram (haut, bas, bord droit) */
+var RBOX = {titre:{x:0.5, y:0.27, s:1}, texte:{x:0.5, y:0.71, s:1}, cartouche:{x:0.27, y:0.155, s:1}, logo:{x:0.16, y:0.16, s:1}};
+var REEL = {sel:null, mode:"cadrage", t:0, o:0, playing:false, cur:null, music:null, drag:null, raf:0, showing:false, out:null, fonts:false, lsel:null, ldrag:null, boxes:[]};
+/* photos JPEG utilisables dans le réel : {name, t (heure de prise si connue), file (mode navigateur), thumb} */
+var PH = {list:[], img:{}, ready:{}, baked:{}};
 var rv = document.createElement("video"); rv.muted = true; rv.playsInline = true; rv.preload = "auto"; rv.setAttribute("playsinline", "");
 var ra = document.createElement("audio"); ra.preload = "auto";
 var rcv = $("rCv"), rctx = rcv.getContext("2d");
@@ -2599,10 +2635,16 @@ function reelData(){
   if(typeof r.titre !== "string") r.titre = "";
   if(!r.fin || typeof r.fin !== "object") r.fin = {on:true, texte:"Soutenez l'ESAM", sous:"esam-secours.fr"};
   if(!(r.musDebut >= 0)) r.musDebut = 0;
-  r.items = r.items.filter(function(it){ return S.markers.some(function(m){ return m.id === it.id; }); });
+  if(!(r.titreDur >= 0)) r.titreDur = 3;
+  if(!r.titreBox || typeof r.titreBox !== "object") r.titreBox = Object.assign({}, RBOX.titre);
+  if(!r.logo || typeof r.logo !== "object" || RLOGOS.indexOf(r.logo.mode) < 0) r.logo = Object.assign({mode:"cartouche"}, RBOX.cartouche);
+  r.items = r.items.filter(function(it){ return it.photo || S.markers.some(function(m){ return m.id === it.id; }); });
   return r;
 }
-function rMarker(it){ return S.markers.find(function(m){ return m.id === it.id; }); }
+function rMarker(it){ return it.photo ? null : S.markers.find(function(m){ return m.id === it.id; }); }
+function rLabel(it){ return it.photo ? "Photo "+phShort(it.photo) : label(rMarker(it)); }
+function rTBox(it){ if(!it.tBox || typeof it.tBox !== "object") it.tBox = Object.assign({}, RBOX.texte); return it.tBox; }
+function rItemDur(it){ return it.photo ? (it.dur || 4) : (it.z - it.a)/(it.vit || 1); }
 function rItem(id){ return reelData().items.find(function(it){ return it.id === id; }); }
 function rNew(m){
   var a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
@@ -2624,6 +2666,12 @@ function rPieces(it, tr, decode){
 function reelPlan(decode){
   var r = reelData(), segs = [], pos = 0, skipped = 0;
   r.items.forEach(function(it){
+    if(it.photo){
+      var ph = phGet(it.photo);
+      if(!ph){ skipped++; return; }
+      segs.push({it:it, photo:ph, pieces:[], out0:pos, dur:rItemDur(it)});
+      pos += rItemDur(it); return;
+    }
     var tr = rTrack(it), pcs = tr ? rPieces(it, tr, decode) : [];
     if(!pcs.length){ skipped++; return; }
     var acc = 0;
@@ -2645,73 +2693,179 @@ function storyCuts(pl){
   cuts.push(pl.total);
   return cuts;
 }
-/* cadrage : position horizontale du cadre (0 = bord gauche, 1 = bord droit), lissée entre les points */
-function rX(it, t){
-  var k = it.keys || [];
-  if(!k.length) return 0.5;
-  if(t <= k[0].t) return k[0].x;
-  if(t >= k[k.length-1].t) return k[k.length-1].x;
+/* points de suivi {t, x, y...} lissés entre eux : valeur du champ f à l'instant t */
+function rKeyAt(k, t, f, def){
+  if(!k || !k.length) return def;
+  if(t <= k[0].t) return k[0][f];
+  if(t >= k[k.length-1].t) return k[k.length-1][f];
   for(var i=0;i<k.length-1;i++){
-    if(t < k[i+1].t){ var s = (t - k[i].t) / Math.max(0.001, k[i+1].t - k[i].t); s = s*s*(3 - 2*s); return k[i].x + (k[i+1].x - k[i].x)*s; }
+    if(t < k[i+1].t){ var s = (t - k[i].t) / Math.max(0.001, k[i+1].t - k[i].t); s = s*s*(3 - 2*s); return k[i][f] + (k[i+1][f] - k[i][f])*s; }
   }
-  return 0.5;
+  return def;
 }
-function rUpsert(it, t, x){
-  it.keys = (it.keys || []).filter(function(k){ return Math.abs(k.t - t) >= 0.4; });
-  it.keys.push({t:Math.round(t*100)/100, x:Math.round(clamp(x,0,1)*1000)/1000});
-  it.keys.sort(function(a,b){ return a.t - b.t; });
+function rKeyPut(list, t, o){
+  list = (list || []).filter(function(k){ return Math.abs(k.t - t) >= 0.4; });
+  var k = {t:Math.round(t*100)/100}; Object.keys(o).forEach(function(f){ k[f] = Math.round(clamp(o[f], 0, 1)*1000)/1000; });
+  list.push(k); list.sort(function(a,b){ return a.t - b.t; });
+  return list;
 }
+/* cadrage : position horizontale du cadre (0 = bord gauche, 1 = bord droit) */
+function rX(it, t){ return rKeyAt(it.keys, t, "x", 0.5); }
+function rUpsert(it, t, x){ it.keys = rKeyPut(it.keys, t, {x:x}); }
 function rCrop(sw, sh, x){
   var cw, ch;
   if(sw/sh > 9/16){ ch = sh; cw = sh*9/16; } else { cw = sw; ch = sw*16/9; }
   return {sx:(sw - cw)*clamp(x, 0, 1), sy:(sh - ch)/2, cw:cw, ch:ch, free:sw - cw};
 }
-function drawCropped(ctx, W, H, src, sw, sh, rot, x){
+/* zones de flou (mosaïque) : carré de côté s x hauteur de l'image, centre suivi par des points {t, x, y} en fraction de l'image source */
+var RMOSAIC = 10, RFSIZES = [0.12, 0.2, 0.32], rTmpC = null;
+function rZone(z, t, sw, sh){
+  var zs = Math.max(4, z.s*sh);
+  return {x:clamp(rKeyAt(z.keys, t, "x", 0.5)*sw - zs/2, 0, Math.max(0, sw - zs)), y:clamp(rKeyAt(z.keys, t, "y", 0.5)*sh - zs/2, 0, Math.max(0, sh - zs)), w:zs, h:zs};
+}
+function pixelate(ctx, x, y, w, h){
+  var cw = ctx.canvas.width, ch = ctx.canvas.height, x0 = Math.max(0, x), y0 = Math.max(0, y), x1 = Math.min(cw, x + w), y1 = Math.min(ch, y + h);
+  if(x1 - x0 < 1 || y1 - y0 < 1) return;
+  var nx = Math.max(1, Math.round(RMOSAIC*(x1 - x0)/w)), ny = Math.max(1, Math.round(RMOSAIC*(y1 - y0)/h));
+  if(!rTmpC) rTmpC = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(RMOSAIC, RMOSAIC) : rCanvas(RMOSAIC, RMOSAIC);
+  var tc = rTmpC.getContext("2d"); tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = "high";
+  tc.clearRect(0, 0, RMOSAIC, RMOSAIC); tc.drawImage(ctx.canvas, x0, y0, x1 - x0, y1 - y0, 0, 0, nx, ny);
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(rTmpC, 0, 0, nx, ny, x0, y0, x1 - x0, y1 - y0); ctx.restore();
+}
+/* source (vidéo) dessinée dans le cadre 9:16, flous compris ; t = instant de la timeline */
+function drawCropped(ctx, W, H, src, sw, sh, rot, x, it, t){
   var cr = rCrop(sw, sh, x), k = H / cr.ch;
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
   drawRot(ctx, src, rot || 0, -cr.sx*k, -cr.sy*k, sw*k, sh*k);
+  ((it && it.flous) || []).forEach(function(z){ var r = rZone(z, t, sw, sh); pixelate(ctx, (r.x - cr.sx)*k, (r.y - cr.sy)*k, r.w*k, r.h*k); });
+}
+/* photo avec ses flous appliqués une fois pour toutes (gardée tant que les flous ne changent pas) */
+function phBaked(im, it){
+  var fl = it.flous || [];
+  if(!fl.length) return im;
+  var sig = JSON.stringify(fl), c = PH.baked[it.id];
+  if(c && c.sig === sig && c.im === im) return c.cv;
+  var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, cv = rCanvas(iw, ih), cx = cv.getContext("2d");
+  cx.drawImage(im, 0, 0);
+  fl.forEach(function(z){ var r = rZone(z, 0, iw, ih); pixelate(cx, r.x, r.y, r.w, r.h); });
+  PH.baked[it.id] = {sig:sig, im:im, cv:cv};
+  return cv;
 }
 function rLines(ctx, txt, maxW, maxLines){ return wrap(ctx, txt, maxW, maxLines); }
-function drawTitle(ctx, W, H, txt, alpha){
-  if(!txt || alpha <= 0) return;
-  var u = W/1080;
-  ctx.save(); ctx.globalAlpha = clamp(alpha, 0, 1);
+/* chaque fonction de dessin d'un calque rend son cadre {x, y, w, h} (pour le choisir et le déplacer dans l'aperçu) */
+function drawTitle(ctx, W, H, txt, box){
+  if(!txt) return null;
+  box = box || RBOX.titre;
+  var u = W/1080*(box.s || 1), cx = box.x*W, cy = box.y*H;
+  ctx.save();
   ctx.font = (112*u)+"px "+ANTON; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-  var ls = rLines(ctx, clean(txt).toUpperCase(), W*0.84, 3), lh = 124*u, y0 = H*0.27 - (ls.length - 1)*lh/2;
+  var ls = rLines(ctx, clean(txt).toUpperCase(), Math.min(907*u, W*0.92), 4), lh = 124*u, cap = 92*u;
+  var hgt = cap + (ls.length - 1)*lh + 48*u, top = cy - hgt/2, y0 = top + cap;
+  var bw = Math.max.apply(null, ls.map(function(l){ return ctx.measureText(l).width; }));
   ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 28*u; ctx.shadowOffsetY = 4*u;
   ctx.fillStyle = "#fff";
-  ls.forEach(function(l, i){ ctx.fillText(l, W/2, y0 + i*lh); });
+  ls.forEach(function(l, i){ ctx.fillText(l, cx, y0 + i*lh); });
   ctx.shadowColor = "transparent";
-  ctx.fillStyle = "#F9DD10"; ctx.fillRect(W/2 - 70*u, y0 + (ls.length - 1)*lh + 36*u, 140*u, 12*u);
+  ctx.fillStyle = "#F9DD10"; ctx.fillRect(cx - 70*u, y0 + (ls.length - 1)*lh + 36*u, 140*u, 12*u);
   ctx.restore();
+  return {x:cx - bw/2, y:top, w:bw, h:hgt};
 }
-function drawItemOver(ctx, W, H, it){
-  var u = W/1080;
+function drawItemText(ctx, W, H, txt, box){
+  if(!txt) return null;
+  box = box || RBOX.texte;
+  var u = W/1080*(box.s || 1), cx = box.x*W, cy = box.y*H;
   ctx.save();
-  var lr = 46*u; drawLogo(ctx, 64*u + lr, 200*u + lr, lr);
-  if(it && it.vit > 1){
-    var tx = "ACCÉLÉRÉ x"+it.vit;
-    ctx.font = "700 "+(32*u)+"px "+MONT; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    var tw = ctx.measureText(tx).width, px = 20*u, bx = W - 64*u, by = 200*u + lr;
-    ctx.fillStyle = "rgba(23,22,24,.72)"; rRound(ctx, bx - tw - px*2, by - 30*u, tw + px*2, 60*u, 30*u); ctx.fill();
-    ctx.fillStyle = "#F9DD10"; ctx.fillText(tx, bx - px, by + 2*u);
-  }
-  if(it && it.texte){
-    ctx.font = "700 "+(52*u)+"px "+MONT; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    var ls = rLines(ctx, it.texte, W*0.8, 3), lh = 66*u, pad = 28*u;
-    var bw = Math.max.apply(null, ls.map(function(l){ return ctx.measureText(l).width; })) + pad*2, bh = ls.length*lh + pad*1.4;
-    var bottom = H*0.74, top = bottom - bh;
-    ctx.fillStyle = "rgba(23,22,24,.74)"; rRound(ctx, W/2 - bw/2, top, bw, bh, 22*u); ctx.fill();
-    ctx.fillStyle = "#fff";
-    ls.forEach(function(l, i){ ctx.fillText(l, W/2, top + pad*0.7 + lh*(i + 0.78)); });
-  }
+  ctx.font = "700 "+(52*u)+"px "+MONT; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  var ls = rLines(ctx, txt, Math.min(864*u, W*0.88), 4), lh = 66*u, pad = 28*u;
+  var bw = Math.max.apply(null, ls.map(function(l){ return ctx.measureText(l).width; })) + pad*2, bh = ls.length*lh + pad*1.4, top = cy - bh/2;
+  ctx.fillStyle = "rgba(23,22,24,.74)"; rRound(ctx, cx - bw/2, top, bw, bh, 22*u); ctx.fill();
+  ctx.fillStyle = "#fff";
+  ls.forEach(function(l, i){ ctx.fillText(l, cx, top + pad*0.7 + lh*(i + 0.78)); });
   ctx.restore();
+  return {x:cx - bw/2, y:top, w:bw, h:bh};
+}
+/* logo ESAM : cartouche (logo + nom) ou logo seul cerclé de blanc */
+function drawBrand(ctx, W, H, lg){
+  if(!lg || lg.mode === "non") return null;
+  var u = W/1080*(lg.s || 1), cx = lg.x*W, cy = lg.y*H;
+  ctx.save();
+  if(lg.mode === "logo"){
+    var R = 82*u, ring = 7*u;
+    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 18*u;
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx, cy, R + ring, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    drawLogo(ctx, cx, cy, R);
+    return {x:cx - R - ring, y:cy - R - ring, w:2*(R + ring), h:2*(R + ring)};
+  }
+  var r = 58*u, pad = 16*u, gap = 20*u, h = 2*r + 2*pad;
+  ctx.font = (70*u)+"px "+ANTON; var w1 = ctx.measureText("ESAM").width;
+  ctx.font = "700 "+(22*u)+"px "+MONT; var w2 = Math.max(ctx.measureText("SECOURS ANIMALIER").width, ctx.measureText("EN MONTAGNE").width);
+  var w = pad + 2*r + gap + Math.max(w1, w2) + pad*2, x0 = cx - w/2, y0 = cy - h/2, tx = x0 + pad + 2*r + gap;
+  ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 16*u;
+  ctx.fillStyle = "rgba(23,22,24,.8)"; rRound(ctx, x0, y0, w, h, h/2); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x0 + pad + r, cy, r, 0, Math.PI*2); ctx.fill();
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#fff"; ctx.font = (70*u)+"px "+ANTON; ctx.fillText("ESAM", tx, cy - 4*u);
+  ctx.fillStyle = "#A8C8FB"; ctx.font = "700 "+(22*u)+"px "+MONT;
+  ctx.fillText("SECOURS ANIMALIER", tx, cy + 26*u); ctx.fillText("EN MONTAGNE", tx, cy + 52*u);
+  ctx.restore();
+  drawLogo(ctx, x0 + pad + r, cy, r - 4*u);
+  return {x:x0, y:y0, w:w, h:h};
+}
+function drawSpeed(ctx, W, H, vit){
+  var u = W/1080, tx = "ACCÉLÉRÉ x"+vit;
+  ctx.save();
+  ctx.font = "700 "+(32*u)+"px "+MONT; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  var tw = ctx.measureText(tx).width, px = 20*u, bx = W - 64*u, by = H*0.155;
+  ctx.fillStyle = "rgba(23,22,24,.72)"; rRound(ctx, bx - tw - px*2, by - 30*u, tw + px*2, 60*u, 30*u); ctx.fill();
+  ctx.fillStyle = "#F9DD10"; ctx.fillText(tx, bx - px, by + 2*u);
+  ctx.restore();
+  return null;
+}
+/* photo cadrée en 9:16 ; zoom lent de RZOOM sur sa durée */
+function drawPhoto(ctx, W, H, im, it, t, dur){
+  im = phBaked(im, it);
+  var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, cr = rCrop(iw, ih, it.x != null ? it.x : 0.5);
+  var z = it.zoom === false ? 1 : 1 + RZOOM*clamp(t/(dur || 1), 0, 1), w = cr.cw/z, h = cr.ch/z;
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(im, cr.sx + (cr.cw - w)/2, cr.sy + (cr.ch - h)/2, w, h, 0, 0, W, H);
+}
+/* calques du réel, du dessous au dessus : {key, a, b (secondes du réel), fi, fo (fondus), draw} */
+function rLayers(pl){
+  var r = pl.r, L = [];
+  if(!pl.segs.length) return L;
+  if(r.logo.mode !== "non") L.push({key:"logo", a:0, b:pl.clips, draw:function(c, W, H){ return drawBrand(c, W, H, r.logo); }});
+  pl.segs.forEach(function(sg){
+    var it = sg.it;
+    if(!sg.photo && it.vit > 1) L.push({key:"vit", a:sg.out0, b:sg.out0 + sg.dur, draw:function(c, W, H){ return drawSpeed(c, W, H, it.vit); }});
+    if(it.texte) L.push({key:"txt:"+it.id, a:sg.out0, b:it.tDur ? Math.min(pl.clips, sg.out0 + it.tDur) : sg.out0 + sg.dur, fo:it.tDur ? 0.25 : 0,
+      draw:function(c, W, H){ return drawItemText(c, W, H, it.texte, rTBox(it)); }});
+  });
+  if(r.titre) L.push({key:"titre", a:0, b:r.titreDur ? Math.min(pl.clips, r.titreDur) : pl.clips, fi:0.3, fo:0.4,
+    draw:function(c, W, H){ return drawTitle(c, W, H, r.titre, r.titreBox); }});
+  return L;
+}
+function rAlpha(l, o){
+  if(o < l.a - 1e-6 || o >= l.b) return 0;
+  var x = 1;
+  if(l.fi) x = Math.min(x, (o - l.a)/l.fi + 0.001);
+  if(l.fo) x = Math.min(x, (l.b - o)/l.fo);
+  return clamp(x, 0, 1);
+}
+function drawLayers(ctx, W, H, L, o){
+  var boxes = [];
+  L.forEach(function(l){
+    var al = rAlpha(l, o); if(al <= 0) return;
+    ctx.save(); ctx.globalAlpha = al; var b = l.draw(ctx, W, H); ctx.restore();
+    if(b) boxes.push({key:l.key, x:b.x, y:b.y, w:b.w, h:b.h});
+  });
+  return boxes;
 }
 function rRound(ctx, x, y, w, h, r){
   ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
-function titleAlpha(tOut){ return tOut >= RTITLE ? 0 : Math.min(1, tOut/0.3 + 0.001, (RTITLE - tOut)/0.4); }
 function drawFin(ctx, W, H, r){
   var u = W/1080;
   ctx.fillStyle = "#171618"; ctx.fillRect(0, 0, W, H);
@@ -2731,8 +2885,57 @@ async function rFonts(){
   REEL.fonts = true;
 }
 
+/* ----- photos JPEG ----- */
+function phGet(name){ return PH.list.find(function(p){ return p.name === name; }) || null; }
+function phShort(name){ return String(name).split("/").pop().replace(/\.jpe?g$/i, ""); }
+function phAdd(list){
+  var n = 0;
+  list.forEach(function(p){
+    if(phGet(p.name)) return;
+    var pn = parseName(p.name.split("/").pop());
+    p.t = pn ? pn.start : (p.t || null); PH.list.push(p); n++;
+  });
+  PH.list.sort(function(a, b){ return (a.t || 0) - (b.t || 0) || (a.name < b.name ? -1 : 1); });
+  return n;
+}
+function phFiles(files){
+  return phAdd(Array.prototype.filter.call(files, function(f){ return /\.jpe?g$/i.test(f.name) || f.type === "image/jpeg"; })
+    .map(function(f){ return {name:clean(f.webkitRelativePath && /\/Photos\//.test("/"+f.webkitRelativePath) ? "Photos/"+f.name : f.name), file:f, t:f.lastModified/1000}; }));
+}
+function phUrl(p, taille){ return "api/image?d="+enc(SRVD)+"&f="+enc(p.name)+"&taille="+taille; }
+function phReady(p){ return p ? PH.ready[p.name] || null : null; }
+/* image redressée, 3200 px au plus : copie préparée par le PC, ou fichier lu dans le navigateur */
+function phImage(p){
+  if(!PH.img[p.name]) PH.img[p.name] = (async function(){
+    var url = p.file ? URL.createObjectURL(p.file) : phUrl(p, "moyenne"), im;
+    try { im = await loadImg(url); } finally { if(p.file) URL.revokeObjectURL(url); }
+    var w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, 3200/Math.max(w, h));
+    if(k < 1){ var c = rCanvas(Math.round(w*k), Math.round(h*k)); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); im = c; }
+    PH.ready[p.name] = im;
+    return im;
+  })().catch(function(e){ delete PH.img[p.name]; throw new Error("photo illisible : "+p.name); });
+  return PH.img[p.name];
+}
+var phThumbBusy = false;
+async function phThumbs(){
+  if(phThumbBusy) return; phThumbBusy = true;
+  try {
+    for(var i=0;i<PH.list.length;i++){
+      var p = PH.list[i]; if(!p.file || p.thumb) continue;
+      var url = URL.createObjectURL(p.file);
+      try {
+        var im = await loadImg(url), k = 240/Math.max(im.naturalWidth, im.naturalHeight), c = rCanvas(Math.round(im.naturalWidth*k), Math.round(im.naturalHeight*k));
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        var b = await new Promise(function(r){ c.toBlob(r, "image/jpeg", 0.8); });
+        p.thumb = URL.createObjectURL(b);
+        document.querySelectorAll('#rPhList img[data-ph="'+CSS.escape(p.name)+'"]').forEach(function(el){ el.src = p.thumb; });
+      } catch(e){ p.thumb = "x"; } finally { URL.revokeObjectURL(url); }
+    }
+  } finally { phThumbBusy = false; }
+}
+function phThumbSrc(p){ return p.file ? (p.thumb && p.thumb !== "x" ? p.thumb : "") : phUrl(p, "petite"); }
+
 /* ----- lecture : cadrage d'un passage ou aperçu du réel ----- */
-function rAbs(url){ var a = document.createElement("a"); a.href = url; return a.href; }
 function rLoad(url, local, play, rate){
   rv.playbackRate = rate || 1;
   if(rv.getAttribute("data-u") !== url){
@@ -2751,8 +2954,10 @@ function rRange(it){
   var m = rMarker(it), a0 = m ? m.at - S.base : it.a, z0 = m ? (m.to != null ? m.to : m.at) - S.base : it.z;
   return {lo:Math.max(0, Math.min(it.a, a0) - 10), hi:Math.min(S.dur, Math.max(it.z, z0) + 10)};
 }
+function rZoneSel(it){ return it && REEL.fsel ? (it.flous || []).find(function(z){ return z.id === REEL.fsel; }) || null : null; }
 function rSeekCadrage(t, play){
   var it = rSelItem(); if(!it) return;
+  if(it.photo){ REEL.cur = null; rv.pause(); rDraw(); return; }
   REEL.t = t;
   var tr = rTrack(it), c = tr ? clipAt(tr, t) : null;
   REEL.cur = c ? {clip:c} : null;
@@ -2762,6 +2967,7 @@ function rFindOut(pl, o){
   for(var i=0;i<pl.segs.length;i++){
     var sg = pl.segs[i];
     if(o < sg.out0 + sg.dur - 1e-4){
+      if(sg.photo) return {photo:true, seg:sg};
       var src = Math.max(0, o - sg.out0) * sg.it.vit;
       for(var j=0;j<sg.pieces.length;j++){
         var p = sg.pieces[j], ln = p.to - p.from;
@@ -2779,7 +2985,10 @@ function rSeekApercu(o, play){
   REEL.o = clamp(o, 0, pl.total);
   var f = rFindOut(pl, REEL.o);
   if(!f){ REEL.cur = null; rv.pause(); rStop(); rDraw(); return; }
-  if(f.fin){ REEL.cur = {fin:true, o0:REEL.o, w0:performance.now()}; rv.pause(); }
+  if(f.fin || f.photo){
+    REEL.cur = {fin:!!f.fin, photo:f.photo, seg:f.seg, o0:REEL.o, w0:performance.now()}; rv.pause();
+    if(f.photo && !phReady(f.seg.photo)) phImage(f.seg.photo).then(function(){ if(!REEL.playing) rDraw(); }, function(e){ toast(e.message); });
+  }
   else { REEL.cur = f; rLoad(f.p.c.url, f.local, play, f.seg.it.vit); }
   rMusicSync(true);
   rDraw();
@@ -2801,7 +3010,7 @@ function rMusicSync(force){
 function rPlay(){
   if(REEL.playing){ rStop(); return; }
   if(REEL.mode === "cadrage"){
-    var it = rSelItem(); if(!it) return;
+    var it = rSelItem(); if(!it || it.photo) return;
     var t = REEL.t; if(t < it.a - 0.05 || t >= it.z - 0.1) t = it.a;
     REEL.playing = true; rSeekCadrage(t, true);
   } else {
@@ -2813,17 +3022,23 @@ function rPlay(){
 }
 function rStop(){ REEL.playing = false; rv.pause(); ra.pause(); cancelAnimationFrame(REEL.raf); rPlayBtn(); }
 function rPlayBtn(){ var b = $("rPlay"); b.innerHTML = REEL.playing ? ICON_PAUSE : ICON_PLAY; b.setAttribute("aria-label", REEL.playing ? "Pause" : "Lire"); }
+/* pendant la lecture, le doigt posé sur l'image enregistre le cadre ou la zone de flou choisie */
+function rTrack1(it){
+  var d = REEL.drag; if(!d) return;
+  if(d.zone && d.pos){ var z = rZoneSel(it); if(z) z.keys = rKeyPut(z.keys, REEL.t, d.pos); }
+  else if(!d.zone && d.x != null) rUpsert(it, REEL.t, d.x);
+}
 function rLoop(){
   cancelAnimationFrame(REEL.raf);
   (function step(){
     if(!REEL.playing) return;
     if(REEL.mode === "cadrage"){
       var it = rSelItem();
-      if(!it){ rStop(); return; }
+      if(!it || it.photo){ rStop(); return; }
       var c = REEL.cur && REEL.cur.clip;
       if(c && rv.readyState >= 2){
         REEL.t = c.s + rv.currentTime;
-        if(REEL.drag && REEL.drag.x != null){ rUpsert(it, REEL.t, REEL.drag.x); }
+        rTrack1(it);
         if(REEL.t >= it.z || rv.ended){
           var n = rTrack(it) && nextClip(rTrack(it), c.e - 0.01);
           if(!rv.ended || !n || n.s >= it.z){ REEL.t = Math.min(REEL.t, it.z); rStop(); rDraw(); rTime(); return; }
@@ -2833,9 +3048,10 @@ function rLoop(){
     } else {
       var pl = REEL.pl, cur = REEL.cur;
       if(!cur){ rStop(); return; }
-      if(cur.fin){
+      if(cur.fin || cur.photo){
         REEL.o = cur.o0 + (performance.now() - cur.w0)/1000;
-        if(REEL.o >= pl.total){ REEL.o = pl.total; rStop(); rDraw(); rTime(); return; }
+        if(cur.photo && REEL.o >= cur.seg.out0 + cur.seg.dur){ rSeekApercu(cur.seg.out0 + cur.seg.dur + 0.002, true); }
+        else if(REEL.o >= pl.total){ REEL.o = pl.total; rStop(); rDraw(); rTime(); return; }
       } else if(rv.readyState >= 2){
         REEL.o = cur.pOut0 + (rv.currentTime - cur.p.from)/cur.seg.it.vit;
         if(rv.currentTime >= cur.p.to - 0.04 || rv.ended){ rSeekApercu(cur.pOut1 + 0.002, true); }
@@ -2853,20 +3069,75 @@ function rDraw(){
     if(rcv.width !== W || rcv.height !== H){ rcv.width = W; rcv.height = H; }
     stage.classList.add("v"); stage.classList.remove("h");
     var pl = REEL.pl || (REEL.pl = reelPlan(false)), cur = REEL.cur;
+    REEL.boxes = [];
     if(!pl.segs.length){ rctx.fillStyle = "#000"; rctx.fillRect(0,0,W,H); return; }
-    if(!cur){ var f = rFindOut(pl, REEL.o); if(f && f.fin) cur = {fin:true}; else if(f){ REEL.cur = cur = f; rLoad(f.p.c.url, f.local, false, f.seg.it.vit); } }
+    if(!cur){
+      var f = rFindOut(pl, REEL.o);
+      if(f && (f.fin || f.photo)) cur = {fin:!!f.fin, photo:f.photo, seg:f.seg};
+      else if(f){ REEL.cur = cur = f; rLoad(f.p.c.url, f.local, false, f.seg.it.vit); }
+    }
     if(cur && cur.fin){ drawFin(rctx, W, H, pl.r); return; }
-    if(cur && rv.readyState >= 2 && rv.videoWidth){
+    if(cur && cur.photo){
+      var im = phReady(cur.seg.photo);
+      if(im) drawPhoto(rctx, W, H, im, cur.seg.it, REEL.o - cur.seg.out0, cur.seg.dur);
+      else { rctx.fillStyle = "#000"; rctx.fillRect(0, 0, W, H); phImage(cur.seg.photo).then(function(){ if(!REEL.playing) rDraw(); }, function(){}); }
+    } else if(cur && rv.readyState >= 2 && rv.videoWidth){
       var tl = cur.p.c.s + rv.currentTime;
-      drawCropped(rctx, W, H, rv, rv.videoWidth, rv.videoHeight, 0, rX(cur.seg.it, tl));
-      drawItemOver(rctx, W, H, cur.seg.it);
-      drawTitle(rctx, W, H, pl.r.titre, titleAlpha(REEL.o));
+      drawCropped(rctx, W, H, rv, rv.videoWidth, rv.videoHeight, 0, rX(cur.seg.it, tl), cur.seg.it, tl);
+    } else return;
+    REEL.boxes = drawLayers(rctx, W, H, rLayers(pl), REEL.o);
+    var sb = REEL.lsel && REEL.boxes.find(function(b){ return b.key === REEL.lsel; });
+    if(sb){
+      rctx.save(); rctx.setLineDash([10, 7]); rctx.lineWidth = 3; rctx.strokeStyle = "#F9DD10";
+      rctx.strokeRect(sb.x - 6, sb.y - 6, sb.w + 12, sb.h + 12); rctx.setLineDash([]);
+      rctx.fillStyle = "#F9DD10"; rctx.strokeStyle = "#171618"; rctx.beginPath(); rctx.arc(sb.x + sb.w + 6, sb.y + sb.h + 6, 13, 0, Math.PI*2); rctx.fill(); rctx.stroke();
+      rctx.restore();
     }
     return;
   }
   stage.classList.add("h"); stage.classList.remove("v");
   if(!it) return;
-  var vw = rv.videoWidth || 1920, vh = rv.videoHeight || 1080, CW = 960, CH = Math.round(960*vh/vw);
+  var CW, CH, sel = rZoneSel(it), t = REEL.t;
+  function frame(sw, sh, x){
+    // cadre 9:16 et zones de flou sur l'image entière ; sw, sh = taille de l'image dessinée
+    var cr = rCrop(sw, sh, x);
+    (it.flous || []).forEach(function(z){ var r = rZone(z, it.photo ? 0 : t, sw, sh); pixelate(rctx, r.x, r.y, r.w, r.h); });
+    rctx.fillStyle = "rgba(0,0,0,.55)";
+    rctx.fillRect(0, 0, cr.sx, sh); rctx.fillRect(cr.sx + cr.cw, 0, sw - cr.sx - cr.cw, sh);
+    var inside = it.photo || (t >= it.a - 0.02 && t <= it.z + 0.02);
+    rctx.lineWidth = 4; rctx.strokeStyle = inside ? "#A8C8FB" : "#E20C0F"; rctx.strokeRect(cr.sx + 2, cr.sy + 2, cr.cw - 4, cr.ch - 4);
+    (it.flous || []).forEach(function(z, i){
+      var r = rZone(z, it.photo ? 0 : t, sw, sh);
+      rctx.save(); rctx.lineWidth = z === sel ? 4 : 2; rctx.strokeStyle = z === sel ? "#F9DD10" : "#fff"; if(z !== sel) rctx.setLineDash([8, 6]);
+      rctx.strokeRect(r.x, r.y, r.w, r.h);
+      rctx.fillStyle = z === sel ? "#F9DD10" : "#fff"; rctx.font = "700 18px "+MONT; rctx.textAlign = "left"; rctx.textBaseline = "top";
+      rctx.fillText("Flou "+(i + 1), r.x + 4, r.y + 4); rctx.restore();
+    });
+    if(!inside){
+      rctx.fillStyle = "rgba(0,0,0,.5)"; rctx.fillRect(0, sh - 44, sw, 44);
+      rctx.fillStyle = "#fff"; rctx.font = "600 20px "+MONT; rctx.textAlign = "center"; rctx.textBaseline = "middle";
+      rctx.fillText("Hors du passage retenu pour le réel", sw/2, sh - 22);
+    }
+  }
+  if(it.photo){
+    var ph = phGet(it.photo), pim = phReady(ph);
+    if(!pim){
+      CW = 960; CH = 540; if(rcv.width !== CW || rcv.height !== CH){ rcv.width = CW; rcv.height = CH; }
+      rctx.fillStyle = "#000"; rctx.fillRect(0, 0, CW, CH);
+      rctx.fillStyle = "#fff"; rctx.font = "600 24px "+MONT; rctx.textAlign = "center"; rctx.textBaseline = "middle";
+      rctx.fillText(ph ? "Chargement de la photo..." : "Photo absente sur cet appareil : choisissez-la à nouveau", CW/2, CH/2);
+      if(ph) phImage(ph).then(function(){ rDraw(); }, function(e){ toast(e.message); });
+      return;
+    }
+    var iw = pim.naturalWidth || pim.width, ih = pim.naturalHeight || pim.height, kk = 960/Math.max(iw, ih);
+    CW = Math.round(iw*kk); CH = Math.round(ih*kk);
+    if(rcv.width !== CW || rcv.height !== CH){ rcv.width = CW; rcv.height = CH; }
+    rctx.drawImage(pim, 0, 0, CW, CH);
+    frame(CW, CH, it.x != null ? it.x : 0.5);
+    return;
+  }
+  var vw = rv.videoWidth || 1920, vh = rv.videoHeight || 1080;
+  CW = 960; CH = Math.round(960*vh/vw);
   if(rcv.width !== CW || rcv.height !== CH){ rcv.width = CW; rcv.height = CH; }
   rctx.fillStyle = "#000"; rctx.fillRect(0, 0, CW, CH);
   var c = REEL.cur && REEL.cur.clip;
@@ -2875,16 +3146,7 @@ function rDraw(){
     rctx.fillText("Pas d'image à cet instant sur cette caméra", CW/2, CH/2); return;
   }
   if(rv.readyState >= 2) rctx.drawImage(rv, 0, 0, CW, CH);
-  var cr = rCrop(CW, CH, rX(it, REEL.t));
-  rctx.fillStyle = "rgba(0,0,0,.55)";
-  rctx.fillRect(0, 0, cr.sx, CH); rctx.fillRect(cr.sx + cr.cw, 0, CW - cr.sx - cr.cw, CH);
-  var inside = REEL.t >= it.a - 0.02 && REEL.t <= it.z + 0.02;
-  rctx.lineWidth = 4; rctx.strokeStyle = inside ? "#A8C8FB" : "#E20C0F"; rctx.strokeRect(cr.sx + 2, cr.sy + 2, cr.cw - 4, cr.ch - 4);
-  if(!inside){
-    rctx.fillStyle = "rgba(0,0,0,.5)"; rctx.fillRect(0, CH - 44, CW, 44);
-    rctx.fillStyle = "#fff"; rctx.font = "600 20px "+MONT; rctx.textAlign = "center"; rctx.textBaseline = "middle";
-    rctx.fillText("Hors du passage retenu pour le réel", CW/2, CH - 22);
-  }
+  frame(CW, CH, rX(it, t));
 }
 function rTime(){
   var it = rSelItem(), el = $("rTime"), sl = $("rSlider");
@@ -2894,7 +3156,7 @@ function rTime(){
     if(document.activeElement !== sl) sl.value = pl.total ? Math.round(REEL.o/pl.total*1000) : 0;
     return;
   }
-  if(!it){ el.textContent = ""; return; }
+  if(!it || it.photo){ el.textContent = ""; return; }
   var rg = rRange(it);
   el.textContent = clockAbs(S.base + REEL.t)+"\n"+ms(Math.max(0, REEL.t - it.a))+" / "+ms(it.z - it.a);
   if(document.activeElement !== sl) sl.value = Math.round((REEL.t - rg.lo)/Math.max(0.1, rg.hi - rg.lo)*1000);
@@ -2905,10 +3167,10 @@ function rBar(){
     var pl = reelPlan(false), T = pl.total || 1;
     pl.segs.forEach(function(sg, i){ h += '<i class="in" style="left:'+(sg.out0/T*100)+'%;width:'+(sg.dur/T*100)+'%;opacity:'+(i % 2 ? .7 : 1)+'"></i>'; if(i) h += '<i class="sg" style="left:'+(sg.out0/T*100)+'%"></i>'; });
     if(pl.fin) h += '<i class="fin" style="width:'+(pl.fin/T*100)+'%"></i>';
-  } else if(it){
-    var rg = rRange(it), L = Math.max(0.1, rg.hi - rg.lo);
+  } else if(it && !it.photo){
+    var rg = rRange(it), L = Math.max(0.1, rg.hi - rg.lo), z = rZoneSel(it);
     h += '<i class="in" style="left:'+((it.a - rg.lo)/L*100)+'%;width:'+((it.z - it.a)/L*100)+'%"></i>';
-    (it.keys || []).forEach(function(k){ h += '<i class="k" style="left:'+((k.t - rg.lo)/L*100)+'%"></i>'; });
+    ((z ? z.keys : it.keys) || []).forEach(function(k){ h += '<i class="k'+(z ? ' fz' : '')+'" style="left:'+((k.t - rg.lo)/L*100)+'%"></i>'; });
   }
   b.innerHTML = h;
 }
@@ -2920,10 +3182,10 @@ function reelEnter(){
   if(REEL.sel && !rItem(REEL.sel)) REEL.sel = null;
   if(!REEL.sel && r.items.length && REEL.mode === "cadrage") REEL.sel = r.items[0].id;
   renderReel();
-  if(REEL.mode === "cadrage"){ var it = rSelItem(); if(it) rSeekCadrage(clamp(REEL.t, it.a, it.z) || it.a, false); }
+  if(REEL.mode === "cadrage"){ var it = rSelItem(); if(it) rSeekCadrage(it.photo ? 0 : (clamp(REEL.t, it.a, it.z) || it.a), false); }
   else rSeekApercu(REEL.o, false);
 }
-function reelLeave(){ if(REEL.playing) rStop(); REEL.drag = null; }
+function reelLeave(){ if(REEL.playing) rStop(); REEL.drag = null; REEL.ldrag = null; }
 function rSave(){ persist(); renderComp(); }
 function renderReel(){
   var r = reelData(), pl = reelPlan(false), it = rSelItem();
@@ -2935,10 +3197,11 @@ function renderReel(){
   chipRow($("rMode"), ["Cadrage du passage","Aperçu du réel"], function(t,i){ return (REEL.mode === "apercu") === !!i; });
   // montage
   $("rList").innerHTML = r.items.map(function(x, i){
-    var m = rMarker(x), tr = rTrack(x), d = (x.z - x.a)/(x.vit || 1);
+    var tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, nf = (x.flous || []).length;
+    var src = x.photo ? (ph ? 'Photo'+(x.zoom === false ? '' : ', zoom lent') : '<span class="miss">[photo à choisir à nouveau]</span>') : (tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>');
     return '<li class="'+(x.id === REEL.sel ? 'sel' : '')+'"><span class="rn">'+(i+1)+'</span>'
-      +'<button type="button" class="rtx" data-rsel="'+x.id+'"><b>'+esc(x.texte || label(m))+'</b><small>'
-      +(tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>')+', '+len(d)+(x.vit > 1 ? ' (x'+x.vit+')' : '')+((x.keys||[]).length ? ', cadre suivi' : '')+'</small></button>'
+      +'<button type="button" class="rtx" data-rsel="'+x.id+'"><b>'+esc(x.texte || rLabel(x))+'</b><small>'
+      +src+', '+len(rItemDur(x))+(x.vit > 1 && !x.photo ? ' (x'+x.vit+')' : '')+((x.keys||[]).length ? ', cadre suivi' : '')+(nf ? ', '+nf+' flou'+(nf > 1 ? 's' : '') : '')+'</small></button>'
       +'<button type="button" class="ib" data-rup="'+x.id+'" aria-label="Monter"'+(i ? '' : ' disabled')+'>'+ICON_UP+'</button>'
       +'<button type="button" class="ib" data-rdown="'+x.id+'" aria-label="Descendre"'+(i < r.items.length - 1 ? '' : ' disabled')+'>'+ICON_DOWN+'</button>'
       +'<button type="button" class="ib" data-rdel="'+x.id+'" aria-label="Retirer du réel">'+ICON_X+'</button></li>';
@@ -2950,9 +3213,13 @@ function renderReel(){
   }).join("");
   $("rAddBox").hidden = !free.length;
   $("rAddSum").textContent = "Ajouter des passages ("+free.length+")";
-  if(!r.items.length) $("rAddBox").open = true;
+  if(!r.items.length && free.length) $("rAddBox").open = true;
+  renderPhotos();
   // habillage
   if(document.activeElement !== $("rTitre")) $("rTitre").value = r.titre;
+  chipRow($("rTitreDur"), ["3 s","5 s","8 s","Tout le réel"], function(t,i){ return (r.titreDur || 0) === RTDURS[i]; });
+  chipRow($("rLogo"), ["Cartouche ESAM","Logo seul","Aucun"], function(t,i){ return r.logo.mode === RLOGOS[i]; });
+  $("rLogoPlace").hidden = r.logo.mode === "non";
   chipRow($("rFinOn"), ["Oui","Non"], function(t,i){ return r.fin.on === !i; });
   $("rFinBox").hidden = !r.fin.on;
   if(document.activeElement !== $("rFinTxt")) $("rFinTxt").value = r.fin.texte || "";
@@ -2971,25 +3238,76 @@ function renderReel(){
   // scène
   var noItem = REEL.mode === "cadrage" && !it, noSeg = REEL.mode === "apercu" && empty;
   $("rEmpty").hidden = !(noItem || noSeg);
-  $("rEmpty").textContent = r.items.length ? "Choisissez un passage du montage pour régler son cadrage." : "Ajoutez des passages au montage (liste « Ajouter des passages »).";
-  $("rTrans").hidden = noItem || noSeg;
+  $("rEmpty").textContent = r.items.length ? "Choisissez un passage du montage pour régler son cadrage." : "Ajoutez des passages ou des photos au montage.";
+  $("rTrans").hidden = noItem || noSeg || (REEL.mode === "cadrage" && !!(it && it.photo));
   rBar(); rTime(); rPlayBtn(); rDraw();
+}
+function renderPhotos(){
+  var r = reelData(), free = PH.list.filter(function(p){ return !r.items.some(function(x){ return x.photo === p.name; }); });
+  $("rPhList").innerHTML = free.map(function(p){
+    var when = p.t && S.real ? clockAbs(p.t) : phShort(p.name);
+    return '<li><button type="button" data-rph="'+esc(p.name)+'" title="'+esc(p.name)+'"><img alt="" loading="lazy" data-ph="'+esc(p.name)+'" src="'+esc(phThumbSrc(p))+'"><small>'+esc(when)+'</small></button></li>';
+  }).join("");
+  $("rPhSum").textContent = "Ajouter des photos ("+free.length+")";
+  $("rPhEmpty").textContent = PH.list.length ? (free.length ? "" : "Toutes les photos sont déjà dans le montage.")
+    : SRV && SRVD ? "Aucune photo JPEG dans le dossier de l'intervention ni dans son sous-dossier Photos." : "Aucune photo chargée.";
+  $("rPhEmpty").hidden = !$("rPhEmpty").textContent;
+  $("rPhPick").hidden = !!(SRV && SRVD);
+  if(PH.list.some(function(p){ return p.file && !p.thumb; })) phThumbs();
+}
+function rTextCtl(it){
+  return '<div class="grp"><label class="lbl" for="rTexte">Texte sur ce passage</label><input class="field" id="rTexte" maxlength="90" autocomplete="off" placeholder="Ex. : '+esc(rLabel(it))+'" value="'+esc(it.texte || "")+'">'
+    +(it.texte ? '<span class="lbl" style="margin-top:10px;display:block">Durée du texte</span><div class="chips">'+RXDURS.map(function(d){ return '<button type="button" class="chip" data-rtdur="'+d+'" aria-pressed="'+((it.tDur || 0) === d)+'">'+(d ? d+' s' : 'Tout le passage')+'</button>'; }).join("")+'</div>'
+      +'<p class="hint">Un texte plus long que le passage continue sur les suivants.</p>'
+      +'<div class="rbtns"><button type="button" class="btn small ghost" data-rplace="txt:'+it.id+'">Placer et agrandir sur l\'image</button></div>' : '')+'</div>';
+}
+function rFlouCtl(it){
+  var fl = it.flous || [], z = rZoneSel(it), near = z && !it.photo && (z.keys || []).some(function(k){ return Math.abs(k.t - REEL.t) < 0.5; });
+  return '<div class="grp"><span class="lbl">Flous (visages, plaques, lieux)</span>'
+    +'<p class="hint" style="margin:0 0 8px">'+(fl.length ? 'Choisissez ce que le doigt ou la souris déplace sur l\'image.'+(it.photo ? '' : ' Pendant la lecture, gardez le doigt sur la zone et suivez ce qu\'il faut cacher : le flou enregistre le mouvement.') : 'Ajoutez une zone floutée, puis glissez-la sur ce qu\'il faut cacher.')+'</p>'
+    +'<div class="chips">'+(fl.length ? '<button type="button" class="chip" data-rfsel="" aria-pressed="'+!z+'">Le cadre</button>' : '')
+    +fl.map(function(f, i){ return '<button type="button" class="chip" data-rfsel="'+f.id+'" aria-pressed="'+(f === z)+'">Flou '+(i + 1)+'</button>'; }).join("")
+    +'<button type="button" class="chip" data-rfadd="1">+ Ajouter un flou</button></div>'
+    +(z ? '<span class="lbl" style="margin-top:10px;display:block">Taille du flou '+(fl.indexOf(z) + 1)+'</span><div class="chips">'+RFSIZES.map(function(s, i){ return '<button type="button" class="chip" data-rfsize="'+s+'" aria-pressed="'+(Math.abs(z.s - s) < 0.001)+'">'+["Petit","Moyen","Grand"][i]+'</button>'; }).join("")+'</div>'
+      +'<div class="rbtns">'+(it.photo ? '' : '<button type="button" class="btn small ghost" data-rfkey="del"'+(near ? '' : ' disabled')+'>Supprimer le point ici</button>')
+      +'<button type="button" class="btn small ghost" data-rfdel="1">Supprimer ce flou</button></div>' : '')+'</div>';
 }
 function renderReelEdit(){
   var it = rSelItem(), box = $("rEdit");
-  if(!it || REEL.mode !== "cadrage"){
-    box.innerHTML = REEL.mode === "apercu" && reelData().items.length ? '<p class="hint">Aperçu en basse définition, sur les proxies. La vidéo finale est calculée en 1080 x 1920 à partir des rushs d\'origine.</p>' : "";
+  if(REEL.mode === "apercu"){
+    var r = reelData(), k = REEL.lsel, h = "";
+    if(k){
+      var nm = k === "titre" ? "Titre d'accroche" : k === "logo" ? "Logo ESAM" : "Texte : "+esc(((rItem(k.slice(4)) || {}).texte) || "");
+      h = '<div class="rsel"><b>'+nm+'</b></div><p class="hint">Glissez-le sur l\'image ; tirez le rond jaune pour l\'agrandir ou le réduire (molette aussi sur ordinateur).</p>'
+        +'<div class="rbtns"><button type="button" class="btn small ghost" data-rsize="0.85">Plus petit</button><button type="button" class="btn small ghost" data-rsize="1.18">Plus grand</button>'
+        +'<button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>'
+        +(k.indexOf("txt:") === 0 && r.items.filter(function(x){ return x.texte; }).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même place pour tous les textes</button>' : '')
+        +'<button type="button" class="btn small ghost" data-runsel="1">Terminé</button></div>';
+    } else if(r.items.length) h = '<p class="hint">Touchez le titre, le logo ou un texte sur l\'image pour le déplacer ou changer sa taille. Aperçu en basse définition, sur les proxies ; la vidéo finale est calculée en 1080 x 1920 à partir des rushs d\'origine.</p>';
+    box.innerHTML = h;
     return;
   }
-  var m = rMarker(it), idx = reelData().items.indexOf(it), cams = S.tracks.filter(function(tr){ return rHas(tr, it); }), tr = rTrack(it);
+  if(!it){ box.innerHTML = ""; return; }
+  var idx = reelData().items.indexOf(it);
+  if(it.photo){
+    box.innerHTML = '<div class="rsel"><b>'+(idx + 1)+'. '+esc(rLabel(it))+'</b><span class="meta" style="font-size:13px;color:var(--muted)">'+len(rItemDur(it))+' dans le réel</span></div>'
+      +'<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p>'
+      +'<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>'
+      +'<div class="grp"><span class="lbl">Durée</span><div class="chips">'+RPDURS.map(function(d){ return '<button type="button" class="chip" data-rpdur="'+d+'" aria-pressed="'+(rItemDur(it) === d)+'">'+d+' s</button>'; }).join("")+'</div></div>'
+      +'<div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="'+(it.zoom !== false)+'">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="'+(it.zoom === false)+'">Non</button></div></div>'
+      +rFlouCtl(it)+rTextCtl(it);
+    return;
+  }
+  var m = rMarker(it), cams = S.tracks.filter(function(tr){ return rHas(tr, it); }), tr = rTrack(it);
   var nk = (it.keys || []).length, near = (it.keys || []).some(function(k){ return Math.abs(k.t - REEL.t) < 0.5; });
   box.innerHTML = '<div class="rsel"><b>'+(idx + 1)+'. '+esc(label(m))+'</b><span class="meta" style="font-size:13px;color:var(--muted)">'+ms(it.a)+' à '+ms(it.z)+', '+len((it.z - it.a)/(it.vit||1))+' dans le réel</span></div>'
     +'<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>'
     +'<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l\'image. Pendant la lecture, suivez l\'animal du doigt : le cadre enregistre votre mouvement et le lisse.'+(nk ? ' '+nk+' point'+(nk > 1 ? 's' : '')+' de cadrage.' : ' Cadre fixe au centre pour l\'instant.')+'</p>'
     +'<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"'+(near ? '' : ' disabled')+'>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"'+(nk ? '' : ' disabled')+'>Cadre fixe au centre</button></div></div>'
+    +rFlouCtl(it)
     +'<div class="grp"><span class="lbl">Caméra</span><div class="chips">'+cams.map(function(c){ return '<button type="button" class="chip" data-rcam="'+esc(c.lens)+'" aria-pressed="'+(tr === c)+'">'+esc(c.name)+'</button>'; }).join("")+'</div></div>'
     +'<div class="grp"><span class="lbl">Vitesse</span><div class="chips">'+RSPEEDS.map(function(s){ return '<button type="button" class="chip" data-rvit="'+s+'" aria-pressed="'+((it.vit||1) === s)+'">'+(s === 1 ? 'Normale' : 'Accéléré x'+s)+'</button>'; }).join("")+'</div></div>'
-    +'<div class="grp"><label class="lbl" for="rTexte">Texte sur ce passage</label><input class="field" id="rTexte" maxlength="90" autocomplete="off" placeholder="Ex. : '+esc(label(m))+'" value="'+esc(it.texte || "")+'"></div>';
+    +rTextCtl(it);
 }
 function renderMusic(){
   var r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -3005,9 +3323,9 @@ function renderMusic(){
 }
 function rSelect(id){
   if(REEL.playing) rStop();
-  REEL.sel = id; REEL.mode = "cadrage";
+  REEL.sel = id; REEL.mode = "cadrage"; REEL.fsel = null;
   var it = rItem(id); renderReel();
-  if(it) rSeekCadrage(it.a, false);
+  if(it) rSeekCadrage(it.photo ? 0 : it.a, false);
   var rc = $("rStage").getBoundingClientRect();
   if(rc.top < 56 || rc.top > window.innerHeight*0.45){ try { $("rStage").scrollIntoView({block:"start", behavior:"smooth"}); } catch(e){ $("rStage").scrollIntoView(); } }
 }
@@ -3016,7 +3334,30 @@ function rSetMode(mode){
   REEL.mode = mode; REEL.cur = null;
   if(mode === "cadrage" && !rSelItem() && reelData().items.length) REEL.sel = reelData().items[0].id;
   renderReel();
-  if(mode === "apercu") rSeekApercu(REEL.o, false); else { var it = rSelItem(); if(it) rSeekCadrage(clamp(REEL.t, it.a, it.z), false); }
+  if(mode === "apercu") rSeekApercu(REEL.o, false); else { var it = rSelItem(); if(it) rSeekCadrage(it.photo ? 0 : clamp(REEL.t, it.a, it.z), false); }
+}
+/* aperçu : choisir un calque (titre, logo, texte) et l'amener à l'image */
+function rBoxOf(key){
+  var r = reelData();
+  if(key === "titre") return r.titreBox;
+  if(key === "logo") return r.logo;
+  var it = key.indexOf("txt:") === 0 ? rItem(key.slice(4)) : null;
+  return it ? rTBox(it) : null;
+}
+function rDefBox(key){ return key === "titre" ? RBOX.titre : key === "logo" ? RBOX[reelData().logo.mode] || RBOX.cartouche : RBOX.texte; }
+function rPlace(key){
+  var pl = reelPlan(false), l = rLayers(pl).find(function(x){ return x.key === key; });
+  if(!l){ toast("Rien à placer : l'élément n'apparaît pas dans le réel."); return; }
+  if(REEL.mode !== "apercu") rSetMode("apercu");
+  REEL.lsel = key;
+  rSeekApercu(Math.min(l.b - 0.05, l.a + (l.fi ? 0.6 : 0.1)), false);
+  renderReelEdit();
+  var rc = $("rStage").getBoundingClientRect();
+  if(rc.top < 56 || rc.bottom > window.innerHeight){ try { $("rStage").scrollIntoView({block:"start", behavior:"smooth"}); } catch(e){ $("rStage").scrollIntoView(); } }
+}
+function rResize(key, f){
+  var b = rBoxOf(key); if(!b) return;
+  b.s = Math.round(clamp((b.s || 1)*f, 0.4, 3)*100)/100;
 }
 
 /* ----- événements ----- */
@@ -3026,7 +3367,7 @@ $("rPlay").onclick = rPlay;
 $("rSlider").addEventListener("input", function(){
   var f = this.value/1000;
   if(REEL.mode === "apercu"){ var pl = reelPlan(false); rSeekApercu(f*pl.total, REEL.playing); }
-  else { var it = rSelItem(); if(!it) return; var rg = rRange(it); rSeekCadrage(rg.lo + f*(rg.hi - rg.lo), REEL.playing); }
+  else { var it = rSelItem(); if(!it || it.photo) return; var rg = rRange(it); rSeekCadrage(rg.lo + f*(rg.hi - rg.lo), REEL.playing); }
   rTime();
 });
 $("rSlider").addEventListener("change", function(){ renderReelEdit(); });
@@ -3040,26 +3381,62 @@ $("rList").addEventListener("click", function(e){
   else if(b.dataset.rdel){
     var gone = r.items.splice(i, 1)[0];
     if(REEL.sel === id) REEL.sel = null;
-    toast("Passage retiré du réel.", "Annuler", function(){ reelData().items.splice(i, 0, gone); rSave(); renderReel(); });
+    toast((gone.photo ? "Photo retirée" : "Passage retiré")+" du réel.", "Annuler", function(){ reelData().items.splice(i, 0, gone); rSave(); renderReel(); });
   }
   if(REEL.playing) rStop();
   REEL.cur = null; rSave(); renderReel();
   if(REEL.mode === "apercu") rSeekApercu(REEL.o, false);
 });
+/* place un nouvel élément du montage selon l'ordre chronologique */
+function rItemTime(x){ if(x.photo){ var p = phGet(x.photo); return p && p.t ? p.t : Infinity; } var m = rMarker(x); return m ? m.at : Infinity; }
+function rInsert(it, t){
+  var r = reelData(), k = t == null ? -1 : r.items.findIndex(function(x){ return rItemTime(x) > t; });
+  if(k < 0) r.items.push(it); else r.items.splice(k, 0, it);
+}
 $("rAdd").addEventListener("click", function(e){
   var b = e.target.closest("[data-radd]"); if(!b) return;
   var m = S.markers.find(function(x){ return x.id === b.dataset.radd; }); if(!m) return;
-  var r = reelData(), it = rNew(m);
-  // place le passage selon l'ordre chronologique
-  var k = r.items.findIndex(function(x){ var mx = rMarker(x); return mx && mx.at > m.at; });
-  if(k < 0) r.items.push(it); else r.items.splice(k, 0, it);
+  var it = rNew(m); rInsert(it, m.at);
   rSave(); rSelect(it.id);
   toast("Passage ajouté au réel. Réglez son cadrage.");
 });
+$("rPhList").addEventListener("click", function(e){
+  var b = e.target.closest("[data-rph]"); if(!b) return;
+  var p = phGet(b.dataset.rph); if(!p) return;
+  var it = {id:"ph"+uid(), photo:p.name, dur:4, x:0.5, zoom:true, vit:1, texte:"", keys:[]};
+  rInsert(it, p.t && S.real ? p.t : null);
+  rSave(); rSelect(it.id);
+  toast("Photo ajoutée au réel. Réglez son cadrage.");
+});
+$("rPhotoIn").addEventListener("change", function(e){
+  var n = phFiles(e.target.files); e.target.value = "";
+  toast(n ? n+" photo"+(n > 1 ? "s" : "")+" disponible"+(n > 1 ? "s" : "")+" pour le réel." : "Aucune nouvelle photo JPEG.");
+  renderPhotos(); $("rPhBox").open = true;
+});
 $("rEdit").addEventListener("click", function(e){
   var b = e.target.closest("button"); if(!b) return;
+  if(REEL.mode === "apercu"){
+    var key = REEL.lsel; if(!key) return;
+    if(b.dataset.rsize) rResize(key, +b.dataset.rsize);
+    else if(b.dataset.rreset){ var bx = rBoxOf(key); if(bx) Object.assign(bx, rDefBox(key)); }
+    else if(b.dataset.rall){ var src = rBoxOf(key); reelData().items.forEach(function(x){ if(x.texte) x.tBox = Object.assign({}, src); }); toast("Tous les textes sont à cette place."); }
+    else if(b.dataset.runsel){ REEL.lsel = null; renderReelEdit(); rDraw(); return; }
+    else return;
+    rSave(); rDraw(); return;
+  }
   var it = rSelItem(); if(!it) return;
-  if(b.dataset.rtrim === "a"){
+  if(b.dataset.rplace){ rPlace(b.dataset.rplace); return; }
+  if(b.dataset.rfsel != null){ REEL.fsel = b.dataset.rfsel || null; renderReelEdit(); rBar(); rDraw(); return; }
+  if(b.dataset.rfadd){
+    var t = it.photo ? 0 : REEL.t, prev = rZoneSel(it);
+    var z = {id:uid(), s:prev ? prev.s : RFSIZES[1], keys:[{t:Math.round(t*100)/100, x:0.5, y:0.5}]};
+    it.flous = (it.flous || []).concat([z]); REEL.fsel = z.id;
+    toast("Flou ajouté au centre : glissez-le sur ce qu'il faut cacher.");
+  }
+  else if(b.dataset.rfsize){ var zs = rZoneSel(it); if(zs) zs.s = +b.dataset.rfsize; }
+  else if(b.dataset.rfdel){ it.flous = (it.flous || []).filter(function(f){ return f.id !== REEL.fsel; }); REEL.fsel = null; }
+  else if(b.dataset.rfkey === "del"){ var zk = rZoneSel(it); if(zk){ var rest = zk.keys.filter(function(k){ return Math.abs(k.t - REEL.t) >= 0.5; }); if(rest.length) zk.keys = rest; else toast("Dernier point : déplacez le flou ou supprimez-le."); } }
+  else if(b.dataset.rtrim === "a"){
     if(REEL.t >= it.z - 0.5){ toast("Le début doit être avant la fin du passage."); return; }
     it.a = Math.max(0, REEL.t);
   } else if(b.dataset.rtrim === "z"){
@@ -3070,16 +3447,30 @@ $("rEdit").addEventListener("click", function(e){
   } else if(b.dataset.rkey === "clear"){ it.keys = []; }
   else if(b.dataset.rcam){ it.cam = b.dataset.rcam; REEL.cur = null; rSave(); renderReel(); rSeekCadrage(REEL.t, false); return; }
   else if(b.dataset.rvit){ it.vit = +b.dataset.rvit; }
+  else if(b.dataset.rtdur != null){ it.tDur = +b.dataset.rtdur; }
+  else if(b.dataset.rpdur){ it.dur = +b.dataset.rpdur; }
+  else if(b.dataset.rzoom != null){ it.zoom = b.dataset.rzoom === "1"; }
+  else if(b.dataset.rpx){ it.x = 0.5; }
   else return;
   rSave(); renderReel();
 });
 $("rEdit").addEventListener("input", function(e){
   if(e.target.id !== "rTexte") return;
   var it = rSelItem(); if(!it) return;
+  var had = !!it.texte;
   it.texte = clean(e.target.value); rSave();
-  var li = $("rList").querySelector('[data-rsel="'+it.id+'"] b'); if(li) li.textContent = it.texte || label(rMarker(it));
+  var li = $("rList").querySelector('[data-rsel="'+it.id+'"] b'); if(li) li.textContent = it.texte || rLabel(it);
+  if(had !== !!it.texte){ var pos = e.target.selectionStart; renderReelEdit(); var f = $("rTexte"); f.focus(); try { f.setSelectionRange(pos, pos); } catch(x){} }
 });
 $("rTitre").addEventListener("input", function(){ reelData().titre = clean(this.value); rSave(); if(REEL.mode === "apercu") rDraw(); });
+$("rTitreDur").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if(!b) return; reelData().titreDur = RTDURS[+b.dataset.k]; rSave(); renderReel(); });
+$("rLogo").addEventListener("click", function(e){
+  var b = e.target.closest(".chip"); if(!b) return;
+  var r = reelData(), mode = RLOGOS[+b.dataset.k];
+  if(mode !== r.logo.mode){ r.logo = Object.assign({mode:mode}, RBOX[mode] || RBOX.cartouche); if(REEL.lsel === "logo" && mode === "non") REEL.lsel = null; }
+  rSave(); renderReel();
+});
+$("reel").addEventListener("click", function(e){ var b = e.target.closest("#rTitrePlace, #rLogoPlace"); if(b) rPlace(b.id === "rTitrePlace" ? "titre" : "logo"); });
 $("rFinOn").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if(!b) return; reelData().fin.on = !+b.dataset.k; rSave(); renderReel(); });
 $("rFinTxt").addEventListener("input", function(){ reelData().fin.texte = clean(this.value); rSave(); });
 $("rFinSous").addEventListener("input", function(){ reelData().fin.sous = clean(this.value); rSave(); });
@@ -3101,29 +3492,81 @@ $("rMusDel").onclick = function(){
   if(REEL.music && REEL.music.url) URL.revokeObjectURL(REEL.music.url);
   REEL.music = null; reelData().musique = null; ra.pause(); ra.removeAttribute("data-u"); rSave(); renderMusic();
 };
-/* glisser le cadre */
+/* glisser sur l'image : le cadre ou un flou (cadrage), un titre, le logo ou un texte (aperçu) */
+function rPt(e){ var rc = rcv.getBoundingClientRect(); return {x:(e.clientX - rc.left)/rc.width, y:(e.clientY - rc.top)/rc.height, rc:rc}; }
 rcv.addEventListener("pointerdown", function(e){
-  if(REEL.mode !== "cadrage") return;
-  var it = rSelItem(); if(!it || !(REEL.cur && REEL.cur.clip)) return;
-  var cr = rCrop(rcv.width, rcv.height, 0); if(cr.free < 2){ toast("Cette image est déjà au format vertical : rien à cadrer."); return; }
+  if(REEL.mode === "apercu"){
+    var p = rPt(e), cx = p.x*rcv.width, cy = p.y*rcv.height, hs = 26*rcv.width/p.rc.width;
+    var cur = REEL.lsel && REEL.boxes.find(function(b){ return b.key === REEL.lsel; });
+    var hit = cur && Math.hypot(cx - (cur.x + cur.w + 6), cy - (cur.y + cur.h + 6)) < hs ? {b:cur, resize:true} : null;
+    if(!hit){
+      for(var i=REEL.boxes.length - 1; i>=0; i--){ var b = REEL.boxes[i]; if(cx >= b.x - 8 && cx <= b.x + b.w + 8 && cy >= b.y - 8 && cy <= b.y + b.h + 8){ hit = {b:b}; break; } }
+    }
+    if(!hit){ if(REEL.lsel){ REEL.lsel = null; renderReelEdit(); rDraw(); } return; }
+    var box = rBoxOf(hit.b.key); if(!box) return;
+    e.preventDefault(); try { rcv.setPointerCapture(e.pointerId); } catch(x){}
+    var mx = (hit.b.x + hit.b.w/2), my = (hit.b.y + hit.b.h/2);
+    REEL.ldrag = {key:hit.b.key, resize:!!hit.resize, p0:p, x0:box.x, y0:box.y, s0:box.s || 1, d0:Math.max(10, Math.hypot(cx - mx, cy - my)), mx:mx, my:my, moved:false};
+    if(REEL.lsel !== hit.b.key){ REEL.lsel = hit.b.key; renderReelEdit(); }
+    rDraw();
+    return;
+  }
+  var it = rSelItem(); if(!it) return;
+  if(!it.photo && !(REEL.cur && REEL.cur.clip)) return;
+  if(it.photo && !phReady(phGet(it.photo))) return;
+  var z = rZoneSel(it);
   e.preventDefault(); try { rcv.setPointerCapture(e.pointerId); } catch(x){}
-  REEL.drag = {px:e.clientX, x0:rX(it, REEL.t), x:null};
+  if(z){
+    var pz = rPt(e); REEL.drag = {zone:true, pos:{x:clamp(pz.x, 0, 1), y:clamp(pz.y, 0, 1)}};
+    if(it.photo) z.keys = [{t:0, x:REEL.drag.pos.x, y:REEL.drag.pos.y}]; else if(!REEL.playing) z.keys = rKeyPut(z.keys, REEL.t, REEL.drag.pos);
+    rDraw(); return;
+  }
+  var cr = rCrop(rcv.width, rcv.height, 0); if(cr.free < 2){ REEL.drag = null; toast("Cette image est déjà au format vertical : rien à cadrer."); return; }
+  REEL.drag = {px:e.clientX, x0:it.photo ? (it.x != null ? it.x : 0.5) : rX(it, REEL.t), x:null};
 });
 rcv.addEventListener("pointermove", function(e){
-  var d = REEL.drag; if(!d) return;
+  var ld = REEL.ldrag;
+  if(ld){
+    var box = rBoxOf(ld.key); if(!box) return;
+    var p = rPt(e);
+    if(ld.resize){
+      var d = Math.hypot(p.x*rcv.width - ld.mx, p.y*rcv.height - ld.my);
+      box.s = Math.round(clamp(ld.s0*d/ld.d0, 0.4, 3)*100)/100;
+    } else {
+      box.x = Math.round(clamp(ld.x0 + p.x - ld.p0.x, 0.03, 0.97)*1000)/1000;
+      box.y = Math.round(clamp(ld.y0 + p.y - ld.p0.y, 0.03, 0.97)*1000)/1000;
+    }
+    ld.moved = true;
+    if(!REEL.playing) rDraw();
+    return;
+  }
+  var dr = REEL.drag; if(!dr) return;
   var it = rSelItem(); if(!it) return;
+  if(dr.zone){
+    var pz = rPt(e), z = rZoneSel(it); if(!z) return;
+    dr.pos = {x:clamp(pz.x, 0, 1), y:clamp(pz.y, 0, 1)}; dr.moved = true;
+    if(it.photo) z.keys = [{t:0, x:dr.pos.x, y:dr.pos.y}]; else if(!REEL.playing) z.keys = rKeyPut(z.keys, REEL.t, dr.pos);
+    if(!REEL.playing){ rDraw(); rBar(); }
+    return;
+  }
   var rect = rcv.getBoundingClientRect(), cr = rCrop(rcv.width, rcv.height, 0), freeCss = rect.width * cr.free / rcv.width;
-  d.x = clamp(d.x0 + (e.clientX - d.px)/freeCss, 0, 1);
-  rUpsert(it, REEL.t, d.x);
+  dr.x = clamp(dr.x0 + (e.clientX - dr.px)/freeCss, 0, 1);
+  if(it.photo) it.x = Math.round(dr.x*1000)/1000; else rUpsert(it, REEL.t, dr.x);
   if(!REEL.playing){ rDraw(); rBar(); }
 });
 function rDragEnd(){
+  if(REEL.ldrag){ var mv = REEL.ldrag.moved; REEL.ldrag = null; if(mv) rSave(); return; }
   if(!REEL.drag) return;
-  var moved = REEL.drag.x != null; REEL.drag = null;
+  var moved = REEL.drag.x != null || REEL.drag.zone; REEL.drag = null;
   if(moved){ rSave(); renderReel(); }
 }
 rcv.addEventListener("pointerup", rDragEnd);
 rcv.addEventListener("pointercancel", rDragEnd);
+rcv.addEventListener("wheel", function(e){
+  if(REEL.mode !== "apercu" || !REEL.lsel) return;
+  e.preventDefault(); rResize(REEL.lsel, e.deltaY < 0 ? 1.06 : 1/1.06); rDraw();
+  clearTimeout(REEL.wheelT); REEL.wheelT = setTimeout(rSave, 400);
+}, {passive:false});
 document.addEventListener("keydown", function(e){
   if($("reel").hidden || $("cmp").open || /input|textarea|select/i.test(e.target.tagName)) return;
   if(e.key === " "){ e.preventDefault(); rPlay(); }
@@ -3149,24 +3592,35 @@ async function runReelRemote(story){
   var r = pl.r;
   if(r.musique && !r.musique.fichier){ toast("La musique n'est pas encore sur le PC : choisissez-la à nouveau ou retirez-la."); return; }
   await rFonts();
-  var cv = rCanvas(RW, RH), ctx = cv.getContext("2d");
-  var segs = pl.segs.map(function(sg){
-    ctx.clearRect(0, 0, RW, RH); drawItemOver(ctx, RW, RH, sg.it);
-    var ov = cv.toDataURL("image/png");
-    return {overlay:ov, vitesse:sg.it.vit || 1, nom:label(sg.m), morceaux:sg.pieces.map(function(p){
+  var cv = rCanvas(RW, RH), ctx = cv.getContext("2d"), segs = [];
+  function rel(keys, a, f){ return (keys || []).map(function(k){ var o = {t:Math.round((k.t - a)*1000)/1000}; f.forEach(function(n){ o[n] = k[n]; }); return o; }); }
+  for(var i=0;i<pl.segs.length;i++){
+    var sg = pl.segs[i];
+    if(sg.photo){
+      // photo cadrée et floutée par le navigateur, zoom lent fait par le PC
+      drawPhoto(ctx, RW, RH, await phImage(sg.photo), {id:sg.it.id, x:sg.it.x, flous:sg.it.flous, zoom:false}, 0, 1);
+      segs.push({type:"photo", image:cv.toDataURL("image/jpeg", 0.92), duree:sg.dur, zoom:sg.it.zoom !== false, nom:rLabel(sg.it)});
+      continue;
+    }
+    segs.push({type:"video", vitesse:sg.it.vit || 1, nom:label(sg.m), morceaux:sg.pieces.map(function(p){
       var a = p.c.s + p.from;
-      return {fichier:p.c.name, debut:p.from, fin:p.to, cles:(sg.it.keys || []).map(function(k){ return {t:Math.round((k.t - a)*1000)/1000, x:k.x}; })};
-    })};
+      return {fichier:p.c.name, debut:p.from, fin:p.to, cles:rel(sg.it.keys, a, ["x"]),
+        flous:(sg.it.flous || []).map(function(z){ return {s:z.s, cles:rel(z.keys, a, ["x","y"])}; })};
+    })});
+  }
+  var L = rLayers(pl), calques = L.map(function(l){
+    ctx.clearRect(0, 0, RW, RH); l.draw(ctx, RW, RH);
+    return {image:cv.toDataURL("image/png"), debut:Math.round(l.a*1000)/1000, fin:Math.round(l.b*1000)/1000, fi:l.fi || 0, fo:l.fo || 0};
   });
-  var titre = null, fin = null;
-  if(r.titre){ ctx.clearRect(0, 0, RW, RH); drawTitle(ctx, RW, RH, r.titre, 1); titre = {image:cv.toDataURL("image/png"), duree:RTITLE}; }
+  var fin = null;
   if(r.fin.on){ drawFin(ctx, RW, RH, r); fin = {image:cv.toDataURL("image/png"), duree:RFIN}; }
   var pcv = rOpenRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.");
-  var first = pl.segs[0];
-  ctx.clearRect(0, 0, RW, RH); if(r.titre) drawTitle(ctx, RW, RH, r.titre, 1); drawItemOver(ctx, RW, RH, first.it);
-  var pc = pcv.getContext("2d"); pc.fillStyle = "#222"; pc.fillRect(0, 0, pcv.width, pcv.height); pc.drawImage(cv, 0, 0, pcv.width, pcv.height);
+  ctx.fillStyle = "#222"; ctx.fillRect(0, 0, RW, RH);
+  if(pl.segs[0].photo) drawPhoto(ctx, RW, RH, await phImage(pl.segs[0].photo), pl.segs[0].it, 0, pl.segs[0].dur);
+  drawLayers(ctx, RW, RH, L, Math.min(1, pl.clips/2));
+  pcv.getContext("2d").drawImage(cv, 0, 0, pcv.width, pcv.height);
   var job = await api("api/reel", {d:SRVD, mode:story ? "story" : "reel", nom:rBaseName(story), titre_video:"ESAM - "+clean(S.meta.intervention || SRVD),
-    segments:segs, titre:titre, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
+    segments:segs, calques:calques, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
   CMP.job = job.id; CMP.running = true;
   $("cmpStatus").textContent = "Envoyé au PC";
   pollJob();
@@ -3200,6 +3654,7 @@ async function runReelLocal(story){
   var pl = reelPlan(true);
   if(!pl.segs.length){ toast("Aucun passage décodable dans ce navigateur."); return; }
   if(typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined"){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
+  for(var pi=0; pi<pl.segs.length; pi++){ if(pl.segs[pi].photo) await phImage(pl.segs[pi].photo); }
   var enc0 = await pickEncoder(RW, RH, 10000000, false);
   if(!enc0) throw new Error("aucun encodeur vidéo disponible pour 1080 x 1920");
   await rFonts();
@@ -3264,7 +3719,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
       aenc.encode(ad); ad.close(); aPos += k;
     }
   }
-  var k = 0, nextOut = A, sinceKey = -1, lastUi = 0, t0 = performance.now();
+  var L = rLayers(pl), k = 0, nextOut = A, sinceKey = -1, lastUi = 0, t0 = performance.now();
   var totalAll = pl.total, doneBefore = A;
   function ui(lbl){
     var now = performance.now(); if(now - lastUi < 250) return; lastUi = now;
@@ -3275,7 +3730,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
   }
   async function emit(seg, lbl){
     octx.drawImage(bcv, 0, 0);
-    if(seg){ drawItemOver(octx, W, H, seg.it); drawTitle(octx, W, H, pl.r.titre, titleAlpha(nextOut)); }
+    drawLayers(octx, W, H, L, nextOut);
     await waitQ(venc, 6);
     var fr = new VideoFrame(ocv, {timestamp:Math.round(k*1e6/30), duration:33333});
     var key = sinceKey < 0 || sinceKey >= 59; venc.encode(fr, {keyFrame:key}); sinceKey = key ? 0 : sinceKey + 1; fr.close();
@@ -3287,8 +3742,13 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
     for(var si=0; si<pl.segs.length && !CMP.cancel; si++){
       var sg = pl.segs[si], vit = sg.it.vit || 1, sEnd = sg.out0 + sg.dur;
       if(sEnd <= A || sg.out0 >= B) continue;
-      var lbl = "Passage "+(si+1)+" sur "+pl.segs.length+" : "+label(sg.m);
+      var lbl = (sg.photo ? "Photo " : "Passage ")+(si+1)+" sur "+pl.segs.length+" : "+rLabel(sg.it);
       bctx.fillStyle = "#000"; bctx.fillRect(0, 0, W, H);
+      if(sg.photo){
+        var pim = await phImage(sg.photo);
+        while(nextOut < Math.min(B, sEnd) - 1e-6 && !CMP.cancel){ drawPhoto(bctx, W, H, pim, sg.it, nextOut - sg.out0, sg.dur); await emit(sg, lbl); }
+        continue;
+      }
       for(var pi=0; pi<sg.pieces.length && !CMP.cancel; pi++){
         var p = sg.pieces[pi], pOut0 = sg.out0 + p.src0/vit, pOut1 = pOut0 + (p.to - p.from)/vit;
         if(pOut1 <= A || pOut0 >= B) continue;
@@ -3298,7 +3758,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
           var tl = f.timestamp/1e6, o = pOut0 + (tl - p.from)/vit, dOut = (f.duration || 33333)/1e6/vit;
           if(o + dOut <= nextOut + 1e-6 || nextOut >= B - 1e-6){ f.close(); return null; }
           var md = p.c.media, rot = md.rot || 0, vw = rot % 180 ? f.displayHeight : f.displayWidth, vh = rot % 180 ? f.displayWidth : f.displayHeight;
-          drawCropped(bctx, W, H, f, vw, vh, rot, rX(sg.it, p.c.s + tl));
+          drawCropped(bctx, W, H, f, vw, vh, rot, rX(sg.it, p.c.s + tl), sg.it, p.c.s + tl);
           f.close();
           return o + dOut;
         }, async function(until){

@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.9
+version: 0.10
 date_maj: 2026-10-20
 ---
 
@@ -127,13 +127,14 @@ Dans l'onglet Sommaire, chaque passage a un champ « Commentaire interne ESAM »
 
 L'onglet Réel monte une vidéo verticale 1080 x 1920 pour Instagram et Facebook à partir des passages marqués.
 
-1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend la plage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire.
-2. **Cadrage du passage** : touchez un passage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse (accéléré x2 à x8, signalé à l'image) et un texte court.
-3. **Habillage** : titre d'accroche sur les 3 premières secondes, carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
-4. **Aperçu du réel** : lecture du montage complet en vertical, sur les proxies, avec textes et musique.
+1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend la plage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire. « Ajouter des photos » propose les photos JPEG : en mode PC, celles du dossier de l'intervention et de son sous-dossier `Photos` ; en mode navigateur, celles choisies avec les vidéos, trouvées dans le dossier des rushs ou ajoutées par « Choisir des photos JPEG ». Une photo dure 2 à 8 s (4 s par défaut), avec un zoom lent qu'on peut couper, et se cadre comme un passage.
+2. **Cadrage du passage** : touchez un passage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
+   **Flous** : « + Ajouter un flou » pose une zone en mosaïque (petite, moyenne ou grande) pour cacher un visage, une plaque ou un lieu. Choisissez « Flou 1 » (ou « Le cadre ») pour dire ce que le doigt ou la souris déplace. À l'arrêt, la zone est posée pour tout le passage ; pendant la lecture, gardez le doigt dessus et suivez : elle enregistre le mouvement (points jaunes sur la barre). Les flous sont appliqués dans la vidéo finale, quel que soit le cadrage.
+3. **Habillage** : titre d'accroche (3, 5 ou 8 s, ou tout le réel), logo ESAM (cartouche avec le nom, logo seul cerclé de blanc, ou aucun), carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
+4. **Aperçu du réel** : lecture du montage complet en vertical, sur les proxies, avec textes et musique. Touchez le titre, le logo ou un texte sur l'image pour le sélectionner : glissez-le pour le déplacer, tirez le rond jaune (ou la molette sur ordinateur) pour l'agrandir, ou utilisez « Plus petit », « Plus grand », « Remettre à sa place ». « Placer et agrandir sur l'image » (dans Habillage ou sous le texte d'un passage) amène directement l'aperçu au bon moment.
 5. **Créer le réel** ou **Créer la story** : le PC calcule à partir des rushs d'origine. La story est découpée en morceaux de 60 s maximum, de préférence entre deux passages.
 
-Les textes et le logo sont placés à l'écart du bas de l'image et du bord droit, où Instagram affiche la légende et ses boutons. Le réglage du réel est enregistré avec la fiche. Musique : uniquement une musique libre de droits ou dont l'ESAM a les droits ; sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.
+Par défaut, les textes et le logo sont placés à l'écart du bas de l'image et du bord droit, où Instagram affiche la légende et ses boutons. Le réglage du réel est enregistré avec la fiche. Musique : uniquement une musique libre de droits ou dont l'ESAM a les droits ; sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.
 
 En mode navigateur, le son est encodé en AAC sur la plupart des ordinateurs et téléphones ; si le navigateur ne propose que l'Opus, l'appli le signale, et le mode PC reste la voie sûre.
 
@@ -158,6 +159,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.10 | 2026-10-20 | Réel : logo ESAM plus visible (cartouche avec le nom ou logo cerclé de blanc) ; titre, logo et textes déplaçables et agrandissables dans l'aperçu ; durée du titre et des textes réglable ; photos JPEG dans le montage (zoom lent) ; zones de flou qui suivent l'action |
 | 0.9 | 2026-10-20 | Onglet Réel : montage vertical 1080 x 1920 pour réel et story, cadre qui suit l'action, accéléré, titre d'accroche, texte par passage, carton de fin ESAM, musique ; story découpée en morceaux de 60 s ; onglets lisibles sur petit téléphone |
 | 0.8.1 | 2026-10-15 | Code publié sur GitHub ; mode navigateur sur GitHub Pages ; `app.html` renommé `index.html` ; réglages modèles dans `config.exemple.json` ; script `mettre-a-jour.ps1` ; correction d'un conflit d'écriture de l'historique des calculs quand deux calculs se terminent en même temps |
 | 0.8 | 2026-10-15 | Caméra de chaque passage choisie directement dans la colonne Marqueurs et le Sommaire ; bouton « Utiliser <caméra> » dans le bandeau « Dans la plage » ; caméra réellement compilée affichée dans le bandeau |

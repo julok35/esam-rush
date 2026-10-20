@@ -59,11 +59,43 @@ async def navigateur(tmp, iv):
             await pg.mouse.move(cx - 60 + i * 15, cy); await pg.wait_for_timeout(150)
         await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
         print("cadrage :", await pg.inner_text("#rEdit .grp >> nth=0"))
+        # passage 1 : zone de flou suivie pendant la lecture
+        await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
+        await pg.click('#rEdit [data-rfsize="0.32"]'); await pg.wait_for_timeout(200)
+        await pg.click('#rEdit [data-rtrim="a"]'); await pg.wait_for_timeout(200)
+        await pg.locator("#rCv").scroll_into_view_if_needed()
+        box = await pg.locator("#rCv").bounding_box()
+        cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+        await pg.mouse.move(cx, cy); await pg.mouse.down()
+        await pg.click("#rPlay", force=True)
+        for i in range(8):
+            await pg.mouse.move(cx - 80 + i * 20, cy - 30 + i * 6); await pg.wait_for_timeout(150)
+        await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
+        await pg.screenshot(path=str(tmp / "r1b_flou.png"))
+        # photo du drone dans le montage, avec texte de 8 s
+        await pg.click("#rPhSum"); await pg.wait_for_timeout(300)
+        print("photos :", await pg.locator("#rPhList [data-rph]").count())
+        await pg.click("#rPhList [data-rph] >> nth=0"); await pg.wait_for_timeout(1500)
+        await pg.fill("#rTexte", "Photo prise par le drone"); await pg.wait_for_timeout(200)
+        await pg.click('#rEdit [data-rtdur="8"]'); await pg.wait_for_timeout(200)
+        await pg.click('#rEdit [data-rpdur="5"]'); await pg.wait_for_timeout(200)
+        await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
+        await pg.screenshot(path=str(tmp / "r1c_photo.png"))
         await pg.screenshot(path=str(tmp / "r1_cadrage.png"))
         await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
         await pg.set_input_files("#rMusIn", str(tmp / "musique.mp3"))
         await pg.wait_for_function("document.getElementById('rMusInfo').textContent.indexOf('envoyée') >= 0", timeout=10000)
         await pg.fill("#rMusOff", "2")
+        await pg.click('#rTitreDur .chip >> nth=2')
+        await pg.click('#rLogo .chip >> nth=0')
+        # titre : déplacé puis agrandi à la souris dans l'aperçu
+        await pg.click("#rTitrePlace"); await pg.wait_for_timeout(800)
+        box = await pg.locator("#rCv").bounding_box()
+        tx, ty = box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.27
+        await pg.mouse.move(tx, ty); await pg.mouse.down(); await pg.mouse.move(tx, ty + 120, steps=6); await pg.mouse.up()
+        await pg.click('#rEdit [data-rsize="1.18"]'); await pg.wait_for_timeout(300)
+        await pg.screenshot(path=str(tmp / "r1d_titre.png"))
+        await pg.click('#rEdit [data-runsel]')
         await pg.click("#rMode .chip >> nth=1"); await pg.wait_for_timeout(500)
         await pg.click("#rPlay"); await pg.wait_for_timeout(1800); await pg.click("#rPlay")
         await pg.wait_for_timeout(200)
@@ -72,7 +104,10 @@ async def navigateur(tmp, iv):
         await pg.screenshot(path=str(tmp / "r3_page.png"), full_page=True)
         etat = api("api/etat?d=" + urllib.parse.quote(iv))
         reel = etat["meta"]["reel"]
-        print("enregistré :", len(reel["items"]), "passages,", [len(x["keys"]) for x in reel["items"]], "points, vitesses", [x["vit"] for x in reel["items"]], "musique", reel.get("musique"))
+        print("titre :", reel["titreBox"], reel["titreDur"], "logo :", reel["logo"], "flous :", [len(x.get("flous") or []) for x in reel["items"]], [len(f["keys"]) for x in reel["items"] for f in (x.get("flous") or [])])
+        assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] > 1 and reel["titreDur"] == 8
+        assert any(x.get("photo") for x in reel["items"]) and any(len(f["keys"]) >= 2 for x in reel["items"] for f in (x.get("flous") or []))
+        print("enregistré :", len(reel["items"]), "passages,", [len(x.get("keys") or []) for x in reel["items"]], "points, vitesses", [x.get("vit") for x in reel["items"]], "musique", reel.get("musique"))
         for story in (False, True):
             await pg.click("#rGoStory" if story else "#rGoReel")
             await pg.wait_for_selector("#cmpDone:not([hidden])", timeout=600000)
