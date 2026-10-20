@@ -8,11 +8,11 @@ proxies 540p + vignettes, photos pleine résolution, vidéo compilée en résolu
 Dépendances : Python 3.10+ (bibliothèque standard uniquement) et ffmpeg/ffprobe dans le PATH.
 Écoute uniquement sur 127.0.0.1 : l'accès depuis le téléphone passe par « tailscale serve ».
 """
-import base64, json, math, os, re, shutil, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.parse
+import base64, json, math, os, re, shutil, struct, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.9"
+VERSION = "0.10"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -131,6 +131,63 @@ def videos(d):
 
 def proxy_of(f): return f.parent / PROXY_DIR / (f.stem + ".mp4")
 
+IMG_EXT = {".jpg", ".jpeg"}
+
+def photos(d):
+    """Photos JPEG de l'intervention (dossier des rushs et sous-dossier Photos), en chemins relatifs."""
+    out = []
+    for sub in (d, d / "Photos"):
+        if not sub.is_dir(): continue
+        for f in sub.iterdir():
+            if f.is_file() and f.suffix.lower() in IMG_EXT and not f.name.startswith("."):
+                out.append({"nom": f.relative_to(d).as_posix(), "heure": f.stat().st_mtime})
+    out.sort(key=lambda x: x["nom"].lower())
+    return out
+
+def photo_file(d, nom):
+    nom = clean(nom or "")
+    if not any(x["nom"] == nom for x in photos(d)): raise ValueError("photo introuvable : " + nom)
+    return d / nom
+
+def jpeg_orientation(p):
+    """Orientation EXIF d'un JPEG (1 à 8), 1 si absente ou illisible."""
+    try:
+        with open(p, "rb") as f:
+            if f.read(2) != b"\xff\xd8": return 1
+            while True:
+                m = f.read(4)
+                if len(m) < 4 or m[0] != 0xFF or m[1] == 0xDA: return 1
+                ln = int.from_bytes(m[2:4], "big")
+                if m[1] != 0xE1: f.seek(ln - 2, 1); continue
+                seg = f.read(ln - 2)
+                if seg[:6] != b"Exif\0\0": continue
+                t = seg[6:]; e = "<" if t[:2] == b"II" else ">"
+                off = struct.unpack(e + "I", t[4:8])[0]
+                for i in range(struct.unpack(e + "H", t[off:off + 2])[0]):
+                    en = t[off + 2 + i * 12: off + 14 + i * 12]
+                    if struct.unpack(e + "H", en[:2])[0] == 0x0112: return struct.unpack(e + "H", en[8:10])[0]
+                return 1
+    except (OSError, struct.error, IndexError): return 1
+
+ORIENT = {2: "hflip", 3: "hflip,vflip", 4: "vflip", 5: "transpose=0", 6: "transpose=1", 7: "transpose=3", 8: "transpose=2"}
+PHOTO_SIZES = {"petite": 360, "moyenne": 3200}
+
+def photo_copy(d, nom, taille):
+    """Copie redressée et réduite d'une photo (vignette ou version de travail), gardée en cache dans proxies/photos."""
+    src = photo_file(d, nom); side = PHOTO_SIZES.get(taille, 360)
+    out = d / PROXY_DIR / "photos" / ("%s_%s_%s.jpg" % (re.sub(r"[^A-Za-z0-9]+", "_", nom)[:80], taille, int(src.stat().st_mtime)))
+    if out.exists(): return out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    info = probe(src) or {}
+    o = jpeg_orientation(src); w, h = info.get("w") or side, info.get("h") or side
+    if o >= 5: w, h = h, w
+    k = min(1.0, side / max(w, h, 1))
+    vf = ([ORIENT[o]] if o in ORIENT else []) + ["scale=%d:%d" % (max(2, int(w * k) // 2 * 2), max(2, int(h * k) // 2 * 2))]
+    tmp = out.with_suffix(".tmp.jpg")
+    run([FFMPEG, "-noautorotate", "-i", str(src), "-vf", ",".join(vf), "-frames:v", "1", "-q:v", "3", str(tmp)])
+    os.replace(tmp, out)
+    return out
+
 def list_interventions():
     out = []
     if not ROOT.is_dir(): return out
@@ -158,7 +215,7 @@ def manifest(d):
         m["proxy"] = rel(f.stem + ".mp4")
         m["thumbs"]["sheets"] = [rel(s) for s in m["thumbs"]["sheets"]]
         clips.append(m)
-    return {"dossier": d.name, "clips": clips}
+    return {"dossier": d.name, "clips": clips, "photos": photos(d)}
 
 # ---------------------------------------------------------------- travaux
 JOBS, JLOCK, QUEUE = [], threading.Lock(), []
@@ -388,6 +445,7 @@ def do_video(job):
 
 # ---------------------------------------------------------------- réel et story (1080 x 1920)
 RW, RH = 1080, 1920
+PHOTO_ZOOM = 0.08      # zoom lent sur les photos : +8 % sur la durée de la photo
 MUSIC_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac"}
 
 def crop_box(w, h):
@@ -398,19 +456,37 @@ def crop_box(w, h):
     cw = w - w % 2; ch = min(h, int(cw * 16 / 9)) // 2 * 2
     return cw, ch, 0, (h - ch) // 2
 
-def x_expr(keys, course):
-    """Position x du cadre en fonction de t (secondes depuis le début du morceau), lissée entre les points."""
-    if course <= 0: return "0"
-    ks = sorted(({"t": float(k["t"]), "x": min(1.0, max(0.0, float(k["x"])))} for k in (keys or [])), key=lambda k: k["t"])
-    if not ks: return str(int(course * 0.5))
-    e = "%.4f" % ks[-1]["x"]
+def key_expr(keys, f, default=0.5):
+    """Valeur du champ f (0 à 1) en fonction de t (secondes depuis le début du morceau), lissée entre les points."""
+    ks = sorted(({"t": float(k["t"]), "v": min(1.0, max(0.0, float(k[f])))} for k in (keys or [])), key=lambda k: k["t"])
+    if not ks: return "%.4f" % default
+    e = "%.4f" % ks[-1]["v"]
     for i in range(len(ks) - 2, -1, -1):
         a, b = ks[i], ks[i + 1]
         span = max(0.001, b["t"] - a["t"])
         sm = "clip((t-(%.3f))/%.3f,0,1)" % (a["t"], span)
-        e = "if(lt(t,%.3f),%.4f+(%.4f)*%s*%s*(3-2*%s),%s)" % (b["t"], a["x"], b["x"] - a["x"], sm, sm, sm, e)
-    e = "if(lt(t,%.3f),%.4f,%s)" % (ks[0]["t"], ks[0]["x"], e)
-    return "(%s)*%d" % (e, course)
+        e = "if(lt(t,%.3f),%.4f+(%.4f)*%s*%s*(3-2*%s),%s)" % (b["t"], a["v"], b["v"] - a["v"], sm, sm, sm, e)
+    return "if(lt(t,%.3f),%.4f,%s)" % (ks[0]["t"], ks[0]["v"], e)
+
+def x_expr(keys, course):
+    """Position x du cadre en pixels."""
+    if course <= 0: return "0"
+    return "(%s)*%d" % (key_expr(keys, "x"), course)
+
+MOSAIC = 10   # flous : zone réduite à 10 x 10 pavés, comme dans le navigateur
+
+def blur_chain(flous, w, h):
+    """Zones de flou (mosaïque) suivies, appliquées à l'image source avant le cadrage : filtre de [0:v] vers [s]."""
+    fc, last = "", "[0:v]"
+    for j, z in enumerate(flous or []):
+        zs = max(MOSAIC, int(float(z.get("s") or 0.2) * h) // 2 * 2)
+        if zs > min(w, h): zs = min(w, h) // 2 * 2
+        ex = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "x"), w, zs // 2, w - zs)
+        ey = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "y"), h, zs // 2, h - zs)
+        fc += ("%ssplit[fa%d][fb%d];[fb%d]crop=%d:%d:x='%s':y='%s',scale=%d:%d,scale=%d:%d:flags=neighbor[fz%d];"
+               "[fa%d][fz%d]overlay=x='%s':y='%s'[fo%d];") % (last, j, j, j, zs, zs, ex, ey, MOSAIC, MOSAIC, zs, zs, j, j, j, ex, ey, j)
+        last = "[fo%d]" % j
+    return fc + last
 
 def story_cuts(total, bounds, limit):
     cuts, last = [0.0], 0.0
@@ -432,7 +508,7 @@ def do_reel(job):
     if not segs_in: raise ValueError("aucun passage")
     srcs = {}
     for sg in segs_in:
-        for pc in sg["morceaux"]:
+        for pc in sg.get("morceaux") or []:
             name = pc["fichier"]
             if name not in srcs:
                 f = d / name
@@ -448,14 +524,22 @@ def do_reel(job):
     WORK_ROOT.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="esam_reel_", dir=str(WORK_ROOT)))
     try:
-        title = png_from(pl["titre"]["image"], work / "titre.png") if pl.get("titre") else None
+        # calques dessinés par le navigateur (logo, titre, textes, accéléré) : image plein cadre, plage de temps, fondus
+        layers = []
+        for i, c in enumerate(pl.get("calques") or []):
+            layers.append((png_from(c["image"], work / ("c%03d.png" % i)), float(c["debut"]), float(c["fin"]),
+                           float(c.get("fi") or 0), float(c.get("fo") or 0)))
         plan, pos = [], 0.0
         for i, sg in enumerate(segs_in):
-            ov = png_from(sg["overlay"], work / ("o%03d.png" % i))
+            if sg.get("type") == "photo":
+                img = png_from(sg["image"], work / ("p%03d.jpg" % i))
+                dur = max(0.5, float(sg.get("duree") or 3))
+                plan.append(("photo", sg, img, 1.0, pos, dur, i)); pos += dur
+                continue
             vit = max(1.0, float(sg.get("vitesse") or 1))
             for pc in sg["morceaux"]:
                 src_d = max(0.05, float(pc["fin"]) - float(pc["debut"]))
-                plan.append(("clip", pc, ov, vit, pos, src_d / vit, i))
+                plan.append(("clip", pc, None, vit, pos, src_d / vit, i))
                 pos += src_d / vit
         clips_end = pos
         if pl.get("fin"):
@@ -466,32 +550,51 @@ def do_reel(job):
         free = shutil.disk_usage(WORK_ROOT).free
         if free < total * 3e6 + 2e8:
             raise RuntimeError("Espace disque insuffisant dans %s" % WORK_ROOT)
-        log("Réel %s : %d segments, %.1f s, musique : %s" % (pl.get("nom"), len(plan), total, music.name if music else "non"))
+        log("Réel %s : %d segments, %d calques, %.1f s, musique : %s" % (pl.get("nom"), len(plan), len(layers), total, music.name if music else "non"))
+
+        def over(at, dur, first):
+            """Calques visibles entre at et at + dur, posés sur [b] : entrées ffmpeg et suite du filtre."""
+            args, fc, last, k = [], "", "[b]", 0
+            for png, a, b, fi, fo in layers:
+                if b <= at + 0.001 or a >= at + dur - 0.001: continue
+                s0, e0 = a - at, b - at
+                f = "format=rgba"
+                if fi and s0 >= 0: f += ",fade=t=in:st=%.3f:d=%.3f:alpha=1" % (s0, fi)
+                if fo and e0 - fo >= 0: f += ",fade=t=out:st=%.3f:d=%.3f:alpha=1" % (e0 - fo, fo)
+                args += ["-loop", "1", "-framerate", "30", "-i", str(png)]
+                fc += ";[%d:v]%s[l%d];%s[l%d]overlay=0:0:shortest=1:enable='gte(t,%.3f)*lt(t,%.3f)'[m%d]" % (first + k, f, k, last, k, max(0.0, s0), e0, k)
+                last = "[m%d]" % k; k += 1
+            return args, fc + ";%sformat=yuv420p[v]" % last
+
         files, acc, seg_bounds = [], 0.0, []
-        TT = float(pl["titre"].get("duree") or 3) if title else 0
-        for k, (kind, pc, ov, vit, at, dur, idx) in enumerate(plan):
+        for k, (kind, pc, img, vit, at, dur, idx) in enumerate(plan):
             out = work / ("s%03d.mp4" % k)
             if kind == "fin":
                 job["libelle"] = "Carton de fin"
-                cmd = [FFMPEG, "-loop", "1", "-framerate", "30", "-i", str(ov), "-t", "%.3f" % dur,
+                cmd = [FFMPEG, "-loop", "1", "-framerate", "30", "-i", str(img), "-t", "%.3f" % dur,
                        "-vf", "scale=%d:%d,setsar=1,fps=30,format=yuv420p" % (RW, RH)]
             else:
-                if idx is not None and (not seg_bounds or seg_bounds[-1][1] != idx): seg_bounds.append((at, idx))
-                info = srcs[pc["fichier"]]
-                cw, ch, course, y = crop_box(info["w"], info["h"])
-                job["libelle"] = "Passage %d sur %d : %s" % (idx + 1, len(segs_in), clean(segs_in[idx].get("nom") or pc["fichier"]))
-                fc = ("[0:v]crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b];"
-                      "[1:v]format=rgba[o];[b][o]overlay=0:0:shortest=1[c]") % (cw, ch, x_expr(pc.get("cles"), course), y, RW, RH, vit)
-                cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"]),
-                       "-loop", "1", "-i", str(ov)]
-                if title and at < TT - 0.05:
-                    tend = TT - at
-                    fade = ("fade=t=in:st=0:d=0.3:alpha=1," if at < 0.01 else "") + "fade=t=out:st=%.3f:d=0.4:alpha=1" % max(0, tend - 0.4)
-                    cmd += ["-loop", "1", "-i", str(title)]
-                    fc += ";[2:v]format=rgba,%s[tt];[c][tt]overlay=0:0:shortest=1:enable='lt(t,%.3f)'[d];[d]format=yuv420p[v]" % (fade, tend)
+                if not seg_bounds or seg_bounds[-1][1] != idx: seg_bounds.append((at, idx))
+                job["libelle"] = "%s %d sur %d : %s" % ("Photo" if kind == "photo" else "Passage", idx + 1, len(segs_in),
+                                                        clean(segs_in[idx].get("nom") or (pc or {}).get("fichier") or ""))
+                if kind == "photo":
+                    if pc.get("zoom"):
+                        n = max(1, int(round(dur * 30)))
+                        # agrandie 4 fois avant le zoom lent pour éviter les saccades d'arrondi de zoompan
+                        cmd = [FFMPEG, "-i", str(img)]
+                        fc = ("[0:v]scale=%d:%d,zoompan=z='1+%.4f*on/%d':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=%d:s=%dx%d:fps=30,setsar=1[b]"
+                              % (RW * 4, RH * 4, PHOTO_ZOOM, n, n, RW, RH))
+                    else:
+                        cmd = [FFMPEG, "-loop", "1", "-framerate", "30", "-i", str(img)]
+                        fc = "[0:v]scale=%d:%d,setsar=1,fps=30[b]" % (RW, RH)
                 else:
-                    fc += ";[c]format=yuv420p[v]"
-                cmd += ["-filter_complex", fc, "-map", "[v]", "-t", "%.3f" % dur]
+                    info = srcs[pc["fichier"]]
+                    cw, ch, course, y = crop_box(info["w"], info["h"])
+                    fc = blur_chain(pc.get("flous"), info["w"], info["h"]) + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b]"
+                          % (cw, ch, x_expr(pc.get("cles"), course), y, RW, RH, vit))
+                    cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])]
+                oargs, ofc = over(at, dur, 1)
+                cmd += oargs + ["-filter_complex", fc + ofc, "-map", "[v]", "-t", "%.3f" % dur]
             cmd += ENC["final"] + ["-g", "60", "-an", "-r", "30", str(out)]
             base = acc
             run(cmd, dur, lambda x: job.__setitem__("avance", 0.9 * (base + x * dur) / total), job)
@@ -619,6 +722,7 @@ class H(BaseHTTPRequestHandler):
                                        "travaux": jobs, "veille": {"mode": IDLE_MODE, "minutes": IDLE_MIN}})
             if u.path == "/api/interventions": return self.send_json({"interventions": list_interventions()})
             if u.path == "/api/manifest": return self.send_json(manifest(folder(q.get("d"))))
+            if u.path == "/api/image": return self.send_file(photo_copy(folder(q.get("d")), q.get("f"), q.get("taille")))
             if u.path == "/api/etat":
                 p = folder(q.get("d")) / WORK_DIR / "etat.json"
                 return self.send_json(json.loads(p.read_text(encoding="utf-8")) if p.exists() else {})

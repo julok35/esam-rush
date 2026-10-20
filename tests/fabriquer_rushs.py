@@ -5,7 +5,8 @@ Usage : python tests/fabriquer_rushs.py DOSSIER [--vp9]
   --vp9   : vidéos en VP9 au lieu de H.264 (Chromium headless de Playwright ne décode pas le H.264)
 
 Crée une intervention « 2026-09-12 Chien egare Belledonne » avec deux vols DJI
-(pistes W, Z, T) et une vidéo de téléphone en portrait, horodatée par creation_time.
+(pistes W, Z, T), une vidéo de téléphone en portrait, horodatée par creation_time,
+et deux photos JPEG (une du drone, une dans le sous-dossier Photos).
 Nécessite ffmpeg dans le PATH (version 6.1 ou plus pour la rotation).
 """
 import subprocess, sys
@@ -34,6 +35,11 @@ def main():
          "-metadata", "creation_time=2026-09-12T12:30:40.000000Z", str(out)])
     tmp.unlink()
     print("cree", out.name)
+    # Photos JPEG : une du drone (heure dans le nom), une dans le sous-dossier Photos
+    (iv / "Photos").mkdir(exist_ok=True)
+    for out, motif in ((iv / "DJI_20260912143050_0003_W.JPG", "testsrc2"), (iv / "Photos" / "ESAM_photo_terrain.jpg", "smptebars")):
+        run(["-f", "lavfi", "-i", f"{motif}=size=1600x1200:duration=1", "-frames:v", "1", "-q:v", "3", str(out)])
+        print("cree", out.name)
 
 if __name__ == "__main__":
     main()
