@@ -1,0 +1,6 @@
+# Reglages et etat propres a chaque PC
+config.json
+travaux.json
+derushage.log
+__pycache__/
+*.pyc

@@ -1,0 +1,11 @@
+{
+  "dossier_rushs": "G:/Mon Drive/ESAM/Rushs drone",
+  "port": 8765,
+  "ecoute": "127.0.0.1",
+  "mode_inactivite": "veille",
+  "veille_apres_minutes": 20,
+  "proxy_hauteur": 540,
+  "vignette_toutes_secondes": 3,
+  "codec_video_finale": "h264",
+  "dossier_travail": ""
+}
