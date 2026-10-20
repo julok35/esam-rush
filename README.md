@@ -13,9 +13,11 @@ Outil de l'ESAM (Equipe de Secours Animalier en Montagne) pour annoter les rushs
 |---|---|
 | `index.html` | L'appli (un seul fichier, sans étape de construction) |
 | `server.py` | Serveur du PC (Python, bibliothèque standard + ffmpeg) |
+| `vendor/` | mp4box, mp4-muxer et polices embarqués (pas d'accès Internet nécessaire) |
+| `docs/ARCHITECTURE.md` | Documentation technique pour développeur : modèle de données, API, conventions, tests |
 | `config.exemple.json` | Modèle des réglages du PC |
 | `installer.ps1`, `mettre-a-jour.ps1` | Installation et mise à jour sur Windows |
-| `tests/` | Faux rushs et test de bout en bout |
+| `tests/` | Faux rushs, tests unitaires et tests de bout en bout |
 | `CLAUDE.md` | Consignes pour Claude Code |
 
 Licence MIT, voir `LICENSE`.

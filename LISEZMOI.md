@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.11
+version: 0.12
 date_maj: 2026-10-20
 ---
 
@@ -17,6 +17,7 @@ Rien n'est exposé sur Internet : le serveur n'écoute que sur le PC lui-même, 
 |---|---|
 | `server.py` | Le programme du PC (Python, sans dépendance) |
 | `index.html` | L'appli de dérushage, servie par le PC et publiée sur GitHub Pages |
+| `vendor/` | Bibliothèques vidéo et polices embarquées : l'appli n'a pas besoin d'Internet |
 | `config.exemple.json` | Modèle des réglages, copié en `config.json` au premier lancement |
 | `config.json` | Les réglages de ce PC (jamais envoyé sur GitHub) |
 | `installer.ps1` | L'installation automatique |
@@ -160,6 +161,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.12 | 2026-10-20 | Appli utilisable sans Internet (bibliothèques et polices embarquées) ; ouverture d'une longue intervention en mode PC bien plus rapide et plus légère en mémoire ; pincement à deux doigts pour zoomer la timeline ; sur téléphone, messages affichés sous l'en-tête, onglet Réel en trois volets (Montage, Passage, Habillage), chronologie RETEX repliée tant qu'aucun décollage n'est marqué, un seul bouton « Voir » par passage ; nombre de passages du réel sur l'onglet ; documentation technique dans `docs/ARCHITECTURE.md` |
 | 0.11 | 2026-10-20 | Réel : flou doux aux bords fondus à la place des pixels ; liste « Sur l'image » pour choisir et déplacer chaque texte ; textes libres, flèches, cercles et cadres à placer ; taille et couleur des titres et textes, texte avec ou sans bandeau |
 | 0.10 | 2026-10-20 | Réel : logo ESAM plus visible (cartouche avec le nom ou logo cerclé de blanc) ; titre, logo et textes déplaçables et agrandissables dans l'aperçu ; durée du titre et des textes réglable ; photos JPEG dans le montage (zoom lent) ; zones de flou qui suivent l'action |
 | 0.9 | 2026-10-20 | Onglet Réel : montage vertical 1080 x 1920 pour réel et story, cadre qui suit l'action, accéléré, titre d'accroche, texte par passage, carton de fin ESAM, musique ; story découpée en morceaux de 60 s ; onglets lisibles sur petit téléphone |
