@@ -337,6 +337,72 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .card .ttl{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 @media (max-width:520px){ .inwin{flex-wrap:wrap} .inwin .iwb{flex-wrap:wrap} }
 [hidden]{display:none!important}
+@media (max-width:479px){
+  body.loaded .top .logo{display:none}
+  .top{gap:6px}
+  .top .tabs{overflow-x:auto;scrollbar-width:none}
+  .top .tabs::-webkit-scrollbar{display:none}
+  .top .tab{padding:0 5px;font-size:13px;flex:0 0 auto}
+  .top .tab .n{margin-left:3px;min-width:18px;padding:0 4px}
+  .ver{padding:2px 6px}
+}
+/* ---------- réel et story ---------- */
+#reel{padding:0 16px 40px}
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 10px}
+.rtot b{font-family:Anton,Impact,sans-serif;font-size:24px;font-weight:400;display:block;line-height:1.15}
+.rtot small{display:block;font-size:12px;color:var(--muted)}
+.rstage{scroll-margin-top:64px;position:relative;background:#000;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.rstage canvas{display:block;max-width:100%;width:100%;height:auto;cursor:grab}
+.rstage.v canvas{width:auto;height:min(62vh,640px);cursor:default}
+.rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
+.rtrans{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
+.rplay{flex:none;width:48px;padding:0}
+.rtl{position:relative;flex:1;height:44px}
+.rbar{position:absolute;left:0;right:0;top:16px;height:12px;border-radius:6px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
+.rbar .in{position:absolute;top:0;bottom:0;background:var(--blue)}
+.rbar .k{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px}
+.rbar .sg{position:absolute;top:0;bottom:0;border-left:2px solid var(--bg)}
+.rbar .fin{position:absolute;top:0;bottom:0;right:0;background:var(--ink);opacity:.55}
+.rtl input{position:absolute;inset:0;width:100%;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none}
+.rtl input::-webkit-slider-runnable-track{height:44px;background:transparent}
+.rtl input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:8px;height:38px;margin-top:3px;border-radius:4px;background:var(--red);border:2px solid var(--bg)}
+.rtl input::-moz-range-thumb{width:8px;height:38px;border:2px solid var(--bg);border-radius:4px;background:var(--red)}
+.rtl input::-moz-range-track{background:transparent}
+.rtime{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;min-width:6.5em;text-align:right;white-space:pre-line;line-height:1.25}
+.redit{border-top:1px solid var(--line)}
+.redit:empty{display:none}
+.redit .rsel{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+.redit .rsel b{font-size:16px}
+.redit .hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rh{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:22px 0 8px}
+.rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px}
+.rlist:empty{display:none}
+.rlist li{border-top:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:6px 8px}
+.rlist li:first-child{border-top:0}
+.rlist li.sel{background:var(--clip)}
+.rlist .rn{flex:none;width:26px;height:26px;border-radius:50%;background:var(--blue);color:var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.rlist .rtx{flex:1;min-width:0;text-align:left;background:none;border:0;padding:6px 2px;color:inherit;font:inherit;cursor:pointer;min-height:44px}
+.rlist .rtx b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rlist .rtx small{display:block;font-size:12px;color:var(--muted)}
+.rlist .ib{flex:none;width:38px;height:38px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.rlist .ib:disabled{opacity:.3}
+.rlist.add .rn{background:var(--soft);color:var(--ink);border:1.5px dashed var(--muted)}
+.radd{margin-top:10px}
+.radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:40px}
+.rmus{font-size:14px}
+.rmus.miss{color:var(--red);font-weight:600}
+#rReel .hint,.rside .hint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.rexport{position:sticky;bottom:0;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);margin-top:18px;display:flex;flex-wrap:wrap;gap:8px;z-index:3}
+.rexport .btn{flex:1}
+.rexport .warn{flex-basis:100%;margin:2px 0 0}
+@media (min-width:1100px){
+  #reel{padding:0 24px 40px}
+  .rgrid{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:28px;align-items:start}
+  .rside{position:sticky;top:96px;max-height:calc(100vh - 110px);overflow:auto;padding-right:6px}
+  .rstage.v canvas{height:min(70vh,760px)}
+  .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.3/dist/mp4box.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js"></script>
@@ -350,6 +416,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       <button class="tab" role="tab" id="tabView" aria-selected="true">Visionner</button>
       <button class="tab" role="tab" id="tabBoard" aria-selected="false">Planche</button>
       <button class="tab" role="tab" id="tabSum" aria-selected="false">Sommaire<span class="n" id="count">0</span></button>
+      <button class="tab" role="tab" id="tabReel" aria-selected="false">Réel</button>
     </nav>
     <div class="sub" id="hsub">Aucun vol chargé</div>
     <button type="button" class="ver" id="ver" title="Version de l'appli">v</button>
@@ -357,6 +424,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 
   <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV">
   <input type="file" id="mdIn" accept=".md,.json,text/markdown,application/json,text/plain">
+  <input type="file" id="rMusIn" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
 
   <section id="empty" class="empty">
   <div id="localBox">
@@ -485,6 +553,62 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <ol class="list" id="list"></ol>
     <p class="emptylist" id="emptyList">Aucun marqueur pour l'instant. Pendant la lecture, touchez Début puis Fin pour une plage, ou Repère pour un instant.</p>
   </section>
+<section id="reel" hidden>
+  <div class="rgrid">
+    <div class="rmain">
+      <div class="rhead">
+        <div class="rtot"><b id="rDur">Réel : 0 s</b><small id="rInfo"></small></div>
+        <div class="chips" id="rMode"></div>
+      </div>
+      <div class="rstage" id="rStage">
+        <canvas id="rCv" width="960" height="540"></canvas>
+        <div class="rempty" id="rEmpty" hidden></div>
+      </div>
+      <div class="rtrans" id="rTrans">
+        <button type="button" class="btn ghost rplay" id="rPlay" aria-label="Lire"></button>
+        <div class="rtl" id="rTl"><div class="rbar" id="rBar"></div><input type="range" id="rSlider" min="0" max="1000" step="1" value="0" aria-label="Position"></div>
+        <span class="rtime" id="rTime">0:00</span>
+      </div>
+      <div class="redit" id="rEdit"></div>
+    </div>
+    <div class="rside">
+      <h3 class="rh">Montage</h3>
+      <ol class="rlist" id="rList"></ol>
+      <details class="radd" id="rAddBox"><summary id="rAddSum">Ajouter des passages</summary><ul class="rlist add" id="rAdd"></ul></details>
+      <h3 class="rh">Habillage</h3>
+      <div class="grp">
+        <label class="lbl" for="rTitre">Titre d'accroche (3 premières secondes)</label>
+        <input class="field" id="rTitre" maxlength="70" autocomplete="off" placeholder="Ex. : Perdu depuis 3 jours, retrouvé par le drone">
+      </div>
+      <div class="grp">
+        <span class="lbl">Carton de fin ESAM (3 s)</span>
+        <div class="chips" id="rFinOn"></div>
+        <div id="rFinBox">
+          <input class="field" id="rFinTxt" maxlength="50" autocomplete="off" style="margin-top:10px" aria-label="Texte principal du carton de fin">
+          <input class="field" id="rFinSous" maxlength="60" autocomplete="off" style="margin-top:8px" aria-label="Sous-titre du carton de fin">
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Musique</span>
+        <div class="rmus" id="rMusInfo"></div>
+        <div class="actions" style="margin-top:8px">
+          <label class="btn small ghost" for="rMusIn" id="rMusLbl">Choisir une musique</label>
+          <button type="button" class="btn small ghost" id="rMusDel" hidden>Retirer</button>
+        </div>
+        <div id="rMusOffBox" hidden>
+          <label class="lbl" for="rMusOff" style="margin-top:10px;display:block">Démarrer la musique à (secondes)</label>
+          <input class="field" id="rMusOff" type="number" min="0" step="1" value="0" inputmode="numeric" style="max-width:140px">
+        </div>
+        <p class="hint">Uniquement une musique libre de droits ou dont l'ESAM a les droits. Sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.</p>
+      </div>
+      <div class="rexport">
+        <button type="button" class="btn primary" id="rGoReel">Créer le réel</button>
+        <button type="button" class="btn" id="rGoStory">Créer la story</button>
+        <p class="warn" id="rEst"></p>
+      </div>
+    </div>
+  </div>
+</section>
 </div>
 
 <dialog class="sheet" id="sheet">
@@ -573,7 +697,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <script>
 (function(){
 "use strict";
-var APP_VERSION = "0.8.1";
+var APP_VERSION = "0.9";
 var LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 var ORDER = ["W","Z","T","V","N","S"];
 var THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
@@ -1554,7 +1678,7 @@ $("dirOpen").onclick = async function(){
   var files = [], fiche = null;
   for await (var ent of dir.values()){
     if(ent.kind !== "file") continue;
-    if(/\.(mp4|mov|m4v)$/i.test(ent.name) && !/^ESAM_Compilation/.test(ent.name)) files.push(await ent.getFile());
+    if(/\.(mp4|mov|m4v)$/i.test(ent.name) && !/^ESAM_(Compilation|Reel|Story)/.test(ent.name)) files.push(await ent.getFile());
     else if(/^ESAM_Derushage_.*\.md$/.test(ent.name)) fiche = ent;
   }
   if(!files.length){ toast("Aucune vidéo dans ce dossier."); return; }
@@ -1743,9 +1867,12 @@ function setTab(which){
   $("tabView").setAttribute("aria-selected", which === "view");
   $("tabBoard").setAttribute("aria-selected", which === "board");
   $("tabSum").setAttribute("aria-selected", which === "sum");
-  $("view").hidden = which !== "view"; $("sum").hidden = which !== "sum"; $("board").hidden = which !== "board";
+  $("tabReel").setAttribute("aria-selected", which === "reel");
+  $("view").hidden = which !== "view"; $("sum").hidden = which !== "sum"; $("board").hidden = which !== "board"; $("reel").hidden = which !== "reel";
   $("hov").hidden = true;
-  if(which === "sum"){ v.pause(); renderHeader(); renderSummary(); }
+  if(which !== "reel" && typeof reelLeave === "function") reelLeave();
+  if(which === "reel"){ v.pause(); reelEnter(); }
+  else if(which === "sum"){ v.pause(); renderHeader(); renderSummary(); }
   else if(which === "board"){ v.pause(); renderBoard(); }
   else { renderTimeline(); }
 }
@@ -1815,7 +1942,7 @@ $("reset").onclick = function(){
   S.dirHandle = null; S.verBumped = false; clearTimeout(ficheT); setSave("");
   if(!(typeof SRV !== "undefined" && SRV)) $("exp").textContent = "Exporter la fiche";
   cancelPending();
-  $("view").hidden = true; $("sum").hidden = true; $("board").hidden = true; $("tabs").hidden = true; $("empty").hidden = false; BOARD.step = 0;
+  $("view").hidden = true; $("sum").hidden = true; $("board").hidden = true; $("reel").hidden = true; reelLeave(); $("tabs").hidden = true; $("empty").hidden = false; BOARD.step = 0;
   $("hsub").textContent = "Aucun vol chargé"; document.body.classList.remove("loaded"); $("mission").hidden = true; setRate(1);
   toast("Vos marqueurs restent enregistrés pour ce vol.");
 };
@@ -2218,7 +2345,7 @@ async function runCompile(){
     throw e;
   }
 }
-function cmpName(){ return "ESAM_Compilation_"+(S.real?isoDay(new Date(S.base*1000)):isoDay(new Date()))+(S.meta.intervention?"_"+slug(S.meta.intervention):"")+(CMP.lastFmt === "v" ? "_vertical" : "")+"."+CMP.ext; }
+function cmpName(){ if(REEL.showing && REEL.out && REEL.out[0]) return REEL.out[0].name; return "ESAM_Compilation_"+(S.real?isoDay(new Date(S.base*1000)):isoDay(new Date()))+(S.meta.intervention?"_"+slug(S.meta.intervention):"")+(CMP.lastFmt === "v" ? "_vertical" : "")+"."+CMP.ext; }
 function srtName(){ return cmpName().replace(/\.mp4$/, "") + ".commentaires-ESAM.srt"; }
 async function saveToDir(){
   var dir = S.dirHandle, name = cmpName();
@@ -2425,6 +2552,11 @@ async function pollJob(){
     CMP.running = false; CMP.job = null;
     $("cmpResult").hidden = true; $("cmpSave").hidden = true; $("cmpInfo").classList.remove("miss");
     var r = j.resultat || {};
+    if(r.fichiers){
+      $("cmpInfo").textContent = (r.fichiers.length > 1 ? r.fichiers.length+" vidéos enregistrées" : "Vidéo enregistrée")+" dans le Drive : "+r.fichiers.join(", ")+" ("+r.largeur+" x "+r.hauteur+", "+len(r.duree)+" au total, "+r.taille_mo+" Mo), calculée"+(r.fichiers.length > 1 ? "s" : "")+" en "+len(el)+"."+(r.musique ? " Avec la musique." : " Sans musique.")+" Elle"+(r.fichiers.length > 1 ? "s apparaîtront" : " apparaîtra")+" dans le Drive dès la fin de la synchronisation.";
+      cmpView("Done"); toast(r.fichiers.length > 1 ? "Story prête." : "Réel prêt.");
+      return;
+    }
     $("cmpInfo").textContent = "Vidéo enregistrée dans le Drive : "+r.fichier+" ("+r.largeur+" x "+r.hauteur+", "+len(r.duree)+", "+r.taille_mo+" Mo), calculée en "+len(el)+"."
       + (r.chapitres ? " "+r.chapitres+" chapitres inscrits dans la vidéo"+(r.fichier_chapitres ? ", liste dans "+r.fichier_chapitres : "")+"." : "")
       + (r.fichier_commentaires ? " "+r.commentaires+" commentaire(s) interne(s) dans "+r.fichier_commentaires+"." : "")
@@ -2450,6 +2582,811 @@ $("reset").onclick = function(){
   _rs.call(this);
   if(SRV){ SRVD = null; $("cmpResult").hidden = false; $("cmpSave").hidden = false; refreshList(); }
 };
+/* ---------- réel et story (vertical 9:16) ---------- */
+var RW = 1080, RH = 1920, RTITLE = 3, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8];
+var REEL = {sel:null, mode:"cadrage", t:0, o:0, playing:false, cur:null, music:null, drag:null, raf:0, showing:false, out:null, fonts:false};
+var rv = document.createElement("video"); rv.muted = true; rv.playsInline = true; rv.preload = "auto"; rv.setAttribute("playsinline", "");
+var ra = document.createElement("audio"); ra.preload = "auto";
+var rcv = $("rCv"), rctx = rcv.getContext("2d");
+var ICON_UP = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
+var ICON_DOWN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>';
+var ICON_X = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+function reelData(){
+  var r = S.meta.reel;
+  if(!r || typeof r !== "object") r = S.meta.reel = {};
+  if(!Array.isArray(r.items)) r.items = [];
+  if(typeof r.titre !== "string") r.titre = "";
+  if(!r.fin || typeof r.fin !== "object") r.fin = {on:true, texte:"Soutenez l'ESAM", sous:"esam-secours.fr"};
+  if(!(r.musDebut >= 0)) r.musDebut = 0;
+  r.items = r.items.filter(function(it){ return S.markers.some(function(m){ return m.id === it.id; }); });
+  return r;
+}
+function rMarker(it){ return S.markers.find(function(m){ return m.id === it.id; }); }
+function rItem(id){ return reelData().items.find(function(it){ return it.id === id; }); }
+function rNew(m){
+  var a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
+  if(m.to == null){ a -= 3; z += 3; }
+  return {id:m.id, a:Math.max(0, a), z:Math.min(S.dur, z), cam:effCam(m), vit:1, texte:"", keys:[]};
+}
+function rHas(tr, it){ return tr.clips.some(function(c){ return c.ok && c.s < it.z && c.e > it.a; }); }
+function rTrack(it){
+  var i = trackIdx(it.cam);
+  if(i >= 0 && rHas(S.tracks[i], it)) return S.tracks[i];
+  return S.tracks.find(function(tr){ return rHas(tr, it); }) || null;
+}
+function rPieces(it, tr, decode){
+  return tr.clips.filter(function(c){ return c.ok && c.s < it.z && c.e > it.a && (!decode || (c.media && !c.noDecode) || c.remote); })
+    .sort(function(x,y){ return x.s - y.s; })
+    .map(function(c){ return {c:c, from:Math.max(it.a, c.s) - c.s, to:Math.min(it.z, c.e) - c.s}; })
+    .filter(function(p){ return p.to - p.from > 0.2; });
+}
+function reelPlan(decode){
+  var r = reelData(), segs = [], pos = 0, skipped = 0;
+  r.items.forEach(function(it){
+    var tr = rTrack(it), pcs = tr ? rPieces(it, tr, decode) : [];
+    if(!pcs.length){ skipped++; return; }
+    var acc = 0;
+    pcs.forEach(function(p){ p.src0 = acc; acc += p.to - p.from; });
+    var d = acc / (it.vit || 1);
+    segs.push({it:it, m:rMarker(it), tr:tr, pieces:pcs, out0:pos, dur:d});
+    pos += d;
+  });
+  var fin = r.fin.on ? RFIN : 0;
+  return {r:r, segs:segs, clips:pos, fin:fin, total:pos + fin, skipped:skipped};
+}
+function storyCuts(pl){
+  var bounds = pl.segs.map(function(s){ return s.out0; }).concat([pl.clips]), cuts = [0], last = 0;
+  while(pl.total - last > RSTORY + 0.01){
+    var cand = bounds.filter(function(b){ return b > last + 10 && b <= last + RSTORY; }).pop();
+    last = cand != null ? cand : last + RSTORY - 2;
+    cuts.push(last);
+  }
+  cuts.push(pl.total);
+  return cuts;
+}
+/* cadrage : position horizontale du cadre (0 = bord gauche, 1 = bord droit), lissée entre les points */
+function rX(it, t){
+  var k = it.keys || [];
+  if(!k.length) return 0.5;
+  if(t <= k[0].t) return k[0].x;
+  if(t >= k[k.length-1].t) return k[k.length-1].x;
+  for(var i=0;i<k.length-1;i++){
+    if(t < k[i+1].t){ var s = (t - k[i].t) / Math.max(0.001, k[i+1].t - k[i].t); s = s*s*(3 - 2*s); return k[i].x + (k[i+1].x - k[i].x)*s; }
+  }
+  return 0.5;
+}
+function rUpsert(it, t, x){
+  it.keys = (it.keys || []).filter(function(k){ return Math.abs(k.t - t) >= 0.4; });
+  it.keys.push({t:Math.round(t*100)/100, x:Math.round(clamp(x,0,1)*1000)/1000});
+  it.keys.sort(function(a,b){ return a.t - b.t; });
+}
+function rCrop(sw, sh, x){
+  var cw, ch;
+  if(sw/sh > 9/16){ ch = sh; cw = sh*9/16; } else { cw = sw; ch = sw*16/9; }
+  return {sx:(sw - cw)*clamp(x, 0, 1), sy:(sh - ch)/2, cw:cw, ch:ch, free:sw - cw};
+}
+function drawCropped(ctx, W, H, src, sw, sh, rot, x){
+  var cr = rCrop(sw, sh, x), k = H / cr.ch;
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  drawRot(ctx, src, rot || 0, -cr.sx*k, -cr.sy*k, sw*k, sh*k);
+}
+function rLines(ctx, txt, maxW, maxLines){ return wrap(ctx, txt, maxW, maxLines); }
+function drawTitle(ctx, W, H, txt, alpha){
+  if(!txt || alpha <= 0) return;
+  var u = W/1080;
+  ctx.save(); ctx.globalAlpha = clamp(alpha, 0, 1);
+  ctx.font = (112*u)+"px "+ANTON; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  var ls = rLines(ctx, clean(txt).toUpperCase(), W*0.84, 3), lh = 124*u, y0 = H*0.27 - (ls.length - 1)*lh/2;
+  ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 28*u; ctx.shadowOffsetY = 4*u;
+  ctx.fillStyle = "#fff";
+  ls.forEach(function(l, i){ ctx.fillText(l, W/2, y0 + i*lh); });
+  ctx.shadowColor = "transparent";
+  ctx.fillStyle = "#F9DD10"; ctx.fillRect(W/2 - 70*u, y0 + (ls.length - 1)*lh + 36*u, 140*u, 12*u);
+  ctx.restore();
+}
+function drawItemOver(ctx, W, H, it){
+  var u = W/1080;
+  ctx.save();
+  var lr = 46*u; drawLogo(ctx, 64*u + lr, 200*u + lr, lr);
+  if(it && it.vit > 1){
+    var tx = "ACCÉLÉRÉ x"+it.vit;
+    ctx.font = "700 "+(32*u)+"px "+MONT; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    var tw = ctx.measureText(tx).width, px = 20*u, bx = W - 64*u, by = 200*u + lr;
+    ctx.fillStyle = "rgba(23,22,24,.72)"; rRound(ctx, bx - tw - px*2, by - 30*u, tw + px*2, 60*u, 30*u); ctx.fill();
+    ctx.fillStyle = "#F9DD10"; ctx.fillText(tx, bx - px, by + 2*u);
+  }
+  if(it && it.texte){
+    ctx.font = "700 "+(52*u)+"px "+MONT; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    var ls = rLines(ctx, it.texte, W*0.8, 3), lh = 66*u, pad = 28*u;
+    var bw = Math.max.apply(null, ls.map(function(l){ return ctx.measureText(l).width; })) + pad*2, bh = ls.length*lh + pad*1.4;
+    var bottom = H*0.74, top = bottom - bh;
+    ctx.fillStyle = "rgba(23,22,24,.74)"; rRound(ctx, W/2 - bw/2, top, bw, bh, 22*u); ctx.fill();
+    ctx.fillStyle = "#fff";
+    ls.forEach(function(l, i){ ctx.fillText(l, W/2, top + pad*0.7 + lh*(i + 0.78)); });
+  }
+  ctx.restore();
+}
+function rRound(ctx, x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function titleAlpha(tOut){ return tOut >= RTITLE ? 0 : Math.min(1, tOut/0.3 + 0.001, (RTITLE - tOut)/0.4); }
+function drawFin(ctx, W, H, r){
+  var u = W/1080;
+  ctx.fillStyle = "#171618"; ctx.fillRect(0, 0, W, H);
+  drawLogo(ctx, W/2, H*0.36, 160*u);
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#fff";
+  ctx.font = (118*u)+"px "+ANTON;
+  var ls = rLines(ctx, clean(r.fin.texte || "").toUpperCase(), W*0.84, 2), y = H*0.36 + 160*u + 170*u;
+  ls.forEach(function(l){ ctx.fillText(l, W/2, y); y += 128*u; });
+  if(r.fin.sous){ ctx.fillStyle = "#A8C8FB"; ctx.font = "600 "+(52*u)+"px "+MONT; ctx.fillText(clean(r.fin.sous), W/2, y + 6*u); y += 80*u; }
+  ctx.fillStyle = "#cfd2d8"; ctx.font = "500 "+(34*u)+"px "+MONT;
+  ctx.fillText("Equipe de Secours Animalier en Montagne", W/2, y + 20*u);
+  ctx.fillStyle = "#A8C8FB"; ctx.fillRect(0, H - 16*u, W, 16*u);
+}
+async function rFonts(){
+  if(REEL.fonts) return;
+  try { await Promise.all([document.fonts.load("40px Anton"), document.fonts.load("700 40px Montserrat"), document.fonts.load("600 40px Montserrat"), document.fonts.load("500 40px Montserrat")]); } catch(e){}
+  REEL.fonts = true;
+}
+
+/* ----- lecture : cadrage d'un passage ou aperçu du réel ----- */
+function rAbs(url){ var a = document.createElement("a"); a.href = url; return a.href; }
+function rLoad(url, local, play, rate){
+  rv.playbackRate = rate || 1;
+  if(rv.getAttribute("data-u") !== url){
+    rv.setAttribute("data-u", url); rv.src = url;
+    rv.onloadedmetadata = function(){ rv.onloadedmetadata = null; rv.currentTime = local; rv.playbackRate = rate || 1; if(play) rv.play().catch(function(){}); };
+  } else {
+    if(Math.abs(rv.currentTime - local) > 0.05) rv.currentTime = local;
+    if(play) rv.play().catch(function(){});
+  }
+}
+rv.addEventListener("seeked", function(){ if(!REEL.playing) rDraw(); });
+rv.addEventListener("loadeddata", function(){ if(!REEL.playing) rDraw(); });
+
+function rSelItem(){ return REEL.sel ? rItem(REEL.sel) : null; }
+function rRange(it){
+  var m = rMarker(it), a0 = m ? m.at - S.base : it.a, z0 = m ? (m.to != null ? m.to : m.at) - S.base : it.z;
+  return {lo:Math.max(0, Math.min(it.a, a0) - 10), hi:Math.min(S.dur, Math.max(it.z, z0) + 10)};
+}
+function rSeekCadrage(t, play){
+  var it = rSelItem(); if(!it) return;
+  REEL.t = t;
+  var tr = rTrack(it), c = tr ? clipAt(tr, t) : null;
+  REEL.cur = c ? {clip:c} : null;
+  if(c) rLoad(c.url, t - c.s, play, 1); else { rv.pause(); rDraw(); }
+}
+function rFindOut(pl, o){
+  for(var i=0;i<pl.segs.length;i++){
+    var sg = pl.segs[i];
+    if(o < sg.out0 + sg.dur - 1e-4){
+      var src = Math.max(0, o - sg.out0) * sg.it.vit;
+      for(var j=0;j<sg.pieces.length;j++){
+        var p = sg.pieces[j], ln = p.to - p.from;
+        if(src < p.src0 + ln - 1e-4 || j === sg.pieces.length - 1){
+          return {seg:sg, p:p, local:p.from + Math.min(ln, src - p.src0), pOut0:sg.out0 + p.src0/sg.it.vit, pOut1:sg.out0 + (p.src0 + ln)/sg.it.vit};
+        }
+      }
+    }
+  }
+  if(pl.fin && o < pl.total) return {fin:true};
+  return null;
+}
+function rSeekApercu(o, play){
+  var pl = REEL.pl = reelPlan(false);
+  REEL.o = clamp(o, 0, pl.total);
+  var f = rFindOut(pl, REEL.o);
+  if(!f){ REEL.cur = null; rv.pause(); rStop(); rDraw(); return; }
+  if(f.fin){ REEL.cur = {fin:true, o0:REEL.o, w0:performance.now()}; rv.pause(); }
+  else { REEL.cur = f; rLoad(f.p.c.url, f.local, play, f.seg.it.vit); }
+  rMusicSync(true);
+  rDraw();
+}
+function rMusicUrl(){
+  var r = reelData();
+  if(REEL.music && REEL.music.url) return REEL.music.url;
+  if(SRV && SRVD && r.musique && r.musique.fichier) return "files/"+enc(SRVD)+"/.derushage/"+enc(r.musique.fichier);
+  return null;
+}
+function rMusicSync(force){
+  var url = REEL.mode === "apercu" ? rMusicUrl() : null;
+  if(!url || !REEL.playing){ if(!ra.paused) ra.pause(); return; }
+  if(ra.getAttribute("data-u") !== url){ ra.setAttribute("data-u", url); ra.src = url; force = true; }
+  var want = reelData().musDebut + REEL.o;
+  if(force || Math.abs(ra.currentTime - want) > 0.35){ try { ra.currentTime = want; } catch(e){} }
+  if(ra.paused) ra.play().catch(function(){});
+}
+function rPlay(){
+  if(REEL.playing){ rStop(); return; }
+  if(REEL.mode === "cadrage"){
+    var it = rSelItem(); if(!it) return;
+    var t = REEL.t; if(t < it.a - 0.05 || t >= it.z - 0.1) t = it.a;
+    REEL.playing = true; rSeekCadrage(t, true);
+  } else {
+    var pl = reelPlan(false); if(!pl.segs.length) return;
+    var o = REEL.o >= pl.total - 0.1 ? 0 : REEL.o;
+    REEL.playing = true; rSeekApercu(o, true);
+  }
+  rPlayBtn(); rLoop();
+}
+function rStop(){ REEL.playing = false; rv.pause(); ra.pause(); cancelAnimationFrame(REEL.raf); rPlayBtn(); }
+function rPlayBtn(){ var b = $("rPlay"); b.innerHTML = REEL.playing ? ICON_PAUSE : ICON_PLAY; b.setAttribute("aria-label", REEL.playing ? "Pause" : "Lire"); }
+function rLoop(){
+  cancelAnimationFrame(REEL.raf);
+  (function step(){
+    if(!REEL.playing) return;
+    if(REEL.mode === "cadrage"){
+      var it = rSelItem();
+      if(!it){ rStop(); return; }
+      var c = REEL.cur && REEL.cur.clip;
+      if(c && rv.readyState >= 2){
+        REEL.t = c.s + rv.currentTime;
+        if(REEL.drag && REEL.drag.x != null){ rUpsert(it, REEL.t, REEL.drag.x); }
+        if(REEL.t >= it.z || rv.ended){
+          var n = rTrack(it) && nextClip(rTrack(it), c.e - 0.01);
+          if(!rv.ended || !n || n.s >= it.z){ REEL.t = Math.min(REEL.t, it.z); rStop(); rDraw(); rTime(); return; }
+          rSeekCadrage(n.s, true);
+        }
+      }
+    } else {
+      var pl = REEL.pl, cur = REEL.cur;
+      if(!cur){ rStop(); return; }
+      if(cur.fin){
+        REEL.o = cur.o0 + (performance.now() - cur.w0)/1000;
+        if(REEL.o >= pl.total){ REEL.o = pl.total; rStop(); rDraw(); rTime(); return; }
+      } else if(rv.readyState >= 2){
+        REEL.o = cur.pOut0 + (rv.currentTime - cur.p.from)/cur.seg.it.vit;
+        if(rv.currentTime >= cur.p.to - 0.04 || rv.ended){ rSeekApercu(cur.pOut1 + 0.002, true); }
+      }
+      rMusicSync(false);
+    }
+    rDraw(); rTime();
+    REEL.raf = requestAnimationFrame(step);
+  })();
+}
+function rDraw(){
+  var stage = $("rStage"), it = rSelItem();
+  if(REEL.mode === "apercu"){
+    var W = 540, H = 960;
+    if(rcv.width !== W || rcv.height !== H){ rcv.width = W; rcv.height = H; }
+    stage.classList.add("v"); stage.classList.remove("h");
+    var pl = REEL.pl || (REEL.pl = reelPlan(false)), cur = REEL.cur;
+    if(!pl.segs.length){ rctx.fillStyle = "#000"; rctx.fillRect(0,0,W,H); return; }
+    if(!cur){ var f = rFindOut(pl, REEL.o); if(f && f.fin) cur = {fin:true}; else if(f){ REEL.cur = cur = f; rLoad(f.p.c.url, f.local, false, f.seg.it.vit); } }
+    if(cur && cur.fin){ drawFin(rctx, W, H, pl.r); return; }
+    if(cur && rv.readyState >= 2 && rv.videoWidth){
+      var tl = cur.p.c.s + rv.currentTime;
+      drawCropped(rctx, W, H, rv, rv.videoWidth, rv.videoHeight, 0, rX(cur.seg.it, tl));
+      drawItemOver(rctx, W, H, cur.seg.it);
+      drawTitle(rctx, W, H, pl.r.titre, titleAlpha(REEL.o));
+    }
+    return;
+  }
+  stage.classList.add("h"); stage.classList.remove("v");
+  if(!it) return;
+  var vw = rv.videoWidth || 1920, vh = rv.videoHeight || 1080, CW = 960, CH = Math.round(960*vh/vw);
+  if(rcv.width !== CW || rcv.height !== CH){ rcv.width = CW; rcv.height = CH; }
+  rctx.fillStyle = "#000"; rctx.fillRect(0, 0, CW, CH);
+  var c = REEL.cur && REEL.cur.clip;
+  if(!c){
+    rctx.fillStyle = "#fff"; rctx.font = "600 24px "+MONT; rctx.textAlign = "center"; rctx.textBaseline = "middle";
+    rctx.fillText("Pas d'image à cet instant sur cette caméra", CW/2, CH/2); return;
+  }
+  if(rv.readyState >= 2) rctx.drawImage(rv, 0, 0, CW, CH);
+  var cr = rCrop(CW, CH, rX(it, REEL.t));
+  rctx.fillStyle = "rgba(0,0,0,.55)";
+  rctx.fillRect(0, 0, cr.sx, CH); rctx.fillRect(cr.sx + cr.cw, 0, CW - cr.sx - cr.cw, CH);
+  var inside = REEL.t >= it.a - 0.02 && REEL.t <= it.z + 0.02;
+  rctx.lineWidth = 4; rctx.strokeStyle = inside ? "#A8C8FB" : "#E20C0F"; rctx.strokeRect(cr.sx + 2, cr.sy + 2, cr.cw - 4, cr.ch - 4);
+  if(!inside){
+    rctx.fillStyle = "rgba(0,0,0,.5)"; rctx.fillRect(0, CH - 44, CW, 44);
+    rctx.fillStyle = "#fff"; rctx.font = "600 20px "+MONT; rctx.textAlign = "center"; rctx.textBaseline = "middle";
+    rctx.fillText("Hors du passage retenu pour le réel", CW/2, CH - 22);
+  }
+}
+function rTime(){
+  var it = rSelItem(), el = $("rTime"), sl = $("rSlider");
+  if(REEL.mode === "apercu"){
+    var pl = REEL.pl || reelPlan(false);
+    el.textContent = ms(REEL.o)+" / "+ms(pl.total);
+    if(document.activeElement !== sl) sl.value = pl.total ? Math.round(REEL.o/pl.total*1000) : 0;
+    return;
+  }
+  if(!it){ el.textContent = ""; return; }
+  var rg = rRange(it);
+  el.textContent = clockAbs(S.base + REEL.t)+"\n"+ms(Math.max(0, REEL.t - it.a))+" / "+ms(it.z - it.a);
+  if(document.activeElement !== sl) sl.value = Math.round((REEL.t - rg.lo)/Math.max(0.1, rg.hi - rg.lo)*1000);
+}
+function rBar(){
+  var b = $("rBar"), it = rSelItem(), h = "";
+  if(REEL.mode === "apercu"){
+    var pl = reelPlan(false), T = pl.total || 1;
+    pl.segs.forEach(function(sg, i){ h += '<i class="in" style="left:'+(sg.out0/T*100)+'%;width:'+(sg.dur/T*100)+'%;opacity:'+(i % 2 ? .7 : 1)+'"></i>'; if(i) h += '<i class="sg" style="left:'+(sg.out0/T*100)+'%"></i>'; });
+    if(pl.fin) h += '<i class="fin" style="width:'+(pl.fin/T*100)+'%"></i>';
+  } else if(it){
+    var rg = rRange(it), L = Math.max(0.1, rg.hi - rg.lo);
+    h += '<i class="in" style="left:'+((it.a - rg.lo)/L*100)+'%;width:'+((it.z - it.a)/L*100)+'%"></i>';
+    (it.keys || []).forEach(function(k){ h += '<i class="k" style="left:'+((k.t - rg.lo)/L*100)+'%"></i>'; });
+  }
+  b.innerHTML = h;
+}
+
+/* ----- rendu de l'onglet ----- */
+function reelEnter(){
+  rFonts().then(function(){ rDraw(); });
+  var r = reelData();
+  if(REEL.sel && !rItem(REEL.sel)) REEL.sel = null;
+  if(!REEL.sel && r.items.length && REEL.mode === "cadrage") REEL.sel = r.items[0].id;
+  renderReel();
+  if(REEL.mode === "cadrage"){ var it = rSelItem(); if(it) rSeekCadrage(clamp(REEL.t, it.a, it.z) || it.a, false); }
+  else rSeekApercu(REEL.o, false);
+}
+function reelLeave(){ if(REEL.playing) rStop(); REEL.drag = null; }
+function rSave(){ persist(); renderComp(); }
+function renderReel(){
+  var r = reelData(), pl = reelPlan(false), it = rSelItem();
+  REEL.pl = pl;
+  // en-tête
+  var cuts = storyCuts(pl), nst = cuts.length - 1;
+  $("rDur").textContent = "Réel : "+(pl.segs.length ? len(pl.total) : "vide");
+  $("rInfo").textContent = pl.segs.length ? "1080 x 1920, "+pl.segs.length+" passage"+(pl.segs.length > 1 ? "s" : "")+", story en "+nst+" morceau"+(nst > 1 ? "x" : "")+" de 60 s max" : "Ajoutez des passages au montage";
+  chipRow($("rMode"), ["Cadrage du passage","Aperçu du réel"], function(t,i){ return (REEL.mode === "apercu") === !!i; });
+  // montage
+  $("rList").innerHTML = r.items.map(function(x, i){
+    var m = rMarker(x), tr = rTrack(x), d = (x.z - x.a)/(x.vit || 1);
+    return '<li class="'+(x.id === REEL.sel ? 'sel' : '')+'"><span class="rn">'+(i+1)+'</span>'
+      +'<button type="button" class="rtx" data-rsel="'+x.id+'"><b>'+esc(x.texte || label(m))+'</b><small>'
+      +(tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>')+', '+len(d)+(x.vit > 1 ? ' (x'+x.vit+')' : '')+((x.keys||[]).length ? ', cadre suivi' : '')+'</small></button>'
+      +'<button type="button" class="ib" data-rup="'+x.id+'" aria-label="Monter"'+(i ? '' : ' disabled')+'>'+ICON_UP+'</button>'
+      +'<button type="button" class="ib" data-rdown="'+x.id+'" aria-label="Descendre"'+(i < r.items.length - 1 ? '' : ' disabled')+'>'+ICON_DOWN+'</button>'
+      +'<button type="button" class="ib" data-rdel="'+x.id+'" aria-label="Retirer du réel">'+ICON_X+'</button></li>';
+  }).join("");
+  var free = sorted().filter(function(m){ return !r.items.some(function(x){ return x.id === m.id; }); });
+  $("rAdd").innerHTML = free.map(function(m){
+    var n = sorted().indexOf(m) + 1, a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
+    return '<li><span class="rn">'+n+'</span><button type="button" class="rtx" data-radd="'+m.id+'"><b>'+esc(label(m))+'</b><small>'+clockAbs(m.at)+(m.to != null ? ', '+len(z - a) : ', repère (6 s autour)')+'</small></button></li>';
+  }).join("");
+  $("rAddBox").hidden = !free.length;
+  $("rAddSum").textContent = "Ajouter des passages ("+free.length+")";
+  if(!r.items.length) $("rAddBox").open = true;
+  // habillage
+  if(document.activeElement !== $("rTitre")) $("rTitre").value = r.titre;
+  chipRow($("rFinOn"), ["Oui","Non"], function(t,i){ return r.fin.on === !i; });
+  $("rFinBox").hidden = !r.fin.on;
+  if(document.activeElement !== $("rFinTxt")) $("rFinTxt").value = r.fin.texte || "";
+  if(document.activeElement !== $("rFinSous")) $("rFinSous").value = r.fin.sous || "";
+  renderMusic();
+  // éditeur du passage
+  renderReelEdit();
+  // export
+  var empty = !pl.segs.length;
+  $("rGoReel").disabled = empty; $("rGoStory").disabled = empty;
+  $("rGoStory").textContent = "Créer la story"+(nst > 1 ? " ("+nst+" morceaux)" : "");
+  var tips = [];
+  if(pl.skipped) tips.push(pl.skipped+" passage(s) sans image ignoré(s)");
+  if(pl.total > 90) tips.push("au-delà d'une minute et demie, un réel est rarement regardé jusqu'au bout");
+  $("rEst").textContent = empty ? "Ajoutez au moins un passage." : (SRV && SRVD ? "Calcul sur le PC en pleine résolution, vidéo déposée dans le dossier de l'intervention." : "Calcul dans ce navigateur, garder l'onglet ouvert.")+(tips.length ? " Attention : "+tips.join(" ; ")+"." : "");
+  // scène
+  var noItem = REEL.mode === "cadrage" && !it, noSeg = REEL.mode === "apercu" && empty;
+  $("rEmpty").hidden = !(noItem || noSeg);
+  $("rEmpty").textContent = r.items.length ? "Choisissez un passage du montage pour régler son cadrage." : "Ajoutez des passages au montage (liste « Ajouter des passages »).";
+  $("rTrans").hidden = noItem || noSeg;
+  rBar(); rTime(); rPlayBtn(); rDraw();
+}
+function renderReelEdit(){
+  var it = rSelItem(), box = $("rEdit");
+  if(!it || REEL.mode !== "cadrage"){
+    box.innerHTML = REEL.mode === "apercu" && reelData().items.length ? '<p class="hint">Aperçu en basse définition, sur les proxies. La vidéo finale est calculée en 1080 x 1920 à partir des rushs d\'origine.</p>' : "";
+    return;
+  }
+  var m = rMarker(it), idx = reelData().items.indexOf(it), cams = S.tracks.filter(function(tr){ return rHas(tr, it); }), tr = rTrack(it);
+  var nk = (it.keys || []).length, near = (it.keys || []).some(function(k){ return Math.abs(k.t - REEL.t) < 0.5; });
+  box.innerHTML = '<div class="rsel"><b>'+(idx + 1)+'. '+esc(label(m))+'</b><span class="meta" style="font-size:13px;color:var(--muted)">'+ms(it.a)+' à '+ms(it.z)+', '+len((it.z - it.a)/(it.vit||1))+' dans le réel</span></div>'
+    +'<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>'
+    +'<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l\'image. Pendant la lecture, suivez l\'animal du doigt : le cadre enregistre votre mouvement et le lisse.'+(nk ? ' '+nk+' point'+(nk > 1 ? 's' : '')+' de cadrage.' : ' Cadre fixe au centre pour l\'instant.')+'</p>'
+    +'<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"'+(near ? '' : ' disabled')+'>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"'+(nk ? '' : ' disabled')+'>Cadre fixe au centre</button></div></div>'
+    +'<div class="grp"><span class="lbl">Caméra</span><div class="chips">'+cams.map(function(c){ return '<button type="button" class="chip" data-rcam="'+esc(c.lens)+'" aria-pressed="'+(tr === c)+'">'+esc(c.name)+'</button>'; }).join("")+'</div></div>'
+    +'<div class="grp"><span class="lbl">Vitesse</span><div class="chips">'+RSPEEDS.map(function(s){ return '<button type="button" class="chip" data-rvit="'+s+'" aria-pressed="'+((it.vit||1) === s)+'">'+(s === 1 ? 'Normale' : 'Accéléré x'+s)+'</button>'; }).join("")+'</div></div>'
+    +'<div class="grp"><label class="lbl" for="rTexte">Texte sur ce passage</label><input class="field" id="rTexte" maxlength="90" autocomplete="off" placeholder="Ex. : '+esc(label(m))+'" value="'+esc(it.texte || "")+'"></div>';
+}
+function renderMusic(){
+  var r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
+  el.classList.remove("miss");
+  if(REEL.music) el.textContent = REEL.music.name+(SRV && SRVD ? (r.musique && r.musique.fichier ? ", envoyée sur le PC" : ", envoi sur le PC...") : "");
+  else if(r.musique && r.musique.fichier && SRV && SRVD) el.textContent = r.musique.nom+", sur le PC";
+  else if(r.musique){ el.textContent = "[Musique « "+r.musique.nom+" » à choisir à nouveau sur cet appareil]"; el.classList.add("miss"); }
+  else el.textContent = "Aucune : vidéo sans son.";
+  $("rMusDel").hidden = !has;
+  $("rMusLbl").textContent = has ? "Changer de musique" : "Choisir une musique";
+  $("rMusOffBox").hidden = !has;
+  if(document.activeElement !== $("rMusOff")) $("rMusOff").value = r.musDebut || 0;
+}
+function rSelect(id){
+  if(REEL.playing) rStop();
+  REEL.sel = id; REEL.mode = "cadrage";
+  var it = rItem(id); renderReel();
+  if(it) rSeekCadrage(it.a, false);
+  var rc = $("rStage").getBoundingClientRect();
+  if(rc.top < 56 || rc.top > window.innerHeight*0.45){ try { $("rStage").scrollIntoView({block:"start", behavior:"smooth"}); } catch(e){ $("rStage").scrollIntoView(); } }
+}
+function rSetMode(mode){
+  if(REEL.playing) rStop();
+  REEL.mode = mode; REEL.cur = null;
+  if(mode === "cadrage" && !rSelItem() && reelData().items.length) REEL.sel = reelData().items[0].id;
+  renderReel();
+  if(mode === "apercu") rSeekApercu(REEL.o, false); else { var it = rSelItem(); if(it) rSeekCadrage(clamp(REEL.t, it.a, it.z), false); }
+}
+
+/* ----- événements ----- */
+$("tabReel").onclick = function(){ setTab("reel"); };
+$("rMode").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if(b) rSetMode(+b.dataset.k ? "apercu" : "cadrage"); });
+$("rPlay").onclick = rPlay;
+$("rSlider").addEventListener("input", function(){
+  var f = this.value/1000;
+  if(REEL.mode === "apercu"){ var pl = reelPlan(false); rSeekApercu(f*pl.total, REEL.playing); }
+  else { var it = rSelItem(); if(!it) return; var rg = rRange(it); rSeekCadrage(rg.lo + f*(rg.hi - rg.lo), REEL.playing); }
+  rTime();
+});
+$("rSlider").addEventListener("change", function(){ renderReelEdit(); });
+$("rList").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if(!b) return;
+  var r = reelData(), id = b.dataset.rsel || b.dataset.rup || b.dataset.rdown || b.dataset.rdel, i = r.items.findIndex(function(x){ return x.id === id; });
+  if(i < 0) return;
+  if(b.dataset.rsel){ rSelect(id); return; }
+  if(b.dataset.rup && i > 0){ var x = r.items.splice(i, 1)[0]; r.items.splice(i - 1, 0, x); }
+  else if(b.dataset.rdown && i < r.items.length - 1){ var y = r.items.splice(i, 1)[0]; r.items.splice(i + 1, 0, y); }
+  else if(b.dataset.rdel){
+    var gone = r.items.splice(i, 1)[0];
+    if(REEL.sel === id) REEL.sel = null;
+    toast("Passage retiré du réel.", "Annuler", function(){ reelData().items.splice(i, 0, gone); rSave(); renderReel(); });
+  }
+  if(REEL.playing) rStop();
+  REEL.cur = null; rSave(); renderReel();
+  if(REEL.mode === "apercu") rSeekApercu(REEL.o, false);
+});
+$("rAdd").addEventListener("click", function(e){
+  var b = e.target.closest("[data-radd]"); if(!b) return;
+  var m = S.markers.find(function(x){ return x.id === b.dataset.radd; }); if(!m) return;
+  var r = reelData(), it = rNew(m);
+  // place le passage selon l'ordre chronologique
+  var k = r.items.findIndex(function(x){ var mx = rMarker(x); return mx && mx.at > m.at; });
+  if(k < 0) r.items.push(it); else r.items.splice(k, 0, it);
+  rSave(); rSelect(it.id);
+  toast("Passage ajouté au réel. Réglez son cadrage.");
+});
+$("rEdit").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if(!b) return;
+  var it = rSelItem(); if(!it) return;
+  if(b.dataset.rtrim === "a"){
+    if(REEL.t >= it.z - 0.5){ toast("Le début doit être avant la fin du passage."); return; }
+    it.a = Math.max(0, REEL.t);
+  } else if(b.dataset.rtrim === "z"){
+    if(REEL.t <= it.a + 0.5){ toast("La fin doit être après le début du passage."); return; }
+    it.z = Math.min(S.dur, REEL.t);
+  } else if(b.dataset.rkey === "del"){
+    it.keys = (it.keys || []).filter(function(k){ return Math.abs(k.t - REEL.t) >= 0.5; });
+  } else if(b.dataset.rkey === "clear"){ it.keys = []; }
+  else if(b.dataset.rcam){ it.cam = b.dataset.rcam; REEL.cur = null; rSave(); renderReel(); rSeekCadrage(REEL.t, false); return; }
+  else if(b.dataset.rvit){ it.vit = +b.dataset.rvit; }
+  else return;
+  rSave(); renderReel();
+});
+$("rEdit").addEventListener("input", function(e){
+  if(e.target.id !== "rTexte") return;
+  var it = rSelItem(); if(!it) return;
+  it.texte = clean(e.target.value); rSave();
+  var li = $("rList").querySelector('[data-rsel="'+it.id+'"] b'); if(li) li.textContent = it.texte || label(rMarker(it));
+});
+$("rTitre").addEventListener("input", function(){ reelData().titre = clean(this.value); rSave(); if(REEL.mode === "apercu") rDraw(); });
+$("rFinOn").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if(!b) return; reelData().fin.on = !+b.dataset.k; rSave(); renderReel(); });
+$("rFinTxt").addEventListener("input", function(){ reelData().fin.texte = clean(this.value); rSave(); });
+$("rFinSous").addEventListener("input", function(){ reelData().fin.sous = clean(this.value); rSave(); });
+$("rMusOff").addEventListener("input", function(){ var x = parseFloat(this.value); reelData().musDebut = x >= 0 ? x : 0; rSave(); });
+$("rMusIn").addEventListener("change", function(e){
+  var f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  if(f.size > 60*1048576){ toast("Fichier trop lourd (60 Mo maximum)."); return; }
+  if(REEL.music && REEL.music.url) URL.revokeObjectURL(REEL.music.url);
+  REEL.music = {file:f, url:URL.createObjectURL(f), name:clean(f.name)};
+  var r = reelData(); r.musique = {nom:clean(f.name)}; rSave(); renderMusic();
+  if(SRV && SRVD){
+    fetch("api/musique?d="+enc(SRVD)+"&nom="+enc(f.name), {method:"POST", headers:{"Content-Type":"application/octet-stream"}, body:f})
+      .then(function(res){ return res.json().then(function(j){ if(!res.ok) throw new Error(j.erreur || "erreur "+res.status); return j; }); })
+      .then(function(j){ reelData().musique = {nom:clean(f.name), fichier:j.fichier}; rSave(); renderMusic(); toast("Musique envoyée sur le PC."); },
+            function(err){ toast("Envoi de la musique impossible : "+err.message); });
+  } else toast("Musique ajoutée. Elle reste sur cet appareil.");
+});
+$("rMusDel").onclick = function(){
+  if(REEL.music && REEL.music.url) URL.revokeObjectURL(REEL.music.url);
+  REEL.music = null; reelData().musique = null; ra.pause(); ra.removeAttribute("data-u"); rSave(); renderMusic();
+};
+/* glisser le cadre */
+rcv.addEventListener("pointerdown", function(e){
+  if(REEL.mode !== "cadrage") return;
+  var it = rSelItem(); if(!it || !(REEL.cur && REEL.cur.clip)) return;
+  var cr = rCrop(rcv.width, rcv.height, 0); if(cr.free < 2){ toast("Cette image est déjà au format vertical : rien à cadrer."); return; }
+  e.preventDefault(); try { rcv.setPointerCapture(e.pointerId); } catch(x){}
+  REEL.drag = {px:e.clientX, x0:rX(it, REEL.t), x:null};
+});
+rcv.addEventListener("pointermove", function(e){
+  var d = REEL.drag; if(!d) return;
+  var it = rSelItem(); if(!it) return;
+  var rect = rcv.getBoundingClientRect(), cr = rCrop(rcv.width, rcv.height, 0), freeCss = rect.width * cr.free / rcv.width;
+  d.x = clamp(d.x0 + (e.clientX - d.px)/freeCss, 0, 1);
+  rUpsert(it, REEL.t, d.x);
+  if(!REEL.playing){ rDraw(); rBar(); }
+});
+function rDragEnd(){
+  if(!REEL.drag) return;
+  var moved = REEL.drag.x != null; REEL.drag = null;
+  if(moved){ rSave(); renderReel(); }
+}
+rcv.addEventListener("pointerup", rDragEnd);
+rcv.addEventListener("pointercancel", rDragEnd);
+document.addEventListener("keydown", function(e){
+  if($("reel").hidden || $("cmp").open || /input|textarea|select/i.test(e.target.tagName)) return;
+  if(e.key === " "){ e.preventDefault(); rPlay(); }
+});
+
+/* ----- calcul : mode PC ----- */
+function rBaseName(story){
+  return "ESAM_"+(story ? "Story" : "Reel")+"_"+(S.real ? isoDay(new Date(S.base*1000)) : isoDay(new Date()))+(S.meta.intervention ? "_"+slug(S.meta.intervention) : "");
+}
+function rCanvas(W, H){ var c = document.createElement("canvas"); c.width = W; c.height = H; return c; }
+function rOpenRun(msg){
+  REEL.showing = true;
+  $("cmpRun").querySelector(".warn").textContent = msg;
+  $("cmpBar").style.width = "0%"; $("cmpStatus").textContent = "Préparation";
+  var pcv = $("cmpCanvas"); pcv.width = 360; pcv.height = 640;
+  pcv.style.aspectRatio = "9 / 16"; pcv.style.width = "auto"; pcv.style.height = "48vh"; pcv.style.margin = "0 auto";
+  cmpView("Run");
+  var d = $("cmp"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); }
+  return pcv;
+}
+async function runReelRemote(story){
+  var pl = reelPlan(false); if(!pl.segs.length) return;
+  var r = pl.r;
+  if(r.musique && !r.musique.fichier){ toast("La musique n'est pas encore sur le PC : choisissez-la à nouveau ou retirez-la."); return; }
+  await rFonts();
+  var cv = rCanvas(RW, RH), ctx = cv.getContext("2d");
+  var segs = pl.segs.map(function(sg){
+    ctx.clearRect(0, 0, RW, RH); drawItemOver(ctx, RW, RH, sg.it);
+    var ov = cv.toDataURL("image/png");
+    return {overlay:ov, vitesse:sg.it.vit || 1, nom:label(sg.m), morceaux:sg.pieces.map(function(p){
+      var a = p.c.s + p.from;
+      return {fichier:p.c.name, debut:p.from, fin:p.to, cles:(sg.it.keys || []).map(function(k){ return {t:Math.round((k.t - a)*1000)/1000, x:k.x}; })};
+    })};
+  });
+  var titre = null, fin = null;
+  if(r.titre){ ctx.clearRect(0, 0, RW, RH); drawTitle(ctx, RW, RH, r.titre, 1); titre = {image:cv.toDataURL("image/png"), duree:RTITLE}; }
+  if(r.fin.on){ drawFin(ctx, RW, RH, r); fin = {image:cv.toDataURL("image/png"), duree:RFIN}; }
+  var pcv = rOpenRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.");
+  var first = pl.segs[0];
+  ctx.clearRect(0, 0, RW, RH); if(r.titre) drawTitle(ctx, RW, RH, r.titre, 1); drawItemOver(ctx, RW, RH, first.it);
+  var pc = pcv.getContext("2d"); pc.fillStyle = "#222"; pc.fillRect(0, 0, pcv.width, pcv.height); pc.drawImage(cv, 0, 0, pcv.width, pcv.height);
+  var job = await api("api/reel", {d:SRVD, mode:story ? "story" : "reel", nom:rBaseName(story), titre_video:"ESAM - "+clean(S.meta.intervention || SRVD),
+    segments:segs, titre:titre, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
+  CMP.job = job.id; CMP.running = true;
+  $("cmpStatus").textContent = "Envoyé au PC";
+  pollJob();
+}
+
+/* ----- calcul : mode navigateur ----- */
+async function pickAudio(){
+  var c = [{codec:"mp4a.40.2", mux:"aac", label:"AAC"}, {codec:"opus", mux:"opus", label:"Opus"}];
+  if(typeof AudioEncoder === "undefined") return null;
+  for(var i=0;i<c.length;i++){
+    var cfg = {codec:c[i].codec, sampleRate:48000, numberOfChannels:2, bitrate:192000};
+    try { var s = await AudioEncoder.isConfigSupported(cfg); if(s.supported) return {cfg:cfg, mux:c[i].mux, label:c[i].label}; } catch(e){}
+  }
+  return null;
+}
+async function rMusicPcm(total, offset){
+  var buf = await REEL.music.file.arrayBuffer();
+  var AC = window.AudioContext || window.webkitAudioContext, ac = new AC();
+  var dec = await new Promise(function(res, rej){ var p = ac.decodeAudioData(buf, res, rej); if(p && p.then) p.then(res, rej); });
+  try { ac.close(); } catch(e){}
+  var sr = 48000, n = Math.max(1, Math.ceil(total*sr)), oc = new OfflineAudioContext(2, n, sr);
+  var src = oc.createBufferSource(); src.buffer = dec;
+  var g = oc.createGain(); src.connect(g); g.connect(oc.destination);
+  g.gain.setValueAtTime(0, 0); g.gain.linearRampToValueAtTime(1, Math.min(0.5, total/4));
+  var fo = Math.min(2, total/3); g.gain.setValueAtTime(1, Math.max(0, total - fo)); g.gain.linearRampToValueAtTime(0, total);
+  src.start(0, Math.min(offset || 0, Math.max(0, dec.duration - 0.1)));
+  var out = await oc.startRendering();
+  return {sr:sr, l:out.getChannelData(0), r:out.getChannelData(1), n:n};
+}
+async function runReelLocal(story){
+  var pl = reelPlan(true);
+  if(!pl.segs.length){ toast("Aucun passage décodable dans ce navigateur."); return; }
+  if(typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined"){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
+  var enc0 = await pickEncoder(RW, RH, 10000000, false);
+  if(!enc0) throw new Error("aucun encodeur vidéo disponible pour 1080 x 1920");
+  await rFonts();
+  var cuts = story ? storyCuts(pl) : [0, pl.total], n = cuts.length - 1;
+  var pcv = rOpenRun("Le calcul se fait dans ce navigateur. Il continue si vous changez de fenêtre, ne fermez simplement pas cet onglet.");
+  CMP.running = true; CMP.cancel = false;
+  var pcm = null, aenc0 = null;
+  if(REEL.music && REEL.music.file){
+    aenc0 = await pickAudio();
+    if(aenc0){ $("cmpStatus").textContent = "Préparation de la musique"; pcm = await rMusicPcm(pl.total, pl.r.musDebut || 0); }
+  }
+  var outs = [], t0 = performance.now();
+  try {
+    for(var ci=0; ci<n && !CMP.cancel; ci++){
+      var blob = await rRender(pl, cuts[ci], cuts[ci+1], enc0, aenc0, pcm, pcv, ci, n);
+      if(blob) outs.push({name:rBaseName(story)+(story && n > 1 ? "_"+(ci+1)+"sur"+n : "")+".mp4", blob:blob, dur:cuts[ci+1] - cuts[ci]});
+    }
+  } finally { CMP.running = false; }
+  if(CMP.cancel){ CMP.cancel = false; $("cmp").close(); toast("Calcul annulé."); return; }
+  REEL.out = outs;
+  if(REEL.url) URL.revokeObjectURL(REEL.url);
+  REEL.url = URL.createObjectURL(outs[0].blob);
+  $("cmpResult").hidden = false; $("cmpSave").hidden = false; $("cmpInfo").classList.remove("miss");
+  $("cmpResult").src = REEL.url;
+  var size = outs.reduce(function(t,o){ return t + o.blob.size; }, 0);
+  $("cmpInfo").textContent = (n > 1 ? n+" vidéos de story" : story ? "Story" : "Réel")+" : "+len(pl.total)+", 1080 x 1920, "+enc0.label+(pcm ? ", musique en "+aenc0.label : ", sans son")+", "+(size/1048576).toFixed(0)+" Mo, calculé en "+len((performance.now() - t0)/1000)+"."
+    + (n > 1 ? " L'aperçu montre le premier morceau." : "") + (REEL.music && !aenc0 ? " Ce navigateur ne sait pas encoder le son : vidéo sans musique." : "")
+    + (pcm && aenc0.mux === "opus" ? " Son en Opus : si Instagram refuse le fichier, passez par le mode PC." : "");
+  $("cmpSave").textContent = n > 1 ? "Enregistrer les "+n+" vidéos" : "Enregistrer la vidéo";
+  cmpView("Done");
+  if(S.dirHandle){ rSaveOuts().catch(function(e){ toast("Enregistrement dans le dossier impossible : "+e.message); }); }
+  toast(story ? "Story prête." : "Réel prêt.");
+}
+async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
+  var W = RW, H = RH;
+  var ocv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(W, H) : rCanvas(W, H), octx = ocv.getContext("2d");
+  var bcv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(W, H) : rCanvas(W, H), bctx = bcv.getContext("2d");
+  var pctx = pcv.getContext("2d");
+  var tgt = blobTarget();
+  var muxer = new Mp4Muxer.Muxer({target:tgt.target, video:{codec:enc0.mux, width:W, height:H},
+    audio:pcm ? {codec:aenc0.mux, numberOfChannels:2, sampleRate:48000} : undefined, fastStart:false, firstTimestampBehavior:"offset"});
+  var encErr = null;
+  var venc = new VideoEncoder({output:function(ch, meta){ muxer.addVideoChunk(ch, meta); }, error:function(e){ encErr = e; }});
+  venc.configure(enc0.cfg);
+  var aenc = null, aPos = Math.round(A*48000), aEnd = Math.round(B*48000);
+  if(pcm){
+    aenc = new AudioEncoder({output:function(ch, meta){ muxer.addAudioChunk(ch, meta); }, error:function(e){ encErr = e; }});
+    aenc.configure(aenc0.cfg);
+  }
+  function pushAudio(upTo){
+    if(!aenc) return;
+    var lim = Math.min(aEnd, Math.round(upTo*48000));
+    while(aPos < lim){
+      var k = Math.min(4800, lim - aPos), data = new Float32Array(k*2);
+      for(var i=0;i<k;i++){
+        var j = aPos + i, g = 1, e0 = j - Math.round(A*48000), e1 = aEnd - j;
+        if(A > 0 && e0 < 2400) g = e0/2400;               // fondu court aux coupures de story
+        if(B < pl.total - 0.01 && e1 < 2400) g = Math.min(g, e1/2400);
+        data[i] = (j < pcm.n ? pcm.l[j] : 0)*g; data[k + i] = (j < pcm.n ? pcm.r[j] : 0)*g;
+      }
+      var ad = new AudioData({format:"f32-planar", sampleRate:48000, numberOfFrames:k, numberOfChannels:2, timestamp:Math.round((aPos - Math.round(A*48000))/48000*1e6), data:data});
+      aenc.encode(ad); ad.close(); aPos += k;
+    }
+  }
+  var k = 0, nextOut = A, sinceKey = -1, lastUi = 0, t0 = performance.now();
+  var totalAll = pl.total, doneBefore = A;
+  function ui(lbl){
+    var now = performance.now(); if(now - lastUi < 250) return; lastUi = now;
+    var frac = Math.min(1, nextOut/totalAll);
+    $("cmpBar").style.width = (frac*100)+"%";
+    $("cmpStatus").textContent = (n > 1 ? "Morceau "+(ci+1)+" sur "+n+", " : "")+lbl+" ("+Math.round(frac*100)+" %)";
+    pctx.drawImage(ocv, 0, 0, pcv.width, pcv.height);
+  }
+  async function emit(seg, lbl){
+    octx.drawImage(bcv, 0, 0);
+    if(seg){ drawItemOver(octx, W, H, seg.it); drawTitle(octx, W, H, pl.r.titre, titleAlpha(nextOut)); }
+    await waitQ(venc, 6);
+    var fr = new VideoFrame(ocv, {timestamp:Math.round(k*1e6/30), duration:33333});
+    var key = sinceKey < 0 || sinceKey >= 59; venc.encode(fr, {keyFrame:key}); sinceKey = key ? 0 : sinceKey + 1; fr.close();
+    k++; nextOut = A + k/30;
+    if(k % 15 === 0){ pushAudio(nextOut); if(aenc) await waitQ(aenc, 8); }
+    ui(lbl);
+  }
+  try {
+    for(var si=0; si<pl.segs.length && !CMP.cancel; si++){
+      var sg = pl.segs[si], vit = sg.it.vit || 1, sEnd = sg.out0 + sg.dur;
+      if(sEnd <= A || sg.out0 >= B) continue;
+      var lbl = "Passage "+(si+1)+" sur "+pl.segs.length+" : "+label(sg.m);
+      bctx.fillStyle = "#000"; bctx.fillRect(0, 0, W, H);
+      for(var pi=0; pi<sg.pieces.length && !CMP.cancel; pi++){
+        var p = sg.pieces[pi], pOut0 = sg.out0 + p.src0/vit, pOut1 = pOut0 + (p.to - p.from)/vit;
+        if(pOut1 <= A || pOut0 >= B) continue;
+        var from = p.from + Math.max(0, A - pOut0)*vit, to = Math.min(p.to, p.from + (B - pOut0)*vit);
+        var queue = [];
+        await rDecode(p.c, from, to, function(f){
+          var tl = f.timestamp/1e6, o = pOut0 + (tl - p.from)/vit, dOut = (f.duration || 33333)/1e6/vit;
+          if(o + dOut <= nextOut + 1e-6 || nextOut >= B - 1e-6){ f.close(); return null; }
+          var md = p.c.media, rot = md.rot || 0, vw = rot % 180 ? f.displayHeight : f.displayWidth, vh = rot % 180 ? f.displayWidth : f.displayHeight;
+          drawCropped(bctx, W, H, f, vw, vh, rot, rX(sg.it, p.c.s + tl));
+          f.close();
+          return o + dOut;
+        }, async function(until){
+          while(nextOut < until - 1e-6 && nextOut < Math.min(B, sEnd) - 1e-6 && !CMP.cancel){ await emit(sg, lbl); }
+          if(encErr) throw encErr;
+        });
+      }
+      while(nextOut < Math.min(B, sEnd) - 1e-6 && !CMP.cancel){ await emit(sg, lbl); }
+    }
+    if(pl.fin && B > pl.clips && !CMP.cancel){
+      drawFin(bctx, W, H, pl.r);
+      while(nextOut < B - 1e-6 && !CMP.cancel){ await emit(null, "Carton de fin"); }
+    }
+    if(CMP.cancel){ try { venc.close(); } catch(e){} try { aenc && aenc.close(); } catch(e){} await tgt.abort(); return null; }
+    pushAudio(B);
+    await venc.flush(); venc.close();
+    if(aenc){ await aenc.flush(); aenc.close(); }
+    if(encErr) throw encErr;
+    muxer.finalize();
+    return await tgt.finish();
+  } catch(e){
+    try { venc.close(); } catch(x){} try { aenc && aenc.close(); } catch(x){}
+    await tgt.abort();
+    throw e;
+  }
+}
+/* décode les images d'un rush entre from et to (secondes locales) ; onFrame dessine et rend l'instant de fin, onReady émet */
+async function rDecode(c, from, to, onFrame, onReady){
+  var md = c.media, ts = md.timescale, sm = md.samples, fromU = from*1e6, toU = to*1e6, i0 = 0, err = null, pending = [];
+  for(var i=0;i<sm.length;i++){ if(sm[i].cts/ts*1e6 > fromU) break; if(sm[i].key) i0 = i; }
+  var dec = new VideoDecoder({output:function(f){ if(f.timestamp < fromU - 2000 || f.timestamp >= toU){ f.close(); return; } pending.push(f); }, error:function(e){ err = e; }});
+  dec.configure(cfgOf(md));
+  async function drain(){
+    while(pending.length){ var f = pending.shift(), until = onFrame(f); if(until != null) await onReady(until); }
+  }
+  try {
+    for(var j=i0;j<sm.length && !CMP.cancel && !err;j++){
+      var x = sm[j];
+      if(x.dts/ts*1e6 > toU + 1e6) break;
+      await drain();
+      await waitQ(dec, 4);
+      await drain();
+      var data = await c.reader.read(x, 8*1024*1024);
+      dec.decode(new EncodedVideoChunk({type:x.key ? "key" : "delta", timestamp:Math.round(x.cts/ts*1e6), duration:Math.round(x.dur/ts*1e6), data:data}));
+    }
+    if(!err && !CMP.cancel) await dec.flush().catch(function(e){ err = err || e; });
+    await drain();
+  } finally {
+    pending.forEach(function(f){ try { f.close(); } catch(e){} }); pending = [];
+    try { dec.close(); } catch(e){}
+  }
+  if(err) throw new Error("lecture impossible de "+c.name);
+}
+async function rSaveOuts(){
+  var dir = S.dirHandle;
+  if(dir.requestPermission && (await dir.queryPermission({mode:"readwrite"})) !== "granted" && (await dir.requestPermission({mode:"readwrite"})) !== "granted") throw new Error("autorisation refusée");
+  for(var i=0;i<REEL.out.length;i++){ var w = await (await dir.getFileHandle(REEL.out[i].name, {create:true})).createWritable(); await w.write(REEL.out[i].blob); await w.close(); }
+  toast(REEL.out.length > 1 ? REEL.out.length+" vidéos enregistrées dans le dossier des rushs." : "Vidéo enregistrée dans le dossier des rushs : "+REEL.out[0].name);
+}
+function rGo(story){
+  if(REEL.playing) rStop();
+  var p = (SRV && SRVD) ? runReelRemote(story) : runReelLocal(story);
+  p.catch(function(err){
+    CMP.running = false;
+    var msg = err ? ((err.name && err.name !== "Error" ? err.name+" : " : "") + (err.message || String(err))) : "erreur inconnue";
+    try { console.error(err); } catch(e){}
+    if($("cmp").open) showCmpError("La création "+(story ? "de la story" : "du réel")+" a échoué ("+msg+"). Appli v"+APP_VERSION+".");
+    else toast("Création impossible : "+msg);
+  });
+}
+$("rGoReel").onclick = function(){ rGo(false); };
+$("rGoStory").onclick = function(){ rGo(true); };
+var _csave = $("cmpSave").onclick;
+$("cmpSave").onclick = async function(){
+  if(!REEL.showing || !REEL.out) return _csave.call(this);
+  if(S.dirHandle){ try { await rSaveOuts(); return; } catch(e){ toast("Dossier inaccessible, téléchargement à la place."); } }
+  for(var i=0;i<REEL.out.length;i++){ if(!(await saveFile(REEL.out[i].name, REEL.out[i].blob))) return; }
+  toast(REEL.out.length > 1 ? "Vidéos enregistrées." : "Vidéo enregistrée.");
+};
+var _cback = $("cmpBack").onclick;
+$("cmpBack").onclick = function(){ if(REEL.showing){ $("cmp").close(); return; } _cback.call(this); };
+$("cmp").addEventListener("close", function(){
+  if(!REEL.showing) return;
+  REEL.showing = false; $("cmpSave").textContent = "Enregistrer la vidéo";
+  if(SRV){ $("cmpResult").hidden = true; $("cmpSave").hidden = true; }
+  if(CMP.blob && CMP.url) $("cmpResult").src = CMP.url; else $("cmpResult").removeAttribute("src");
+});
+
 function renderVersion(){
   var b = $("ver"), pc = !!SRV, sv = SRV && SRV.version;
   b.textContent = "v"+APP_VERSION+(pc ? " PC" : "");

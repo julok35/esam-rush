@@ -9,6 +9,7 @@ Projet : outil de dérushage des vidéos drone de l'ESAM (secours animalier en m
   - **Mode PC** : `server.py` répond, le badge affiche « vX PC ». Les vidéos viennent du dossier Drive synchronisé, proxies 540p et planches de vignettes faites par ffmpeg, vidéo compilée montée par ffmpeg (NVENC si disponible).
   - **Mode navigateur** (GitHub Pages ou fichier local) : fichiers choisis par l'utilisateur, compilation par WebCodecs + OffscreenCanvas, sortie écrite par morceaux (blobTarget, jamais un ArrayBuffer géant). `showDirectoryPicker` seulement si `window.self === window.top`.
 - `server.py` : `ThreadingHTTPServer` sur 127.0.0.1 (exposé au téléphone par `tailscale serve`), file de calculs persistée dans `travaux.json` (calcul coupé = « interrompu »), mise en veille du PC après inactivité, requêtes Range pour les proxies.
+- Onglet Réel (fin de `index.html`, section « réel et story ») : réglages dans `S.meta.reel` (donc dans `etat.json` et la fiche) : `items` (id du marqueur, plage `a`/`z` en secondes de timeline, `cam`, `vit`, `texte`, `keys` = points de cadrage `{t, x}` lissés par `rX`), `titre`, `fin`, `musique`, `musDebut`. Rendu PC : job `reel` dans `server.py` (`do_reel` : crop animé par expression ffmpeg, calques PNG dessinés par le navigateur, concat, musique, story coupée sans réencodage). Rendu navigateur : `runReelLocal`/`rRender` (WebCodecs, 30 i/s rééchantillonnés, son par AudioEncoder). Les deux rendus utilisent les mêmes fonctions de dessin (`drawTitle`, `drawItemOver`, `drawFin`).
 - Données par intervention (sous-dossier du dossier des rushs) : `proxies/`, `.derushage/etat.json`, fiche `ESAM_Derushage_*.md` (une seule), `Photos/`, `ESAM_Compilation_*.mp4` + `.commentaires-ESAM.srt` + `_chapitres.txt`.
 
 ## Règles du projet
@@ -32,6 +33,7 @@ Projet : outil de dérushage des vidéos drone de l'ESAM (secours animalier en m
 
 - `python tests/test_fumee.py` : fabrique de faux rushs, lance le serveur avec une config temporaire (variable `ESAM_CONFIG`, port 8799), ouvre l'appli dans Chromium (Playwright), prépare les proxies et ouvre l'intervention. À lancer après toute modification de `server.py` ou du mode PC.
 - `python tests/fabriquer_rushs.py DOSSIER [--vp9]` : faux rushs seuls. Le Chromium de Playwright ne décode pas le H.264, d'où `--vp9` et le réglage de test `_test_vp9` (proxies en VP9).
+- `python tests/test_reel.py` : onglet Réel en mode PC de bout en bout (marqueurs, cadrage, accéléré, musique, réel puis story) et contrôle des fichiers (1080 x 1920, son, stories de 60 s max). Compter 6 à 10 minutes sans carte NVIDIA.
 - Mode navigateur : servir le dossier (`python -m http.server`), ouvrir `index.html` et charger des fichiers de `tests` avec `set_input_files('#fileIn', ...)`.
 - Vérifier visuellement par capture d'écran en 390x844 (téléphone) et 1400x900 (PC).
 

@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.8.1
-date_maj: 2026-10-15
+version: 0.9
+date_maj: 2026-10-20
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -93,14 +93,17 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 | `Photos/` | Photos pleine résolution |
 | `ESAM_Compilation_<date>_<mission>.mp4` | Vidéo compilée, avec un chapitre par passage |
 | `ESAM_Compilation_<date>_<mission>.commentaires-ESAM.srt` | Commentaires internes signés, en sous-titres à part (jamais incrustés dans la vidéo) |
+| `ESAM_Reel_<date>_<mission>.mp4` | Réel vertical 1080 x 1920 (onglet Réel) |
+| `ESAM_Story_<date>_<mission>_1sur2.mp4`... | Story découpée en morceaux de 60 s maximum |
+| `.derushage/musique.mp3` | Musique choisie pour le réel |
 | `ESAM_Compilation_<date>_<mission>_chapitres.txt` | Liste des chapitres au format YouTube (à coller dans la description) |
 
 ## Vérifier la version
 
 Le badge en haut à droite de l'appli indique la version :
-- « v0.8.1 PC » sur fond bleu : l'appli passe par le programme du PC, et les deux sont à jour. Les calculs se font sur le PC.
-- « v0.8.1 PC » sur fond jaune : l'appli et le programme du PC n'ont pas la même version. Lancez `mettre-a-jour.ps1`.
-- « v0.8.1 » sans « PC » : mode navigateur, les calculs se font dans l'appareil qui affiche la page. C'est le cas de https://julok35.github.io/esam-rush/ et de toute ouverture sans passer par le PC.
+- « v0.9 PC » sur fond bleu : l'appli passe par le programme du PC, et les deux sont à jour. Les calculs se font sur le PC.
+- « v0.9 PC » sur fond jaune : l'appli et le programme du PC n'ont pas la même version. Lancez `mettre-a-jour.ps1`.
+- « v0.9 » sans « PC » : mode navigateur, les calculs se font dans l'appareil qui affiche la page. C'est le cas de https://julok35.github.io/esam-rush/ et de toute ouverture sans passer par le PC.
 
 Le journal `derushage.log` indique aussi la version au démarrage du programme.
 
@@ -119,6 +122,20 @@ Dans l'onglet Sommaire, chaque passage a un champ « Commentaire interne ESAM »
 - VLC l'affiche automatiquement (même dossier, nom commençant comme celui de la vidéo).
 - Dans Google Drive : ouvrir la vidéo, menu des trois points, « Gérer les sous-titres », ajouter le fichier `.srt`. Seuls ceux qui regardent la vidéo dans le Drive les voient.
 - Le fichier MP4 lui-même ne contient pas les commentaires : il peut être publié tel quel.
+
+## Réel et story (onglet Réel)
+
+L'onglet Réel monte une vidéo verticale 1080 x 1920 pour Instagram et Facebook à partir des passages marqués.
+
+1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend la plage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire.
+2. **Cadrage du passage** : touchez un passage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse (accéléré x2 à x8, signalé à l'image) et un texte court.
+3. **Habillage** : titre d'accroche sur les 3 premières secondes, carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
+4. **Aperçu du réel** : lecture du montage complet en vertical, sur les proxies, avec textes et musique.
+5. **Créer le réel** ou **Créer la story** : le PC calcule à partir des rushs d'origine. La story est découpée en morceaux de 60 s maximum, de préférence entre deux passages.
+
+Les textes et le logo sont placés à l'écart du bas de l'image et du bord droit, où Instagram affiche la légende et ses boutons. Le réglage du réel est enregistré avec la fiche. Musique : uniquement une musique libre de droits ou dont l'ESAM a les droits ; sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.
+
+En mode navigateur, le son est encodé en AAC sur la plupart des ordinateurs et téléphones ; si le navigateur ne propose que l'Opus, l'appli le signale, et le mode PC reste la voie sûre.
 
 ## Choisir la caméra de chaque passage
 
@@ -141,6 +158,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.9 | 2026-10-20 | Onglet Réel : montage vertical 1080 x 1920 pour réel et story, cadre qui suit l'action, accéléré, titre d'accroche, texte par passage, carton de fin ESAM, musique ; story découpée en morceaux de 60 s ; onglets lisibles sur petit téléphone |
 | 0.8.1 | 2026-10-15 | Code publié sur GitHub ; mode navigateur sur GitHub Pages ; `app.html` renommé `index.html` ; réglages modèles dans `config.exemple.json` ; script `mettre-a-jour.ps1` ; correction d'un conflit d'écriture de l'historique des calculs quand deux calculs se terminent en même temps |
 | 0.8 | 2026-10-15 | Caméra de chaque passage choisie directement dans la colonne Marqueurs et le Sommaire ; bouton « Utiliser <caméra> » dans le bandeau « Dans la plage » ; caméra réellement compilée affichée dans le bandeau |
 | 0.7 | 2026-10-11 | Petit logo ESAM en bas à droite de toutes les images ; heure incrustée sans le nom de la caméra ; commentaires internes par passage, signés, en fichier de sous-titres à part ; « Note pour la com » renommée « Texte du carton » |

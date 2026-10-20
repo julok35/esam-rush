@@ -12,7 +12,7 @@ import base64, json, math, os, re, shutil, subprocess, sys, tempfile, threading,
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.8.1"
+VERSION = "0.9"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -127,7 +127,7 @@ def folder(name):
     return p
 
 def videos(d):
-    return sorted(f for f in d.iterdir() if f.is_file() and f.suffix.lower() in VIDEO_EXT and not f.name.startswith(("ESAM_Compilation", ".")))
+    return sorted(f for f in d.iterdir() if f.is_file() and f.suffix.lower() in VIDEO_EXT and not f.name.startswith(("ESAM_Compilation", "ESAM_Reel", "ESAM_Story", ".")))
 
 def proxy_of(f): return f.parent / PROXY_DIR / (f.stem + ".mp4")
 
@@ -208,6 +208,7 @@ def worker():
         try:
             if job["type"] == "proxies": do_proxies(job)
             elif job["type"] == "video": do_video(job)
+            elif job["type"] == "reel": do_reel(job)
             job["etat"], job["avance"] = "termine", 1.0
         except Cancelled:
             job["etat"], job["libelle"] = "annule", "Annulé"
@@ -385,6 +386,173 @@ def do_video(job):
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
+# ---------------------------------------------------------------- réel et story (1080 x 1920)
+RW, RH = 1080, 1920
+MUSIC_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac"}
+
+def crop_box(w, h):
+    """Cadre 9:16 le plus grand possible dans l'image source : (largeur, hauteur, course horizontale, y)."""
+    if w / h > 9 / 16:
+        ch = h - h % 2; cw = int(ch * 9 / 16) // 2 * 2
+        return cw, ch, max(0, w - cw), (h - ch) // 2
+    cw = w - w % 2; ch = min(h, int(cw * 16 / 9)) // 2 * 2
+    return cw, ch, 0, (h - ch) // 2
+
+def x_expr(keys, course):
+    """Position x du cadre en fonction de t (secondes depuis le début du morceau), lissée entre les points."""
+    if course <= 0: return "0"
+    ks = sorted(({"t": float(k["t"]), "x": min(1.0, max(0.0, float(k["x"])))} for k in (keys or [])), key=lambda k: k["t"])
+    if not ks: return str(int(course * 0.5))
+    e = "%.4f" % ks[-1]["x"]
+    for i in range(len(ks) - 2, -1, -1):
+        a, b = ks[i], ks[i + 1]
+        span = max(0.001, b["t"] - a["t"])
+        sm = "clip((t-(%.3f))/%.3f,0,1)" % (a["t"], span)
+        e = "if(lt(t,%.3f),%.4f+(%.4f)*%s*%s*(3-2*%s),%s)" % (b["t"], a["x"], b["x"] - a["x"], sm, sm, sm, e)
+    e = "if(lt(t,%.3f),%.4f,%s)" % (ks[0]["t"], ks[0]["x"], e)
+    return "(%s)*%d" % (e, course)
+
+def story_cuts(total, bounds, limit):
+    cuts, last = [0.0], 0.0
+    while total - last > limit + 0.01:
+        cand = [b for b in bounds if last + 10 < b <= last + limit]
+        last = cand[-1] if cand else last + limit - 2
+        cuts.append(last)
+    cuts.append(total)
+    return cuts
+
+def png_from(data, path):
+    path.write_bytes(base64.b64decode(data.split(",", 1)[-1]))
+    return path
+
+def do_reel(job):
+    d = folder(job["dossier"]); pl = job["_payload"]
+    story = pl.get("mode") == "story"
+    segs_in = pl.get("segments") or []
+    if not segs_in: raise ValueError("aucun passage")
+    srcs = {}
+    for sg in segs_in:
+        for pc in sg["morceaux"]:
+            name = pc["fichier"]
+            if name not in srcs:
+                f = d / name
+                if not f.is_file() or f.parent != d: raise ValueError("rush introuvable : " + name)
+                srcs[name] = probe(f)
+                if not srcs[name]: raise ValueError("rush illisible : " + name)
+    music = None
+    if pl.get("musique"):
+        mname = clean(pl["musique"].get("fichier") or "")
+        if not re.fullmatch(r"musique\.[a-z0-9]{2,4}", mname): raise ValueError("musique invalide")
+        music = d / WORK_DIR / mname
+        if not music.is_file(): raise ValueError("musique introuvable sur le PC, choisissez-la à nouveau")
+    WORK_ROOT.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix="esam_reel_", dir=str(WORK_ROOT)))
+    try:
+        title = png_from(pl["titre"]["image"], work / "titre.png") if pl.get("titre") else None
+        plan, pos = [], 0.0
+        for i, sg in enumerate(segs_in):
+            ov = png_from(sg["overlay"], work / ("o%03d.png" % i))
+            vit = max(1.0, float(sg.get("vitesse") or 1))
+            for pc in sg["morceaux"]:
+                src_d = max(0.05, float(pc["fin"]) - float(pc["debut"]))
+                plan.append(("clip", pc, ov, vit, pos, src_d / vit, i))
+                pos += src_d / vit
+        clips_end = pos
+        if pl.get("fin"):
+            fin = png_from(pl["fin"]["image"], work / "fin.png")
+            plan.append(("fin", None, fin, 1.0, pos, float(pl["fin"].get("duree") or 3), None))
+            pos += float(pl["fin"].get("duree") or 3)
+        total = pos
+        free = shutil.disk_usage(WORK_ROOT).free
+        if free < total * 3e6 + 2e8:
+            raise RuntimeError("Espace disque insuffisant dans %s" % WORK_ROOT)
+        log("Réel %s : %d segments, %.1f s, musique : %s" % (pl.get("nom"), len(plan), total, music.name if music else "non"))
+        files, acc, seg_bounds = [], 0.0, []
+        TT = float(pl["titre"].get("duree") or 3) if title else 0
+        for k, (kind, pc, ov, vit, at, dur, idx) in enumerate(plan):
+            out = work / ("s%03d.mp4" % k)
+            if kind == "fin":
+                job["libelle"] = "Carton de fin"
+                cmd = [FFMPEG, "-loop", "1", "-framerate", "30", "-i", str(ov), "-t", "%.3f" % dur,
+                       "-vf", "scale=%d:%d,setsar=1,fps=30,format=yuv420p" % (RW, RH)]
+            else:
+                if idx is not None and (not seg_bounds or seg_bounds[-1][1] != idx): seg_bounds.append((at, idx))
+                info = srcs[pc["fichier"]]
+                cw, ch, course, y = crop_box(info["w"], info["h"])
+                job["libelle"] = "Passage %d sur %d : %s" % (idx + 1, len(segs_in), clean(segs_in[idx].get("nom") or pc["fichier"]))
+                fc = ("[0:v]crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b];"
+                      "[1:v]format=rgba[o];[b][o]overlay=0:0:shortest=1[c]") % (cw, ch, x_expr(pc.get("cles"), course), y, RW, RH, vit)
+                cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"]),
+                       "-loop", "1", "-i", str(ov)]
+                if title and at < TT - 0.05:
+                    tend = TT - at
+                    fade = ("fade=t=in:st=0:d=0.3:alpha=1," if at < 0.01 else "") + "fade=t=out:st=%.3f:d=0.4:alpha=1" % max(0, tend - 0.4)
+                    cmd += ["-loop", "1", "-i", str(title)]
+                    fc += ";[2:v]format=rgba,%s[tt];[c][tt]overlay=0:0:shortest=1:enable='lt(t,%.3f)'[d];[d]format=yuv420p[v]" % (fade, tend)
+                else:
+                    fc += ";[c]format=yuv420p[v]"
+                cmd += ["-filter_complex", fc, "-map", "[v]", "-t", "%.3f" % dur]
+            cmd += ENC["final"] + ["-g", "60", "-an", "-r", "30", str(out)]
+            base = acc
+            run(cmd, dur, lambda x: job.__setitem__("avance", 0.9 * (base + x * dur) / total), job)
+            if not out.exists() or out.stat().st_size < 1000:
+                raise RuntimeError("segment %d vide" % (k + 1))
+            files.append(out); acc += dur
+        job["libelle"] = "Assemblage"
+        lst = work / "liste.txt"
+        lst.write_text("".join("file '%s'\n" % f.as_posix() for f in files), encoding="utf-8")
+        joined = work / "assemble.mp4"
+        run([FFMPEG, "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)], None, None, job)
+        real = (probe(joined) or {}).get("dur") or total
+        final = work / "final.mp4"
+        meta_t = ["-metadata", "title=" + clean(pl.get("titre_video") or "ESAM")]
+        if music:
+            job["libelle"] = "Musique"
+            fo = min(2.0, real / 3)
+            run([FFMPEG, "-i", str(joined), "-ss", "%.3f" % float(pl["musique"].get("debut") or 0), "-i", str(music),
+                 "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+                 "-af", "afade=t=in:st=0:d=0.5,afade=t=out:st=%.3f:d=%.3f" % (max(0, real - fo), fo),
+                 "-t", "%.3f" % real] + meta_t + ["-movflags", "+faststart", str(final)], real, None, job)
+        else:
+            run([FFMPEG, "-i", str(joined), "-c", "copy"] + meta_t + ["-movflags", "+faststart", str(final)], None, None, job)
+        base_name = re.sub(r'[\\/:*?"<>|]', "_", clean(pl.get("nom") or ("ESAM_Story" if story else "ESAM_Reel")))
+        outs = []
+        if story:
+            bounds = [b for b, _ in seg_bounds] + [clips_end]
+            cuts = story_cuts(real, bounds, float(pl.get("story_max") or 60))
+            n = len(cuts) - 1
+            for i in range(n):
+                a, b = cuts[i], cuts[i + 1]
+                job["libelle"] = "Story %d sur %d" % (i + 1, n)
+                part = work / ("story%02d.mp4" % i)
+                # coupe sans réencodage : les coupures tombent au début d'un passage, donc sur une image clé
+                run([FFMPEG, "-ss", "%.3f" % a, "-i", str(final), "-t", "%.3f" % (b - a), "-map", "0", "-c", "copy",
+                     "-avoid_negative_ts", "make_zero"] + meta_t + ["-movflags", "+faststart", str(part)], None, None, job)
+                job["avance"] = 0.9 + 0.08 * (i + 1) / n
+                outs.append((part, base_name + ("_%dsur%d.mp4" % (i + 1, n) if n > 1 else ".mp4")))
+        else:
+            outs.append((final, base_name + ".mp4"))
+        job["libelle"] = "Copie dans le Drive"
+        names, size = [], 0
+        for src, name in outs:
+            part = d / (name + ".partiel")
+            try:
+                shutil.copyfile(str(src), str(part))
+                if part.stat().st_size != src.stat().st_size: raise RuntimeError("copie incomplète")
+                os.replace(str(part), str(d / name))
+            except Exception as e:
+                try: part.unlink()
+                except OSError: pass
+                keep = WORK_ROOT / name
+                shutil.copyfile(str(src), str(keep))
+                raise RuntimeError("copie dans le Drive impossible (%s). La vidéo est gardée sur le PC : %s" % (e, keep))
+            names.append(name); size += (d / name).stat().st_size
+        job["resultat"] = {"fichiers": names, "largeur": RW, "hauteur": RH, "duree": round(real, 1),
+                           "taille_mo": round(size / 1048576, 1), "musique": bool(music)}
+        job["libelle"] = "Enregistré : " + ", ".join(names)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
 def photo(d, name, t):
     f = d / name
     if not f.is_file() or f.parent != d: raise ValueError("rush introuvable")
@@ -468,6 +636,25 @@ class H(BaseHTTPRequestHandler):
         LAST_ACTIVITY[0] = time.time()
         u = urllib.parse.urlparse(self.path)
         try:
+            if u.path == "/api/musique":      # fichier brut, pas du JSON
+                q = dict(urllib.parse.parse_qsl(u.query))
+                d = folder(q.get("d")); n = int(self.headers.get("Content-Length") or 0)
+                ext = Path(clean(q.get("nom") or "")).suffix.lower()
+                if ext not in MUSIC_EXT: raise ValueError("format de musique non pris en charge (mp3, m4a, aac, wav, ogg, flac)")
+                if n <= 0 or n > 60 * 1048576: raise ValueError("fichier vide ou trop lourd (60 Mo maximum)")
+                w = d / WORK_DIR; w.mkdir(exist_ok=True)
+                tmp = w / "musique.tmp"
+                with open(tmp, "wb") as f:
+                    left = n
+                    while left > 0:
+                        chunk = self.rfile.read(min(1 << 20, left))
+                        if not chunk: break
+                        f.write(chunk); left -= len(chunk)
+                if left > 0: tmp.unlink(); raise ValueError("envoi incomplet")
+                for old in w.glob("musique.*"):
+                    if old.name != "musique.tmp": old.unlink()
+                os.replace(tmp, w / ("musique" + ext))
+                return self.send_json({"ok": True, "fichier": "musique" + ext})
             b = self.body()
             if u.path == "/api/proxies":
                 d = folder(b.get("d"))
@@ -475,6 +662,7 @@ class H(BaseHTTPRequestHandler):
                     j = next((x for x in JOBS if x["dossier"] == d.name and x["type"] == "proxies" and x["etat"] in ("attente", "en_cours")), None)
                 return self.send_json(public(j or new_job("proxies", d)))
             if u.path == "/api/video": return self.send_json(public(new_job("video", folder(b.get("d")), b)))
+            if u.path == "/api/reel": return self.send_json(public(new_job("reel", folder(b.get("d")), b)))
             if u.path == "/api/annuler":
                 with JLOCK: j = next((x for x in JOBS if x["id"] == b.get("id")), None)
                 if j:
@@ -508,7 +696,8 @@ class H(BaseHTTPRequestHandler):
         if not p.is_file(): return self.send_error(404)
         size = p.stat().st_size
         ctype = {".html": "text/html; charset=utf-8", ".mp4": "video/mp4", ".jpg": "image/jpeg", ".json": "application/json",
-                 ".md": "text/markdown; charset=utf-8", ".png": "image/png"}.get(p.suffix.lower(), "application/octet-stream")
+                 ".md": "text/markdown; charset=utf-8", ".png": "image/png",
+                 ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".wav": "audio/wav", ".ogg": "audio/ogg", ".flac": "audio/flac"}.get(p.suffix.lower(), "application/octet-stream")
         rng = self.headers.get("Range"); a, z = 0, size - 1
         m = re.match(r"bytes=(\d*)-(\d*)", rng or "")
         if m:
