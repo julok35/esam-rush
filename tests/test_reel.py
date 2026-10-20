@@ -35,6 +35,9 @@ async def navigateur(tmp, iv):
         await pg.wait_for_timeout(800)
         async def at(t):
             await pg.evaluate(f"document.querySelector('#v').currentTime={t}"); await pg.wait_for_timeout(350)
+        async def volet(n):
+            # sur téléphone, l'onglet Réel montre un volet à la fois (Montage, Aperçu, Habillage)
+            if await pg.is_visible("#rPanes"): await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(200)
         for a, z in ((3, 80), (40, 55)):
             await at(a); await pg.click("#mkS"); await at(z); await pg.click("#mkE")
             if await pg.is_visible("#sheet"): await pg.click("#shCancel")
@@ -46,10 +49,10 @@ async def navigateur(tmp, iv):
             await pg.click("#rAdd [data-radd] >> nth=0"); await pg.wait_for_timeout(300)
         print("montage :", await pg.inner_text("#rList"))
         # passage 2 : accéléré x4 et texte
-        await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(500)
+        await volet(0); await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(500)
         await pg.click('#rEdit [data-rvit="4"]'); await pg.fill("#rTexte", "Le chien est repéré au bord du torrent")
         # passage 1 : cadrage suivi pendant la lecture
-        await pg.click("#rList [data-rsel] >> nth=0"); await pg.wait_for_timeout(1200)
+        await volet(0); await pg.click("#rList [data-rsel] >> nth=0"); await pg.wait_for_timeout(1200)
         box = await pg.locator("#rCv").bounding_box()
         cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
         await pg.mouse.move(cx, cy); await pg.mouse.down()
@@ -73,16 +76,17 @@ async def navigateur(tmp, iv):
         await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1b_flou.png"))
         # photo du drone dans le montage, avec texte de 8 s
-        await pg.click("#rPhSum"); await pg.wait_for_timeout(300)
+        await volet(0); await pg.click("#rPhSum"); await pg.wait_for_timeout(300)
         print("photos :", await pg.locator("#rPhList [data-rph]").count())
-        await pg.click("#rPhList [data-rph] >> nth=0"); await pg.wait_for_timeout(1500)
+        await pg.click("#rPhList [data-rph] >> nth=0"); await pg.wait_for_timeout(300)
+        await volet(1); await pg.wait_for_timeout(1200)
         await pg.fill("#rTexte", "Photo prise par le drone"); await pg.wait_for_timeout(200)
         await pg.click('#rEdit [data-rtdur="8"]'); await pg.wait_for_timeout(200)
         await pg.click('#rEdit [data-rpdur="5"]'); await pg.wait_for_timeout(200)
         await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1c_photo.png"))
         await pg.screenshot(path=str(tmp / "r1_cadrage.png"))
-        await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
+        await volet(2); await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
         await pg.set_input_files("#rMusIn", str(tmp / "musique.mp3"))
         await pg.wait_for_function("document.getElementById('rMusInfo').textContent.indexOf('envoyée') >= 0", timeout=10000)
         await pg.fill("#rMusOff", "2")
@@ -108,7 +112,7 @@ async def navigateur(tmp, iv):
         await pg.mouse.move(box["x"] + box["width"] * 0.35, box["y"] + box["height"] * 0.62, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1e_formes.png"))
         await pg.click('#rEdit [data-runsel]')
-        await pg.click("#rMode .chip >> nth=1"); await pg.wait_for_timeout(500)
+        await volet(1); await pg.click("#rMode .chip >> nth=1"); await pg.wait_for_timeout(500)
         await pg.click("#rPlay"); await pg.wait_for_timeout(1800); await pg.click("#rPlay")
         await pg.wait_for_timeout(200)
         print("aperçu :", (await pg.inner_text("#rTime")).replace("\n", " "), "|", await pg.inner_text("#rInfo"))

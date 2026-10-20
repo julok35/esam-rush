@@ -10,6 +10,7 @@ et deux photos JPEG (une du drone, une dans le sous-dossier Photos).
 Nécessite ffmpeg dans le PATH (version 6.1 ou plus pour la rotation).
 """
 import subprocess, sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 def run(args):
@@ -28,11 +29,12 @@ def main():
             out = iv / f"DJI_{nom}_{p}.MP4"
             run(["-f", "lavfi", "-i", f"{motifs[p]}=size=640x360:rate=30:duration={duree}"] + venc + [str(out)])
             print("cree", out.name)
-    # Téléphone : portrait (rotation 90), heure prise dans creation_time (UTC)
+    # Téléphone : portrait (rotation 90), heure prise dans creation_time (UTC) ; 14:30:40 en heure locale du PC,
+    # pour tomber pendant le premier vol DJI quel que soit le fuseau de la machine
     out = iv / "PXL_20260912_143040.mp4"; tmp = iv / "_tmp_tel.mp4"
+    ct = datetime(2026, 9, 12, 14, 30, 40).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000000Z")
     run(["-f", "lavfi", "-i", "testsrc=size=320x180:rate=30:duration=15"] + venc + [str(tmp)])
-    run(["-display_rotation", "90", "-i", str(tmp), "-c", "copy",
-         "-metadata", "creation_time=2026-09-12T12:30:40.000000Z", str(out)])
+    run(["-display_rotation", "90", "-i", str(tmp), "-c", "copy", "-metadata", "creation_time=" + ct, str(out)])
     tmp.unlink()
     print("cree", out.name)
     # Photos JPEG : une du drone (heure dans le nom), une dans le sous-dossier Photos

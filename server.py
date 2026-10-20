@@ -8,11 +8,12 @@ proxies 540p + vignettes, photos pleine résolution, vidéo compilée en résolu
 Dépendances : Python 3.10+ (bibliothèque standard uniquement) et ffmpeg/ffprobe dans le PATH.
 Écoute uniquement sur 127.0.0.1 : l'accès depuis le téléphone passe par « tailscale serve ».
 """
-import base64, json, math, os, re, shutil, struct, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.parse
+import base64, json, math, os, re, shutil, struct, subprocess, tempfile, threading, time, traceback, unicodedata, urllib.parse
+from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.11"
+VERSION = "0.12"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -38,6 +39,7 @@ NOWIN = subprocess.CREATE_NO_WINDOW if WIN else 0
 
 LOG = HERE / "derushage.log"
 def log(*a):
+    """Écrit une ligne horodatée dans derushage.log et sur la sortie standard."""
     line = time.strftime("%Y-%m-%d %H:%M:%S ") + " ".join(str(x) for x in a)
     try:
         with open(LOG, "a", encoding="utf-8") as f: f.write(line + "\n")
@@ -45,9 +47,11 @@ def log(*a):
     print(line, flush=True)
 
 def clean(s):  # règle typographique ESAM : pas de tiret long
+    """Remplace les tirets longs par un tiret simple (règle typographique ESAM)."""
     return str(s).replace("\u2014", "-").replace("\u2013", "-")
 
 def slug(s):
+    """Nom de fichier sûr : sans accent, lettres, chiffres et tirets bas seulement, 40 caractères au plus."""
     s = unicodedata.normalize("NFD", clean(s))
     s = "".join(c for c in s if unicodedata.category(c) != "Mn")
     return re.sub(r"[^A-Za-z0-9]+", "_", s).strip("_")[:40]
@@ -76,6 +80,7 @@ def run(cmd, total=None, progress=None, job=None):
 class Cancelled(Exception): pass
 
 def probe(path):
+    """Métadonnées d'une vidéo par ffprobe : largeur et hauteur après rotation, durée, codec, heure de création (UTC) ; None sans piste vidéo."""
     out = subprocess.run([FFPROBE, "-v", "error", "-print_format", "json", "-show_format", "-show_streams", str(path)],
                          capture_output=True, text=True, encoding="utf-8", errors="replace", creationflags=NOWIN)
     d = json.loads(out.stdout or "{}")
@@ -92,7 +97,6 @@ def probe(path):
     created = None
     if ct:
         try:
-            from datetime import datetime
             created = datetime.fromisoformat(ct.replace("Z", "+00:00")).timestamp()
             if created < 1.2e9: created = None
         except ValueError: pass
@@ -100,6 +104,7 @@ def probe(path):
 
 ENC = {}
 def detect_encoders():
+    """Choisit les encodeurs ffmpeg (NVENC si la carte NVIDIA répond, sinon logiciel) pour les proxies et la vidéo finale."""
     def ok(enc):
         r = subprocess.run([FFMPEG, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=black:s=320x240:d=0.2",
                             "-c:v", enc, "-f", "null", "-"], capture_output=True, creationflags=NOWIN)
@@ -119,6 +124,7 @@ def detect_encoders():
 
 # ---------------------------------------------------------------- dossiers
 def folder(name):
+    """Dossier d'intervention à partir de son nom, en refusant tout chemin (séparateurs, point initial, '..')."""
     name = clean(name or "")
     if not name or "/" in name or "\\" in name or name.startswith(".") or ".." in name:
         raise ValueError("dossier invalide")
@@ -127,6 +133,7 @@ def folder(name):
     return p
 
 def videos(d):
+    """Rushs du dossier : fichiers vidéo hors productions ESAM (compilation, réel, story) et fichiers cachés."""
     return sorted(f for f in d.iterdir() if f.is_file() and f.suffix.lower() in VIDEO_EXT and not f.name.startswith(("ESAM_Compilation", "ESAM_Reel", "ESAM_Story", ".")))
 
 def proxy_of(f): return f.parent / PROXY_DIR / (f.stem + ".mp4")
@@ -145,6 +152,7 @@ def photos(d):
     return out
 
 def photo_file(d, nom):
+    """Chemin d'une photo de l'intervention à partir de son nom relatif, vérifié dans la liste de photos()."""
     nom = clean(nom or "")
     if not any(x["nom"] == nom for x in photos(d)): raise ValueError("photo introuvable : " + nom)
     return d / nom
@@ -189,16 +197,19 @@ def photo_copy(d, nom, taille):
     return out
 
 def list_interventions():
+    """Sous-dossiers du dossier des rushs, du plus récent au plus ancien, avec l'avancement des proxies.
+    Un seul parcours par dossier : sur un Drive en mode flux, chaque listage coûte un aller-retour."""
     out = []
     if not ROOT.is_dir(): return out
     for d in ROOT.iterdir():
         if not d.is_dir() or d.name.startswith((".", "_")): continue
         try:
-            vids = videos(d)
-            done = sum(1 for f in vids if (d / PROXY_DIR / (f.stem + ".json")).exists())
+            names = [x.name for x in d.iterdir()]
+            vids = [n for n in names if Path(n).suffix.lower() in VIDEO_EXT and not n.startswith(("ESAM_Compilation", "ESAM_Reel", "ESAM_Story", "."))]
+            done = sum(1 for n in vids if (d / PROXY_DIR / (Path(n).stem + ".json")).exists())
             out.append({"nom": d.name, "videos": len(vids), "proxies": done,
-                        "fiche": any(x.name.startswith("ESAM_Derushage") for x in d.iterdir()),
-                        "compilation": any(x.name.startswith("ESAM_Compilation") for x in d.iterdir()),
+                        "fiche": any(n.startswith("ESAM_Derushage") for n in names),
+                        "compilation": any(n.startswith("ESAM_Compilation") for n in names),
                         "maj": d.stat().st_mtime})
         except OSError as e:
             log("Lecture impossible", d, e)
@@ -206,6 +217,7 @@ def list_interventions():
     return out
 
 def manifest(d):
+    """Ce que l'appli charge à l'ouverture : métadonnées de chaque proxy (avec les URL des planches) et photos."""
     clips = []
     for f in videos(d):
         meta_p = d / PROXY_DIR / (f.stem + ".json")
@@ -223,6 +235,7 @@ QCOND = threading.Condition(JLOCK)
 LAST_ACTIVITY = [time.time()]
 
 def new_job(kind, d, payload=None):
+    """Crée un calcul (proxies, video ou reel), le met en file et le persiste ; 30 calculs gardés dans l'historique."""
     job = {"id": "%x" % int(time.time() * 1000), "type": kind, "dossier": d.name, "etat": "attente",
            "avance": 0.0, "libelle": "En attente", "erreur": None, "resultat": None, "debut": time.time(), "_payload": payload}
     with QCOND:
@@ -235,6 +248,7 @@ def public(job): return {k: v for k, v in job.items() if not k.startswith("_") a
 
 SAVE_LOCK = threading.Lock()
 def save_jobs():
+    """Écrit travaux.json de façon atomique ; un seul écrivain à la fois."""
     try:
         with JLOCK: data = [public(j) for j in JOBS]
         with SAVE_LOCK:  # deux threads ne doivent pas ecrire le meme fichier temporaire
@@ -243,6 +257,7 @@ def save_jobs():
     except Exception as e: log("Sauvegarde des travaux impossible :", e)
 
 def load_jobs():
+    """Relit travaux.json au démarrage ; un calcul resté en cours est marqué « interrompu »."""
     if not JOBS_FILE.exists(): return
     try: data = json.loads(JOBS_FILE.read_text(encoding="utf-8"))
     except Exception: return
@@ -254,6 +269,7 @@ def load_jobs():
     del JOBS[:-30]
 
 def worker():
+    """Fil unique qui exécute les calculs de la file dans l'ordre et tient le PC éveillé pendant ce temps."""
     while True:
         with QCOND:
             while not QUEUE: QCOND.wait()
@@ -281,6 +297,7 @@ def worker():
             LAST_ACTIVITY[0] = time.time()
 
 def do_proxies(job):
+    """Calcul « proxies » : pour chaque rush sans .json, proxy 540p et planches de vignettes 10 x 10 en une passe ffmpeg, puis métadonnées."""
     d = folder(job["dossier"]); pdir = d / PROXY_DIR; pdir.mkdir(exist_ok=True)
     todo = [f for f in videos(d) if not (pdir / (f.stem + ".json")).exists()]
     infos = [(f, probe(f)) for f in todo]
@@ -311,6 +328,7 @@ def do_proxies(job):
     job["resultat"] = {"fichiers": len(infos)}
 
 def do_video(job):
+    """Calcul « video » : cartons (PNG envoyés par l'appli) et extraits à la résolution d'origine, concaténés avec chapitres, logo et sous-titres internes à part."""
     d = folder(job["dossier"]); pl = job["_payload"]
     fmt = pl.get("format", "h")
     items = pl["passages"]
@@ -418,7 +436,7 @@ def do_video(job):
         chap_name = name[:-4] + "_chapitres.txt"
         try: (d / chap_name).write_text(clean(chap_txt), encoding="utf-8")
         except OSError as e: log("Fichier de chapitres non écrit :", e); chap_name = None
-        # commentaires internes : fichier de sous-titres à part, jamais incrusté dans la vidéo
+        # commentaires internes : fichier de sous-titres à part, jamais incrusté dans la vidéo (miroir de buildSrt dans index.html)
         def st(x):
             ms_ = int(round(max(0, x) * 1000))
             return "%02d:%02d:%02d,%03d" % (ms_ // 3600000, ms_ % 3600000 // 60000, ms_ % 60000 // 1000, ms_ % 1000)
@@ -457,7 +475,8 @@ def crop_box(w, h):
     return cw, ch, 0, (h - ch) // 2
 
 def key_expr(keys, f, default=0.5):
-    """Valeur du champ f (0 à 1) en fonction de t (secondes depuis le début du morceau), lissée entre les points."""
+    """Valeur du champ f (0 à 1) en fonction de t (secondes depuis le début du morceau), lissée entre les points
+    (expression ffmpeg ; miroir de rKeyAt dans index.html, même lissage en S)."""
     ks = sorted(({"t": float(k["t"]), "v": min(1.0, max(0.0, float(k[f])))} for k in (keys or [])), key=lambda k: k["t"])
     if not ks: return "%.4f" % default
     e = "%.4f" % ks[-1]["v"]
@@ -499,6 +518,7 @@ def blur_chain(flous, w, h, work, first):
     return args, fc + last
 
 def story_cuts(total, bounds, limit):
+    """Instants de coupe d'une story : morceaux de `limit` secondes au plus, coupés de préférence à une limite de passage (miroir de storyCuts dans index.html)."""
     cuts, last = [0.0], 0.0
     while total - last > limit + 0.01:
         cand = [b for b in bounds if last + 10 < b <= last + limit]
@@ -508,10 +528,12 @@ def story_cuts(total, bounds, limit):
     return cuts
 
 def png_from(data, path):
+    """Écrit une image envoyée en base64 (data URL) dans un fichier."""
     path.write_bytes(base64.b64decode(data.split(",", 1)[-1]))
     return path
 
 def do_reel(job):
+    """Calcul « reel » : passages recadrés en 1080 x 1920 avec flous et cadrage animés, photos, calques PNG, carton de fin, musique ; story découpée sans réencodage."""
     d = folder(job["dossier"]); pl = job["_payload"]
     story = pl.get("mode") == "story"
     segs_in = pl.get("segments") or []
@@ -668,6 +690,7 @@ def do_reel(job):
         shutil.rmtree(work, ignore_errors=True)
 
 def photo(d, name, t):
+    """Extrait une image pleine résolution d'un rush à l'instant t, dans le sous-dossier Photos."""
     f = d / name
     if not f.is_file() or f.parent != d: raise ValueError("rush introuvable")
     out_dir = d / "Photos"; out_dir.mkdir(exist_ok=True)
@@ -678,12 +701,14 @@ def photo(d, name, t):
 
 # ---------------------------------------------------------------- veille Windows
 def keep_awake(on):
+    """Empêche (ou autorise à nouveau) la mise en veille de Windows pendant un calcul."""
     if not WIN: return
     import ctypes
     ES_CONTINUOUS, ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
     ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | (ES_SYSTEM_REQUIRED if on else 0))
 
 def user_idle_seconds():
+    """Secondes écoulées depuis la dernière action clavier ou souris sur le PC (Windows)."""
     if not WIN: return 1e9
     import ctypes
     class LII(ctypes.Structure): _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
@@ -692,6 +717,7 @@ def user_idle_seconds():
     return (ctypes.windll.kernel32.GetTickCount() - lii.dwTime) / 1000.0
 
 def idle_watch():
+    """Fil qui met le PC en veille ou l'arrête après `veille_apres_minutes` sans calcul, sans appli et sans utilisateur."""
     while True:
         time.sleep(30)
         if IDLE_MODE == "aucun" or not WIN: continue
@@ -709,24 +735,31 @@ def idle_watch():
 
 # ---------------------------------------------------------------- HTTP
 class H(BaseHTTPRequestHandler):
-    server_version = "ESAMDerushage/1.0"
+    server_version = "ESAMDerushage/" + VERSION
     def log_message(self, *a): pass
 
     def send_json(self, obj, code=200):
+        """Réponse JSON (UTF-8, non mise en cache)."""
         b = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code); self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(b))); self.send_header("Cache-Control", "no-store"); self.end_headers()
         self.wfile.write(b)
 
     def body(self):
+        """Corps JSON de la requête, ou {} s'il est vide."""
         n = int(self.headers.get("Content-Length") or 0)
         return json.loads(self.rfile.read(n).decode("utf-8") or "{}") if n else {}
 
     def do_GET(self):
+        """Routes de lecture : page, état du serveur, interventions, manifeste, images, état de dérushage, fichiers des rushs, vendor."""
         LAST_ACTIVITY[0] = time.time()
         u = urllib.parse.urlparse(self.path); q = dict(urllib.parse.parse_qsl(u.query))
         try:
             if u.path in ("/", "/index.html"): return self.send_file(HERE / "index.html")
+            if u.path.startswith("/vendor/"):
+                name = u.path[len("/vendor/"):]
+                if not re.fullmatch(r"[A-Za-z0-9._-]+", name): return self.send_error(400)
+                return self.send_file(HERE / "vendor" / name)
             if u.path == "/api/status":
                 with JLOCK: jobs = [public(j) for j in JOBS]
                 return self.send_json({"ok": True, "version": VERSION, "racine": str(ROOT), "racine_ok": ROOT.is_dir(), "gpu": ENC.get("gpu"),
@@ -748,6 +781,7 @@ class H(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError): pass
 
     def do_POST(self):
+        """Routes d'écriture : musique (fichier brut), lancement et annulation des calculs, état de dérushage, fiche, photo."""
         LAST_ACTIVITY[0] = time.time()
         u = urllib.parse.urlparse(self.path)
         try:
@@ -808,10 +842,11 @@ class H(BaseHTTPRequestHandler):
             log("ERREUR", u.path, traceback.format_exc()); self.send_json({"erreur": clean(str(e))[:300]}, 500)
 
     def send_file(self, p):
+        """Envoie un fichier avec son type MIME, les requêtes Range (lecture vidéo) et un cache d'une heure sauf pour la page."""
         if not p.is_file(): return self.send_error(404)
         size = p.stat().st_size
         ctype = {".html": "text/html; charset=utf-8", ".mp4": "video/mp4", ".jpg": "image/jpeg", ".json": "application/json",
-                 ".md": "text/markdown; charset=utf-8", ".png": "image/png",
+                 ".md": "text/markdown; charset=utf-8", ".png": "image/png", ".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2",
                  ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".wav": "audio/wav", ".ogg": "audio/ogg", ".flac": "audio/flac"}.get(p.suffix.lower(), "application/octet-stream")
         rng = self.headers.get("Range"); a, z = 0, size - 1
         m = re.match(r"bytes=(\d*)-(\d*)", rng or "")
@@ -834,6 +869,7 @@ class H(BaseHTTPRequestHandler):
                 self.wfile.write(chunk); left -= len(chunk)
 
 def main():
+    """Démarre le serveur : encodeurs, historique des calculs, fil de calcul, fil de veille, HTTP."""
     if not shutil.which("ffmpeg"): log("ATTENTION : ffmpeg introuvable dans le PATH")
     if not ROOT.is_dir(): log("ATTENTION : dossier des rushs introuvable :", ROOT)
     detect_encoders()

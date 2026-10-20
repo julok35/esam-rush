@@ -7,6 +7,8 @@ statut: proposition
 
 # Analyse du code et de l'interface (v0.11)
 
+Note : les cinq lots du plan d'action (section 6) ont été appliqués dans la version 0.12 ; l'état courant du code est décrit dans `docs/ARCHITECTURE.md`. Ce document reste comme trace des constats de départ.
+
 Objectifs fixés par Julien : garder l'appli légère, la faire évoluer facilement, la rendre lisible pour un développeur extérieur, améliorer l'ergonomie. Cette analyse part d'une lecture complète de `index.html`, `server.py`, des tests et de la documentation, de mesures automatiques et de captures d'écran en 390 x 844 (téléphone) et 1400 x 900 (PC) sur les faux rushs de `tests/`.
 
 ## 1. Synthèse
