@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.12
-date_maj: 2026-10-20
+version: 0.13
+date_maj: 2026-10-27
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -161,6 +161,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.13 | 2026-10-27 | Téléphone : vidéos choisies dans la galerie (noms remplacés par des numéros) réparties sur des pistes distinctes au lieu d'une seule, thermique reconnue à son format d'image, message invitant à passer par l'application Fichiers pour garder les noms DJI ; le bouton « Choisir les vidéos » ouvre de préférence le gestionnaire de fichiers ; vignettes de la piste affichée calculées en premier |
 | 0.12 | 2026-10-20 | Appli utilisable sans Internet (bibliothèques et polices embarquées) ; ouverture d'une longue intervention en mode PC bien plus rapide et plus légère en mémoire ; pincement à deux doigts pour zoomer la timeline ; sur téléphone, messages affichés sous l'en-tête, onglet Réel en trois volets (Montage, Passage, Habillage), chronologie RETEX repliée tant qu'aucun décollage n'est marqué, un seul bouton « Voir » par passage ; nombre de passages du réel sur l'onglet ; documentation technique dans `docs/ARCHITECTURE.md` |
 | 0.11 | 2026-10-20 | Réel : flou doux aux bords fondus à la place des pixels ; liste « Sur l'image » pour choisir et déplacer chaque texte ; textes libres, flèches, cercles et cadres à placer ; taille et couleur des titres et textes, texte avec ou sans bandeau |
 | 0.10 | 2026-10-20 | Réel : logo ESAM plus visible (cartouche avec le nom ou logo cerclé de blanc) ; titre, logo et textes déplaçables et agrandissables dans l'aperçu ; durée du titre et des textes réglable ; photos JPEG dans le montage (zoom lent) ; zones de flou qui suivent l'action |
