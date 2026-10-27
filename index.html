@@ -397,6 +397,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   </header>
 
   <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG,.srt,.SRT">
+  <input type="file" id="dirIn" webkitdirectory multiple>
   <input type="file" id="mdIn" accept=".md,.json,text/markdown,application/json,text/plain">
   <input type="file" id="rMusIn" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
   <input type="file" id="rPhotoIn" multiple accept="image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
@@ -406,11 +407,12 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <h2>Les rushs d'un vol, calés sur la même heure</h2>
     <p>Choisissez les vidéos d'un vol. Les fichiers DJI sont rangés par caméra (grand angle, zoom, thermique), alignés sur leur heure de tournage et découpés en vignettes pour repérer vite les moments clés. Posez ensuite vos marqueurs.</p>
     <div class="actions">
+      <button type="button" class="btn primary" id="dirResume" hidden></button>
       <button type="button" class="btn primary" id="dirOpen" hidden>Ouvrir le dossier des rushs</button>
       <label class="btn" id="filesLbl" for="fileIn">Choisir les vidéos</label>
     </div>
     <div class="progress" id="prog" hidden></div>
-    <p class="hint" id="dirHint" hidden>Avec « Ouvrir le dossier des rushs », la fiche de dérushage est enregistrée automatiquement dans ce dossier, à chaque modification, et rechargée à la prochaine ouverture.</p>
+    <p class="hint" id="dirHint" hidden>Avec « Ouvrir le dossier des rushs », toutes les vidéos et photos du dossier (sous-dossiers compris) sont importées, la fiche de dérushage est enregistrée automatiquement dans ce dossier à chaque modification et reprise à la prochaine ouverture, et les vidéos produites y sont écrites.</p>
     <p class="hint">Les vidéos restent sur votre appareil, rien n'est envoyé. Vos marqueurs sont aussi gardés dans ce navigateur et reviennent si vous rouvrez les mêmes fichiers.</p>
     </div>
     <div id="srvBox" hidden>
@@ -690,7 +692,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.13";
+const APP_VERSION = "0.14";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["W","Z","T","V","N","S"];
 const THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
@@ -1754,38 +1756,86 @@ function applyFiche(data){
   S.offsets = Object.assign({}, data.offsets || {}); S.verBumped = false; rebuild();
 }
 
-/* ---------- dossier des rushs (Chrome / Edge, page ouverte directement) ---------- */
+/* ---------- dossier de travail ----------
+   Chrome / Edge sur ordinateur (showDirectoryPicker) : tous les médias du dossier et de ses sous-dossiers sont importés,
+   la fiche y est relue puis enregistrée automatiquement, les vidéos produites y sont écrites ; le dossier est gardé
+   (IndexedDB) pour être repris d'un clic. Téléphone : le navigateur ne sait que lire un dossier (input webkitdirectory),
+   la fiche du dossier est relue mais le travail reste gardé dans le navigateur. */
 const canDir = typeof window.showDirectoryPicker === "function" && window.self === window.top;
-if(canDir){ $("dirOpen").hidden = false; $("dirHint").hidden = false; $("filesLbl").classList.add("ghost"); }
+const canDirIn = !canDir && "webkitdirectory" in document.createElement("input");
+if(canDir || canDirIn){ $("dirOpen").hidden = false; $("dirHint").hidden = false; $("filesLbl").classList.add("ghost"); }
 else { $("filesLbl").classList.add("primary"); }
-$("dirOpen").onclick = async () => {
-  let dir;
-  try { dir = await window.showDirectoryPicker({id:"esam-rushs", mode:"readwrite"}); }
-  catch(e){ if(e && e.name !== "AbortError") toast(`Ouverture du dossier impossible : ${e.message}`); return; }
-  const files = [];
-  let fiche = null;
+if(canDirIn) $("dirHint").textContent = "Avec « Ouvrir le dossier des rushs », toutes les vidéos et photos du dossier (sous-dossiers compris) sont importées avec leur nom d'origine, et la fiche de dérushage qui s'y trouve est reprise. Sur téléphone, le navigateur ne peut pas écrire dans le dossier : le travail reste gardé sur ce téléphone et « Exporter la fiche » le télécharge.";
+function idb(mode, fn){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("esam-derush", 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore("kv"); };
+    r.onerror = () => { rej(r.error); };
+    r.onsuccess = () => { const tx = r.result.transaction("kv", mode), q = fn(tx.objectStore("kv")); tx.oncomplete = () => { res(q && q.result); }; tx.onerror = () => { rej(tx.error); }; };
+  });
+}
+const MEDIA_RE = /\.(mp4|mov|m4v|jpe?g|md)$/i;
+function skipDir(name){ return /^\./.test(name) || /^proxies$/i.test(name); }
+async function walkDir(dir, pre, out, depth){
   for await (const ent of dir.values()){
-    if(ent.kind !== "file") continue;
-    if(/\.(mp4|mov|m4v)$/i.test(ent.name) && !/^ESAM_(Compilation|Reel|Story)/.test(ent.name)) files.push(await ent.getFile());
-    else if(/^ESAM_Derushage_.*\.md$/.test(ent.name)) fiche = ent;
-    else if(/\.jpe?g$/i.test(ent.name)) phAdd([{name:clean(ent.name), file:await ent.getFile()}]);
+    if(ent.kind === "directory"){ if(depth < 4 && !skipDir(ent.name)) await walkDir(ent, `${pre}${ent.name}/`, out, depth+1); }
+    else if(MEDIA_RE.test(ent.name)) out.push({path:pre+ent.name, file:await ent.getFile()});
   }
-  try {
-    for await (const pe of (await dir.getDirectoryHandle("Photos")).values()){
-      if(pe.kind === "file" && /\.jpe?g$/i.test(pe.name)) phAdd([{name:`Photos/${clean(pe.name)}`, file:await pe.getFile()}]);
-    }
-  } catch(e){}
-  if(!files.length){ toast("Aucune vidéo dans ce dossier."); return; }
-  S.dirHandle = dir;S.verBumped = false;
-  await addFiles(files);
+  return out;
+}
+/* items : [{path relatif au dossier, file}] ; rend false si le dossier ne contient aucune vidéo */
+async function importFolder(items){
+  const vids = items.filter(x => /\.(mp4|mov|m4v)$/i.test(x.path) && !/^ESAM_(Compilation|Reel|Story)/.test(x.file.name));
+  const fiche = items.filter(x => /^ESAM_Derushage_.*\.md$/.test(x.file.name)).sort((a, b) => b.file.lastModified - a.file.lastModified)[0];
+  if(!vids.length){ toast("Aucune vidéo dans ce dossier."); return false; }
+  phAdd(items.filter(x => /\.jpe?g$/i.test(x.path)).map(x => ({name:clean(x.path), file:x.file, t:x.file.lastModified/1000})));
+  await addFiles(vids.map(x => x.file));
   if(fiche){
-    const data = parseFiche(await (await fiche.getFile()).text());
+    const data = parseFiche(await fiche.file.text());
     if(data){ applyFiche(data); try { localStorage.setItem(`esam-derush:${S.key}`, JSON.stringify({markers:S.markers, meta:S.meta, offsets:S.offsets})); } catch(e){}
       renderAll(); seek(S.t, false); toast(`Fiche du dossier reprise : ${S.markers.length} marqueur(s).`); }
   }
+  return true;
+}
+async function openDir(dir){
+  $("prog").hidden = false; $("prog").textContent = `Lecture du dossier « ${dir.name} »...`;
+  let items;
+  try { items = await walkDir(dir, "", [], 0); }
+  catch(e){ $("prog").hidden = true; toast(`Lecture du dossier impossible : ${e.message}`); return; }
+  $("prog").hidden = true;
+  S.dirHandle = dir; S.verBumped = false;
+  if(!(await importFolder(items))){ S.dirHandle = null; return; }
+  idb("readwrite", st => st.put(dir, "dossier")).catch(() => {});
   setSave(`Fiche enregistrée automatiquement dans le dossier « ${dir.name} » à chaque modification`, false);
   $("exp").textContent = "Enregistrer la fiche maintenant";
+}
+$("dirOpen").onclick = async () => {
+  if(canDirIn){ $("dirIn").click(); return; }
+  let dir;
+  try { dir = await window.showDirectoryPicker({id:"esam-rushs", mode:"readwrite"}); }
+  catch(e){ if(e && e.name !== "AbortError") toast(`Ouverture du dossier impossible : ${e.message}`); return; }
+  openDir(dir);
 };
+/* dernier dossier ouvert : bouton « Reprendre » sur l'écran d'accueil */
+if(canDir) idb("readonly", st => st.get("dossier")).then(dir => {
+  if(!dir) return;
+  const b = $("dirResume"); b.hidden = false; b.textContent = `Reprendre « ${dir.name} »`; $("dirOpen").classList.remove("primary");
+  b.onclick = async () => {
+    try { if((await dir.requestPermission({mode:"readwrite"})) !== "granted"){ toast("Autorisation refusée : rouvrez le dossier."); return; } }
+    catch(e){ toast("Dossier introuvable : rouvrez-le."); b.hidden = true; return; }
+    openDir(dir);
+  };
+}).catch(() => {});
+$("dirIn").addEventListener("change", e => {
+  const fl = Array.prototype.slice.call(e.target.files);
+  const items = fl.map(f => ({path:(f.webkitRelativePath || f.name).split("/").slice(f.webkitRelativePath ? 1 : 0).join("/"), file:f}))
+    .filter(x => MEDIA_RE.test(x.path) && !x.path.split("/").slice(0, -1).some(skipDir));
+  const top = fl[0] && fl[0].webkitRelativePath ? fl[0].webkitRelativePath.split("/")[0] : "";
+  importFolder(items).then(ok => {
+    e.target.value = "";
+    if(ok) setSave(`Dossier « ${top} » importé. Le navigateur du téléphone ne peut pas écrire dans ce dossier : le travail est gardé sur ce téléphone, « Exporter la fiche » le télécharge.`, false);
+  });
+});
 
 /* ---------- events ----------
    Transport, vitesse, zoom et pincement de la timeline, glissement des bords de plage, raccourcis clavier, onglets. */

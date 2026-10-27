@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.13
+version: 0.14
 date_maj: 2026-10-27
 ---
 
@@ -161,6 +161,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.14 | 2026-10-27 | Dossier de travail : « Ouvrir le dossier des rushs » importe toutes les vidéos et photos du dossier et de ses sous-dossiers (sauf `proxies`) et reprend la fiche qui s'y trouve ; sur ordinateur (Chrome, Edge), la fiche et les vidéos produites y sont enregistrées et le dernier dossier se rouvre d'un clic (« Reprendre ») ; sur téléphone, le dossier est importé avec les noms d'origine, mais le travail reste gardé dans le navigateur |
 | 0.13 | 2026-10-27 | Téléphone : vidéos choisies dans la galerie (noms remplacés par des numéros) réparties sur des pistes distinctes au lieu d'une seule, thermique reconnue à son format d'image, message invitant à passer par l'application Fichiers pour garder les noms DJI ; le bouton « Choisir les vidéos » ouvre de préférence le gestionnaire de fichiers ; vignettes de la piste affichée calculées en premier |
 | 0.12 | 2026-10-20 | Appli utilisable sans Internet (bibliothèques et polices embarquées) ; ouverture d'une longue intervention en mode PC bien plus rapide et plus légère en mémoire ; pincement à deux doigts pour zoomer la timeline ; sur téléphone, messages affichés sous l'en-tête, onglet Réel en trois volets (Montage, Passage, Habillage), chronologie RETEX repliée tant qu'aucun décollage n'est marqué, un seul bouton « Voir » par passage ; nombre de passages du réel sur l'onglet ; documentation technique dans `docs/ARCHITECTURE.md` |
 | 0.11 | 2026-10-20 | Réel : flou doux aux bords fondus à la place des pixels ; liste « Sur l'image » pour choisir et déplacer chaque texte ; textes libres, flèches, cercles et cadres à placer ; taille et couleur des titres et textes, texte avec ou sans bandeau |
