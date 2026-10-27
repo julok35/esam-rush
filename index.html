@@ -396,7 +396,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <button type="button" class="ver" id="ver" title="Version de l'appli">v</button>
   </header>
 
-  <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
+  <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG,.srt,.SRT">
   <input type="file" id="mdIn" accept=".md,.json,text/markdown,application/json,text/plain">
   <input type="file" id="rMusIn" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
   <input type="file" id="rPhotoIn" multiple accept="image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
@@ -690,7 +690,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.12";
+const APP_VERSION = "0.13";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["W","Z","T","V","N","S"];
 const THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
@@ -732,7 +732,11 @@ function esc(s){ return clean(s).replace(/[&<>"]/g, c => ({
 })[c]); }
 function slug(s){ return clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40); }
 function hash(str){ let h = 5381; for(let i=0;i<str.length;i++){ h = ((h<<5)+h+str.charCodeAt(i))|0; } return (h>>>0).toString(36); }
-function lensName(l){ return LENS[l] || (l === "?" ? "Autre caméra" : `Caméra ${l}`); }
+function lensName(l){
+  const m = /^(.)(\d+)$/.exec(l || "");     // "?2", "T2" : pistes ajoutées par autoLens()
+  if(m) return `${lensName(m[1])} ${m[2]}`;
+  return LENS[l] || (l === "?" ? "Autre caméra" : `Caméra ${l}`);
+}
 function drawRot(ctx, src, rot, x, y, w, h){
   if(!rot){ ctx.drawImage(src, x, y, w, h); return; }
   ctx.save(); ctx.translate(x + w/2, y + h/2); ctx.rotate(rot * Math.PI / 180);
@@ -844,9 +848,11 @@ async function addFiles(list){
     let md = null;
     try { md = await parseMedia(f); } catch(e){ md = null; }
     const dur = md && md.duration > 0 ? md.duration : await readDuration(url);
-    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", start:p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
+    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", auto:!p, w:md ? md.dw : 0, h:md ? md.dh : 0, start:p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
   }
   prog.hidden = true;
+  // la galerie Android (sélecteur de photos) remplace les noms par des numéros : les caméras DJI ne se lisent plus dans le nom
+  if(files.some(f => /^\d+\.(mp4|mov|m4v)$/i.test(f.name))) toast("Les noms d'origine des fichiers ont été perdus (galerie du téléphone) : caméras devinées d'après l'image. Pour retrouver grand angle, zoom et thermique, choisissez les vidéos par l'application Fichiers.");
   const firstLoad = !S.key;
   rebuild();
   if(firstLoad && restore()){ rebuild(); toast(`${S.markers.length} marqueur(s) retrouvé(s) pour ce vol.`); }
@@ -969,7 +975,8 @@ function thumbAt(tr, t){ const c = tr ? clipAt(tr, t) : null; return c ? nearest
 let thumbBusy = false;
 async function genThumbs(){
   if(thumbBusy) return;thumbBusy = true;
-  const todo = S.clips.filter(c => c.ok && c.media && !c.thumbsDone);
+  const act = track();
+  const todo = S.clips.filter(c => c.ok && c.media && !c.thumbsDone).sort((a, b) => (act && act.clips.indexOf(b) >= 0) - (act && act.clips.indexOf(a) >= 0));
   const step = Math.max(2, S.dur / 800);
   let n = 0;
   let lastDraw = 0;
@@ -1027,11 +1034,30 @@ async function thumbsFor(c, step, onProgress){
   await Promise.all(pend);
 }
 
+/* fichiers sans nom DJI : une image 5:4 (640 x 512) vient de la caméra thermique ; deux fichiers qui se chevauchent
+   ne viennent pas de la même caméra, ils vont sur des pistes distinctes ("?", "?2", ...), en gardant si possible
+   la même définition d'image sur une piste */
+function autoLens(){
+  const auto = S.clips.filter(c => c.auto).sort((a, b) => (a.start||0)-(b.start||0) || a.name.localeCompare(b.name));
+  const lanes = [];
+  auto.forEach(c => {
+    const base = c.w && c.h && Math.abs(c.w/c.h - 1.25) < 0.02 ? "T" : "?", dim = `${c.w}x${c.h}`;
+    c.lens = base;
+    if(c.start == null || !c.ok) return;
+    const free = lanes.filter(l => l.base === base && l.end <= c.start + 0.5);
+    const lane = free.find(l => l.dim === dim) || free[0];
+    if(lane){ lane.end = c.start + (c.dur || 0); lane.dim = dim; c.lens = lane.lens; return; }
+    const n = lanes.filter(l => l.base === base).length;
+    lanes.push({base:base, lens:n ? base + (n+1) : base, end:c.start + (c.dur || 0), dim:dim});
+    c.lens = lanes[lanes.length-1].lens;
+  });
+}
 function rebuild(){
   const keyNames = S.clips.map(c => `${c.name}:${c.size}`).sort().join("|");
   S.key = hash(keyNames);
   const timed = S.clips.filter(c => c.start != null);
   S.real = timed.length > 0;
+  autoLens();
   const groups = {};
   S.clips.forEach(c => { (groups[c.lens] = groups[c.lens] || []).push(c); });
   const lenses = Object.keys(groups).sort((a, b) => {
@@ -2619,7 +2645,7 @@ async function openRemote(name){
   clearFlight(); SRVD = name; clearTimeout(listT);
   S.clips = man.clips.map(m => {
     const p = parseName(m.nom);
-    return {id:uid(), remote:true, name:m.nom, size:Math.round(m.dur*1000), url:m.proxy, lens:p ? p.lens : "?",
+    return {id:uid(), remote:true, name:m.nom, size:Math.round(m.dur*1000), url:m.proxy, lens:p ? p.lens : "?", auto:!p, w:m.w || 0, h:m.h || 0,
       start:p ? p.start : (m.cree || null), dur:m.dur, ok:m.dur > 0, media:null, thumbs:[], thumbsDone:true, sheet:m.thumbs};
   });
   rebuild();

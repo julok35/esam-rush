@@ -83,7 +83,7 @@ S = {
 }
 ```
 
-Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti).
+Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti). Sans nom DJI (galerie Android, qui renomme en `1000012345.mp4`), `autoLens()` devine la piste : image 5:4 = thermique, et deux fichiers qui se chevauchent vont sur des pistes distinctes (`?`, `?2`, ...).
 
 ### 3.2 Marqueur
 
