@@ -44,7 +44,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
 | markers | Création et édition des marqueurs (dialogue `#sheet`) | `addMarker`, `markStart`, `markEnd`, `openSheet` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
-| dossier des rushs | `showDirectoryPicker` (Chrome, Edge, page ouverte directement) | `$("dirOpen").onclick` |
+| dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
 | events | Transport, zoom et pincement, glissement des bords, clavier, onglets | `setZoom`, `setTab`, `keydown` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |

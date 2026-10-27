@@ -13,7 +13,7 @@ from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.13"
+VERSION = "0.14"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
