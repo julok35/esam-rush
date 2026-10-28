@@ -355,6 +355,8 @@ def do_video(job):
         segs.append(("carte", it["image"], float(it["duree"]), None, clean(it.get("titre") or "Passage %d" % (n + 1)), None))
         for pc in it["morceaux"]:
             segs.append(("clip", pc["fichier"], float(pc["fin"]) - float(pc["debut"]), float(pc["debut"]), None, n))
+    if pl.get("fermeture"):      # carton de fin ESAM (absent des appels d'anciennes versions de l'appli)
+        segs.append(("carte", pl["fermeture"]["image"], float(pl["fermeture"].get("duree") or 5), None, "Fin", None))
     total = sum(s[2] for s in segs) or 1
     WORK_ROOT.mkdir(parents=True, exist_ok=True)
     need = total * (W * H / (3840 * 2160)) * 8e6 * 2.5      # estimation large : segments + assemblage

@@ -48,7 +48,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | events | Transport (x16 maintenu, -5 s et +5 s répétés), zoom et pincement, glissement des bords (au doigt : plage sélectionnée par « Ajuster », `SEL`), clavier, onglets, barre de commande fixe en bas sur téléphone (`.ctrl`, hauteur dans `--ctrlh`) | `holdRepeat`, `fastStop`, `setZoom`, `setTab`, `keydown` |
 | revue | Dialogue `#rev` : relecture en boucle d'un passage depuis le sommaire (caméra effective, sans marge), nom et caméra modifiables, Précédent / Suivant ; bandes de vignettes des cartes du sommaire | `openReview`, `renderReview`, `revPieces`, `drawFilms` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
-| compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
+| compilation | Plan de la vidéo compilée et rendu navigateur ; carton de fin ESAM (`drawOutro`, partagé avec le réel) | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawOutro`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
 | mode PC | Appels HTTP, liste des interventions, ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
@@ -161,7 +161,7 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `GET /api/etat?d=` | | contenu de `.derushage/etat.json` ou `{}` |
 | `GET /files/<dossier>/<chemin>` | | fichier des rushs (proxies, planches, musique), requêtes Range acceptées |
 | `POST /api/proxies` | `{d}` | le calcul créé ou déjà en cours |
-| `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, logo, ouverture: {image, duree}, passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [{fichier, debut, fin}]}]}` (images en data URL PNG) | le calcul créé |
+| `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, logo, ouverture: {image, duree}, fermeture: {image, duree} (carton de fin, facultatif), passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [{fichier, debut, fin}]}]}` (images en data URL PNG) | le calcul créé |
 | `POST /api/reel` | `{d, mode: "reel"|"story", nom, titre_video, segments: [...], calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", vitesse, nom, morceaux: [{fichier, debut, fin, cles: [{t, x}], flous: [{s, cles: [{t, x, y}]}]}]}` | le calcul créé |
 | `POST /api/annuler` | `{id}` | `{ok}` |
 | `POST /api/etat` | `{d, etat}` | `{ok}` |

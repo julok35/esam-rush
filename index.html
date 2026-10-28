@@ -591,11 +591,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
         <div class="rbtns"><button type="button" class="btn small ghost" id="rLogoPlace">Placer et agrandir</button></div>
       </div>
       <div class="grp">
-        <span class="lbl">Carton de fin ESAM (3 s)</span>
+        <span class="lbl">Carton de fin ESAM (4 s) : logo, slogan, appel à suivre et soutenir, esam-secours.fr</span>
         <div class="chips" id="rFinOn"></div>
         <div id="rFinBox">
-          <input class="field" id="rFinTxt" maxlength="50" autocomplete="off" style="margin-top:10px" aria-label="Texte principal du carton de fin">
-          <input class="field" id="rFinSous" maxlength="60" autocomplete="off" style="margin-top:8px" aria-label="Sous-titre du carton de fin">
+          <input class="field" id="rFinTxt" maxlength="90" autocomplete="off" style="margin-top:10px" aria-label="Slogan du carton de fin">
+          <input class="field" id="rFinSous" maxlength="60" autocomplete="off" style="margin-top:8px" aria-label="Appel du carton de fin (au-dessus du site)">
         </div>
       </div>
       <div class="grp">
@@ -2383,7 +2383,7 @@ function buildPlan(){
   const items = [];
   let skipped = 0;
   sorted().forEach(m => { if(CMP.off[m.id]) return; const it = planFor(m); if(it) items.push(it); else skipped++; });
-  const total = 3 + items.reduce((t, it) => t + cardSec(it) + it.len, 0);
+  const total = 3 + OUTRO_SEC + items.reduce((t, it) => t + cardSec(it) + it.len, 0);     // ouverture, carton de fin
   return {items:items, skipped:skipped, total:total};
 }
 function renderCmpSetup(){
@@ -2518,6 +2518,28 @@ function drawIntro(ctx, W, H, pl){
   const sub = `${(S.real ? `Vol du ${dayAbs(S.base)}, ` : "")+pl.items.length} passage${pl.items.length>1?"s":""}`;
   fitText(ctx, sub, W*0.9, "500", u*0.035, MONT); ctx.fillText(sub, W/2, cy + u*0.22);
   ctx.fillRect(0, H-u*0.012, W, u*0.012);
+}
+/* carton de fin ESAM, commun à la vidéo compilée et au réel : logo, slogan, appel à suivre et soutenir, site.
+   W x H quelconque (16:9 ou 9:16) ; o = {texte (slogan), sous (appel)}. Le site est toujours affiché. */
+const OUTRO_SEC = 5, OUTRO_TXT = "Un animal en situation périlleuse ? Ne prenez aucun risque, appelez l'ESAM !", OUTRO_SOUS = "Suivez-nous et soutenez-nous", OUTRO_SITE = "esam-secours.fr";
+function drawOutro(ctx, W, H, o){
+  const u = unitOf(W, H), maxW = W*0.86;
+  ctx.fillStyle = "#171618"; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  const sz = u*0.082, lh = u*0.094;
+  ctx.font = `${sz}px ${ANTON}`;
+  // chaque phrase du slogan commence sur sa propre ligne (coupure après « ? » ou « ! »), quatre lignes au plus
+  const lines = clean(o.texte || "").toUpperCase().split(/(?<=[?!])\s+/).filter(Boolean).reduce((acc, ph) => acc.concat(wrap(ctx, ph, maxW, 2)), []).slice(0, 4);
+  const r = u*0.11, sous = clean(o.sous || "");
+  const blocks = r*2 + u*0.14 + lines.length*lh + (sous ? u*0.085 : u*0.03) + u*0.1 + u*0.08;
+  let y = (H - blocks)/2 + r;
+  drawLogo(ctx, W/2, y, r); y += r + u*0.14 + sz*0.75 - lh*0.5;
+  ctx.fillStyle = "#fff"; ctx.font = `${sz}px ${ANTON}`;
+  lines.forEach(l => { ctx.fillText(l, W/2, y); y += lh; });
+  if(sous){ y += u*0.02; fitText(ctx, sous, maxW, "600", u*0.04, MONT); ctx.fillStyle = "#fff"; ctx.fillText(sous, W/2, y); y += u*0.065; }
+  y += u*0.05; ctx.fillStyle = "#A8C8FB"; fitText(ctx, OUTRO_SITE, maxW, "", u*0.08, ANTON); ctx.fillText(OUTRO_SITE, W/2, y); y += u*0.08;
+  ctx.fillStyle = "#cfd2d8"; fitText(ctx, "Equipe de Secours Animalier en Montagne", maxW, "500", u*0.03, MONT); ctx.fillText("Equipe de Secours Animalier en Montagne", W/2, y);
+  ctx.fillStyle = "#A8C8FB"; ctx.fillRect(0, H - u*0.012, W, u*0.012);
 }
 function drawCard(ctx, W, H, it, i, n){
   const m = it.m, u = unitOf(W, H);
@@ -2726,6 +2748,8 @@ async function runCompile(){
       spans.push({it:it, i:i, a:spA, b:outT/1e6});
       if(encErr) throw encErr;
     }
+    lbl = "Carton de fin";
+    await still(() => { drawOutro(octx, W, H, {texte:OUTRO_TXT, sous:OUTRO_SOUS}); }, OUTRO_SEC);
     lbl = "Finalisation";
     await still(() => { octx.fillStyle = "#000"; octx.fillRect(0,0,W,H); }, 0.5);
     ui(true);
@@ -2910,8 +2934,9 @@ async function runRemote(){
       fin:p.to
     }))};
   });
+  drawOutro(ctx, W, H, {texte:OUTRO_TXT, sous:OUTRO_SOUS}); const outro = cv.toDataURL("image/png");
   const name = outName("Compilation", `${V ? "_vertical" : ""}.mp4`);
-  const job = await api("api/video", {d:SRVD, format:CMP.fmt, nom:name, titre:`ESAM - ${clean(S.meta.intervention || SRVD)}`, auteur:getAuteur(), logo:logo, ouverture:{image:intro, duree:3}, passages:items});
+  const job = await api("api/video", {d:SRVD, format:CMP.fmt, nom:name, titre:`ESAM - ${clean(S.meta.intervention || SRVD)}`, auteur:getAuteur(), logo:logo, ouverture:{image:intro, duree:3}, fermeture:{image:outro, duree:OUTRO_SEC}, passages:items});
   CMP.job = job.id; CMP.running = true;
   jobProgress(0, "Envoyé au PC");
   pollJob();
@@ -2978,7 +3003,7 @@ let BACKEND = LOCAL;
    Réglages dans S.meta.reel (voir reelData et docs/ARCHITECTURE.md). reelPlan() transforme le montage en segments avec
    leur position dans le réel ; rLayers() liste les calques (logo, accéléré, textes, éléments, titre) dessinés par drawLayers().
    Le même code dessine l'aperçu, le rendu navigateur (rRender) et les calques PNG envoyés au PC (runReelRemote). */
-const RW = 1080, RH = 1920, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
+const RW = 1080, RH = 1920, RFIN = 4, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
 const RTDURS = [3,5,8,0], RXDURS = [0,3,5,8], RPDURS = [2,3,4,5,6,8], RLOGOS = ["cartouche","logo","non"];
 /* places par défaut (centre en fraction de l'image, taille) : hors des zones couvertes par Instagram (haut, bas, bord droit) */
 const RBOX = {titre:{x:0.5, y:0.27, s:1}, texte:{x:0.5, y:0.71, s:1}, cartouche:{x:0.27, y:0.155, s:1}, logo:{x:0.16, y:0.16, s:1}, el:{x:0.5, y:0.5, s:1}};
@@ -3001,7 +3026,8 @@ function reelData(){
   if(!r || typeof r !== "object") r = S.meta.reel = {};
   if(!Array.isArray(r.items)) r.items = [];
   if(typeof r.titre !== "string") r.titre = "";
-  if(!r.fin || typeof r.fin !== "object") r.fin = {on:true, texte:"Soutenez l'ESAM", sous:"esam-secours.fr"};
+  if(!r.fin || typeof r.fin !== "object") r.fin = {on:true, texte:OUTRO_TXT, sous:OUTRO_SOUS};
+  else if(r.fin.texte === "Soutenez l'ESAM" && r.fin.sous === "esam-secours.fr"){ r.fin.texte = OUTRO_TXT; r.fin.sous = OUTRO_SOUS; }   // anciens réglages par défaut
   if(!(r.musDebut >= 0)) r.musDebut = 0;
   if(!(r.titreDur >= 0)) r.titreDur = 3;
   if(!r.titreBox || typeof r.titreBox !== "object") r.titreBox = Object.assign({}, RBOX.titre);
@@ -3306,20 +3332,7 @@ function rRound(ctx, x, y, w, h, r){
   ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
-function drawFin(ctx, W, H, r){
-  const u = W/1080;
-  ctx.fillStyle = "#171618";ctx.fillRect(0, 0, W, H);
-  drawLogo(ctx, W/2, H*0.36, 160*u);
-  ctx.textAlign = "center";ctx.textBaseline = "alphabetic";ctx.fillStyle = "#fff";
-  ctx.font = `${118*u}px ${ANTON}`;
-  const ls = rLines(ctx, clean(r.fin.texte || "").toUpperCase(), W*0.84, 2);
-  let y = H*0.36 + 160*u + 170*u;
-  ls.forEach(l => { ctx.fillText(l, W/2, y); y += 128*u; });
-  if(r.fin.sous){ ctx.fillStyle = "#A8C8FB"; ctx.font = `600 ${52*u}px ${MONT}`; ctx.fillText(clean(r.fin.sous), W/2, y + 6*u); y += 80*u; }
-  ctx.fillStyle = "#cfd2d8";ctx.font = `500 ${34*u}px ${MONT}`;
-  ctx.fillText("Equipe de Secours Animalier en Montagne", W/2, y + 20*u);
-  ctx.fillStyle = "#A8C8FB";ctx.fillRect(0, H - 16*u, W, 16*u);
-}
+function drawFin(ctx, W, H, r){ drawOutro(ctx, W, H, r.fin); }
 async function rFonts(){
   if(REEL.fonts) return;
   try { await Promise.all([document.fonts.load("40px Anton"), document.fonts.load("700 40px Montserrat"), document.fonts.load("600 40px Montserrat"), document.fonts.load("500 40px Montserrat")]); } catch(e){}
