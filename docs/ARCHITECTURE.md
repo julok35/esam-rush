@@ -46,6 +46,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
 | events | Transport (x16 maintenu, -5 s et +5 s répétés), zoom et pincement, glissement des bords (au doigt : plage sélectionnée par « Ajuster », `SEL`), clavier, onglets, barre de commande fixe en bas sur téléphone (`.ctrl`, hauteur dans `--ctrlh`) | `holdRepeat`, `fastStop`, `setZoom`, `setTab`, `keydown` |
+| revue | Dialogue `#rev` : relecture en boucle d'un passage depuis le sommaire (caméra effective, sans marge), nom et caméra modifiables, Précédent / Suivant ; bandes de vignettes des cartes du sommaire | `openReview`, `renderReview`, `revPieces`, `drawFilms` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |

@@ -254,14 +254,26 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
 .sumhead label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
 .flight{font-size:13px;color:var(--muted);margin:10px 0 14px}
 .list{list-style:none;margin:0;padding:0 16px 30px}
-.card{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
-.card .idx{grid-row:span 6;width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-top:4px}
+.card{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px}
+.card>*{grid-column:2}
+.card .idx{grid-column:1;grid-row:1 / span 20;width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-top:4px}
 .card .when{font-family:Anton,Impact,sans-serif;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
 .card .ttl{font-weight:700;font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .card .meta{font-size:13px;color:var(--muted)}
 .card .sensbox{background:var(--paleyellow);border-left:5px solid var(--yellow);padding:6px 10px;font-size:13px;font-weight:600;border-radius:0 6px 6px 0;margin-top:4px}
 .card .note{font-size:13px;margin-top:2px}
 .card .cams{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* bande de vignettes du passage (début, milieu, fin) ; un toucher ouvre la revue */
+.film{display:flex;gap:3px;margin-top:6px;cursor:pointer;max-width:520px}
+.film canvas{flex:1 1 0;width:0;min-width:0;height:auto;aspect-ratio:16/9;border-radius:4px;background:#000;display:block}
+/* revue d'un passage : lecture en boucle, nom et caméra modifiables, Précédent / Suivant */
+.revstage{position:relative;background:#000;aspect-ratio:16/9;width:100%;border-radius:8px;overflow:hidden;margin:8px 0 10px}
+.revstage video{width:100%;height:100%;object-fit:contain;display:block}
+.revstage .gap{font-weight:600}
+.revname{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-weight:700}
+.revmeta{font-size:13px;color:var(--muted);margin-top:4px;min-height:1.2em}
+.revnav{display:flex;gap:8px;margin-top:14px}
+.revnav .btn{flex:1}
 .icom{display:block;margin-top:8px}
 .icom span{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
 .icom textarea{min-height:44px;font-size:14px;padding:8px 10px}
@@ -526,6 +538,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       <div class="actions">
         <button class="btn primary" id="exp">Exporter la fiche</button>
         <button class="btn primary" id="cmpOpen">Créer la vidéo compilée</button>
+        <button class="btn ghost" id="revAll">Revoir les passages</button>
         <label class="btn ghost" for="mdIn">Reprendre une fiche</label>
       </div>
     </div>
@@ -638,6 +651,29 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       <button type="button" class="btn primary grow" id="shSave">Enregistrer</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="sheet" id="rev">
+  <div class="sheetin">
+    <h3 id="revTitle">Passage</h3>
+    <div class="when" id="revWhen"></div>
+    <div class="revstage">
+      <video id="revV" muted playsinline preload="auto"></video>
+      <div class="camtag" id="revCam"></div>
+      <div class="ovclock"><span class="clock" id="revClock">00:00:00</span></div>
+      <div class="gap" id="revGap" hidden>Pas d'image pour ce passage.</div>
+    </div>
+    <div class="revname" id="revName"></div>
+    <div class="revmeta" id="revMeta"></div>
+    <div class="revnav">
+      <button type="button" class="btn ghost" id="revPrev">Précédent</button>
+      <button type="button" class="btn primary" id="revNext">Suivant</button>
+    </div>
+    <div class="sheetbtns">
+      <button type="button" class="btn ghost" id="revEdit">Détails</button>
+      <button type="button" class="btn ghost grow" id="revClose">Fermer</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="sheet" id="fallback">
@@ -990,11 +1026,11 @@ async function genThumbs(){
     $("thumbProg").textContent = `vignettes ${Math.round(n/todo.length*100)} %`;
     try {
       if(await canDecode(c.media)){
-        await thumbsFor(c, step, () => { const now = performance.now(); if(now - lastDraw > 400){ lastDraw = now; scheduleStrips(); } });
+        await thumbsFor(c, step, () => { const now = performance.now(); if(now - lastDraw > 400){ lastDraw = now; scheduleStrips(); drawFilms(); } });
       } else c.noDecode = true;
     } catch(e){ c.thumbErr = true; }
     c.thumbsDone = true; n++;
-    scheduleStrips();
+    scheduleStrips(); drawFilms();
   }
   $("thumbProg").textContent = S.clips.some(c => c.noDecode) ? "vignettes indisponibles pour certains fichiers (voir le message en haut)" : "";
   thumbBusy = false;
@@ -1477,15 +1513,34 @@ function renderSummary(){
     else h += '<div class="meta">Sensibilité : aucune</div>';
     if(m.note) h += `<div class="note">Texte du carton : ${esc(m.note)}</div>`;
     h += `<label class="icom"><span>Commentaire interne ESAM (sous-titre, jamais publié)</span><textarea class="field" rows="2" data-com="${m.id}" placeholder="Ex. : flouter la plaque à 0:12, bon plan pour Instagram">${esc(m.comment || "")}</textarea></label>`;
-    h += '<div class="cams">';
     const ec = effCam(m);
-    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}">Voir</button>`;
+    if(ec != null) h += `<div class="film" data-rev="${m.id}" title="Revoir ce passage">${filmTimes(m).map(t => `<canvas width="160" height="90" data-film="${m.id}" data-t="${t}"></canvas>`).join("")}</div>`;
+    h += '<div class="cams">';
+    if(ec != null) h += `<button class="btn small" data-rev="${m.id}">Revoir</button><button class="btn small ghost" data-go="${m.id}" data-i="${trackIdx(ec)}">Voir</button>`;
     h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
   $("list").innerHTML = h;
   $("emptyList").hidden = list.length > 0;
+  drawFilms();
   renderSideList();
   renderChrono();
+  if($("rev").open) renderReview();
+}
+/* instants des vignettes d'un passage : début, milieu, fin (quatre sur une plage, trois autour d'un repère) */
+function filmTimes(m){
+  const a = m.at - S.base;
+  if(m.to == null) return [a - 2, a, a + 2].map(t => clamp(t, 0, S.dur));
+  const z = m.to - S.base;
+  return [0, 1/3, 2/3, 1].map(k => a + (z - a)*k);
+}
+function drawFilms(){
+  if($("sum").hidden) return;
+  document.querySelectorAll("#list canvas[data-film]").forEach(cv => {
+    const m = S.markers.find(x => x.id === cv.dataset.film); if(!m) return;
+    const ec = effCam(m), tr = ec != null ? S.tracks[trackIdx(ec)] : null;
+    const th = tr ? thumbAt(tr, +cv.dataset.t) : null;
+    if(th) drawThumbInto(cv, th, 160, 90); else if(!cv.dataset.blank){ cv.dataset.blank = "1"; drawThumbInto(cv, null, 160, 90); }
+  });
 }
 function byPreset(p){ return sorted().filter(m => m.preset === p); }
 function chrono(){
@@ -2084,6 +2139,8 @@ $("trackRows").addEventListener("click", e => {
 });
 
 $("list").addEventListener("click", e => {
+  const rv0 = e.target.closest("[data-rev]");
+  if(rv0){ const mr = S.markers.find(x => x.id === rv0.dataset.rev); if(mr) openReview(mr); return; }
   const g = e.target.closest("[data-go]"), ed = e.target.closest("[data-edit]");
   if(g){
     const m = S.markers.find(x => x.id === g.dataset.go); if(!m) return;
@@ -2177,6 +2234,71 @@ window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() =
 
 $("shCam").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return; draft.cam = b.dataset.l; renderSheet();
+});
+
+/* ---------- revue ----------
+   Dialogue #rev : relit un passage en boucle (caméra effective, sans marge) pour le nommer depuis le sommaire sans
+   quitter la liste ; Précédent et Suivant enchaînent tous les marqueurs. Un repère est joué 2 s avant et 2 s après. */
+const REV = {m:null, pieces:[], k:0, key:"", raf:0};
+const revV = $("revV");
+function revPieces(m){
+  const pt = m.to == null, a = Math.max(0, m.at - S.base - (pt ? 2 : 0)), z = Math.min(S.dur, (pt ? m.at + 2 : m.to) - S.base);
+  const ec = effCam(m), tr = ec != null ? S.tracks[trackIdx(ec)] : null;
+  if(!tr) return [];
+  return tr.clips.filter(c => c.ok && c.e > a && c.s < z).sort((x, y) => x.s - y.s)
+    .map(c => ({c:c, from:Math.max(a, c.s) - c.s, to:Math.min(z, c.e) - c.s})).filter(p => p.to - p.from > 0.1);
+}
+function openReview(m){
+  v.pause(); REV.m = m; REV.key = ""; renderReview();
+  const d = $("rev"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); }
+}
+function renderReview(){
+  const m = REV.m, list = sorted(), i = m ? list.indexOf(m) : -1;
+  if(i < 0){ $("rev").close(); return; }
+  const n = list.length, pt = m.to == null;
+  $("revTitle").textContent = `${pt ? "Repère" : "Passage"} ${i+1} sur ${n}`;
+  $("revWhen").textContent = pt ? clockAbs(m.at) : `${clockAbs(m.at)} à ${clockAbs(m.to)} (${len(m.to-m.at)})`;
+  $("revName").innerHTML = `${nameSelect(m)} <span class="camlbl">Caméra</span> ${camSelect(m)}`;
+  const ec = effCam(m); $("revCam").textContent = ec != null ? lensName(ec) : "";
+  $("revMeta").textContent = [(m.themes && m.themes.length ? m.themes.join(", ") : ""), (m.note ? `Carton : ${m.note}` : ""), (isSens(m) ? `Sensibilité : ${m.sens.join(", ")}` : "")].filter(Boolean).join(". ");
+  $("revPrev").disabled = i <= 0; $("revNext").disabled = i >= n - 1;
+  const key = `${m.id}:${ec}:${m.at}:${m.to}`;
+  if(key !== REV.key){ REV.key = key; revPlay(); }
+}
+function revPlay(){
+  REV.pieces = revPieces(REV.m); REV.k = 0;
+  $("revGap").hidden = REV.pieces.length > 0;
+  if(!REV.pieces.length){ revV.pause(); revV.removeAttribute("src"); $("revClock").textContent = clockAbs(REV.m.at); return; }
+  revPiece(0);
+}
+function revPiece(k){
+  const p = REV.pieces[k]; REV.k = k;
+  const go = () => { revV.currentTime = p.from; revV.play().catch(() => {}); };
+  if(revV.getAttribute("src") !== p.c.url){ revV.setAttribute("src", p.c.url); revV.onloadedmetadata = () => { revV.onloadedmetadata = null; go(); }; }
+  else go();
+}
+function revLoop(){
+  cancelAnimationFrame(REV.raf);
+  (function step(){
+    const p = REV.pieces[REV.k];
+    if(revV.paused || !p || !$("rev").open) return;
+    $("revClock").textContent = clockAbs(S.base + p.c.s + revV.currentTime);
+    if(revV.currentTime >= p.to - 0.03) revPiece((REV.k + 1) % REV.pieces.length);
+    REV.raf = requestAnimationFrame(step);
+  })();
+}
+revV.addEventListener("play", revLoop);
+revV.addEventListener("ended", () => { if(REV.pieces.length && $("rev").open) revPiece((REV.k + 1) % REV.pieces.length); });
+function revStep(d){ const list = sorted(), i = list.indexOf(REV.m) + d; if(list[i]){ REV.m = list[i]; renderReview(); } }
+$("revPrev").onclick = () => { revStep(-1); };
+$("revNext").onclick = () => { revStep(1); };
+$("revClose").onclick = () => { $("rev").close(); };
+$("revEdit").onclick = () => { if(REV.m) openSheet(REV.m, false); };
+$("revAll").onclick = () => { const l = sorted(); if(l.length) openReview(l[0]); else toast("Aucun marqueur à revoir."); };
+$("rev").addEventListener("close", () => { cancelAnimationFrame(REV.raf); revV.pause(); revV.removeAttribute("src"); REV.m = null; REV.key = ""; });
+$("rev").addEventListener("keydown", e => {
+  if(/input|textarea|select/i.test(e.target.tagName) || $("sheet").open) return;
+  if(e.key === "ArrowLeft"){ e.preventDefault(); revStep(-1); } else if(e.key === "ArrowRight"){ e.preventDefault(); revStep(1); }
 });
 
 /* ---------- photo ----------
@@ -2759,7 +2881,7 @@ async function loadSheets(){
           c.thumbs.push({t: idx*sh.every, img:img, sx:(k % sh.cols)*sh.tw, sy:Math.floor(k / sh.cols)*sh.th, w:sh.tw, h:sh.th});
         }
       } catch(e){}
-      n++; scheduleStrips();
+      n++; scheduleStrips(); drawFilms();
     }
   }
   $("thumbProg").textContent = "";
