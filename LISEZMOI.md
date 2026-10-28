@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.14
-date_maj: 2026-10-27
+version: 0.15
+date_maj: 2026-10-28
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -161,6 +161,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.15 | 2026-10-28 | Visionnage au téléphone : lecture rapide tant que le bouton x16 reste appuyé, retour à la vitesse normale au relâchement avec un léger recul (vitesse et recul réglables par le bouton à côté) ; -5 s et +5 s répétés quand on les maintient ; commandes (lecture, Début, Fin, Repère) dans une barre fixe en bas de l'écran ; les bords d'une plage ne se déplacent plus par mégarde : au doigt, il faut d'abord toucher « Ajuster » dans le bandeau « Dans la plage » ; nom de la mission obligatoire avant de créer la vidéo compilée, le réel ou la story (c'est le titre de la vidéo) ; écran maintenu allumé pendant la lecture et les calculs ; onglet Planche retiré |
 | 0.14 | 2026-10-27 | Dossier de travail : « Ouvrir le dossier des rushs » importe toutes les vidéos et photos du dossier et de ses sous-dossiers (sauf `proxies`) et reprend la fiche qui s'y trouve ; sur ordinateur (Chrome, Edge), la fiche et les vidéos produites y sont enregistrées et le dernier dossier se rouvre d'un clic (« Reprendre ») ; sur téléphone, le dossier est importé avec les noms d'origine, mais le travail reste gardé dans le navigateur |
 | 0.13 | 2026-10-27 | Téléphone : vidéos choisies dans la galerie (noms remplacés par des numéros) réparties sur des pistes distinctes au lieu d'une seule, thermique reconnue à son format d'image, message invitant à passer par l'application Fichiers pour garder les noms DJI ; le bouton « Choisir les vidéos » ouvre de préférence le gestionnaire de fichiers ; vignettes de la piste affichée calculées en premier |
 | 0.12 | 2026-10-20 | Appli utilisable sans Internet (bibliothèques et polices embarquées) ; ouverture d'une longue intervention en mode PC bien plus rapide et plus légère en mémoire ; pincement à deux doigts pour zoomer la timeline ; sur téléphone, messages affichés sous l'en-tête, onglet Réel en trois volets (Montage, Passage, Habillage), chronologie RETEX repliée tant qu'aucun décollage n'est marqué, un seul bouton « Voir » par passage ; nombre de passages du réel sur l'onglet ; documentation technique dans `docs/ARCHITECTURE.md` |

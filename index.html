@@ -11,7 +11,7 @@
 @font-face{font-family:Montserrat;font-style:normal;font-weight:400 700;font-display:swap;src:url(vendor/montserrat-latin.woff2) format("woff2")}
 /* Charte ESAM : polices Anton (titres) et Montserrat (texte), couleurs en variables ci-dessous.
    Organisation : base, en-tête, boutons, accueil, lecteur, timeline, sommaire, fiche de marqueur,
-   dialogue de calcul, planche, mode PC, réel ; les règles pour écran large sont regroupées à la fin
+   dialogue de calcul, mode PC, réel ; les règles pour écran large sont regroupées à la fin
    de chaque partie dans un seul bloc @media (min-width:1100px). */
 :root{
   --lh:46px; --ink:#171618; --onblue:#171618; --bg:#FFFFFF; --blue:#A8C8FB; --yellow:#F9DD10; --paleyellow:#FEF6C8;
@@ -128,12 +128,18 @@ textarea.field{min-height:70px;resize:vertical}
 .scrubprev canvas{max-width:100%;max-height:100%}
 .scrubprev span{position:absolute;right:10px;top:10px;background:var(--blue);color:var(--onblue);font-weight:700;font-size:13px;padding:4px 10px;border-radius:6px}
 .transport{position:relative;display:flex;gap:8px;padding:8px 12px}
-.transport .btn{flex:1;min-height:44px;padding:6px 4px}
+.transport .btn{flex:1;min-height:48px;padding:6px 4px}
 .transport .play{flex:1.8;background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* boutons à maintenir (x16, -5 s, +5 s) : pas de sélection de texte ni de menu contextuel sous le pouce */
+.transport .hold,.transport .spd{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .spd[aria-pressed="true"]{background:var(--blue);color:#171618;border-color:#171618}
-.spdpop{position:absolute;right:12px;bottom:calc(100% - 4px);z-index:30;background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:6px;display:flex;gap:6px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-.spdpop button{min-width:52px;min-height:44px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font-weight:700}
+.transport .spdset{flex:0 0 40px;padding:0;color:var(--muted)}
+.spdpop{position:absolute;right:12px;bottom:calc(100% - 4px);z-index:30;background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:8px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.spdpop .spdrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.spdpop .spdrow>span{flex:1 0 100%;font-size:12px;font-weight:700;color:var(--muted)}
+.spdpop button{min-width:52px;min-height:40px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font-weight:700}
 .spdpop button[aria-pressed="true"]{background:var(--blue);color:#171618;border-color:#171618}
+.btn.off{opacity:.5}
 .mbig{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 12px 10px}
 .mb{min-height:58px;border-radius:12px;border:2px solid #171618;background:var(--blue);color:#171618;font-weight:700;font-size:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.1;touch-action:manipulation}
 .mb .ic{font-family:Anton,Impact,sans-serif;font-size:20px;line-height:1}
@@ -148,8 +154,19 @@ textarea.field{min-height:70px;resize:vertical}
 .inwin .iwb{display:flex;gap:6px;flex:none}
 .inwin .btn{min-height:34px;padding:4px 10px;font-size:12px;border-width:1.5px}
 .inwin.on .btn{background:#fff;color:#171618;border-color:#171618}
-@media (max-width:520px){ .inwin{flex-wrap:wrap} .inwin .iwl{white-space:normal;line-height:1.25} .inwin .iwb{flex-wrap:wrap} }
+/* téléphone : le texte du bandeau sur toute la largeur, les boutons en dessous */
+@media (max-width:1099px){ .inwin{flex-wrap:wrap;padding:6px 8px 6px 10px} .inwin .iwl{flex:1 0 100%;white-space:normal;line-height:1.25;font-size:12px} .inwin .iwb{flex-wrap:wrap} }
+/* à la souris, les poignées sont toujours visibles : pas besoin du bouton « Ajuster » */
+@media (hover:hover) and (pointer:fine){ .inwin [data-wa="sel"]{display:none} }
 .pending{margin:0 12px 10px;padding:4px 10px;border:2px dashed var(--ink);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;font-weight:600}
+/* téléphone : les commandes (lecture, Début, Fin, Repère) forment une barre fixe en bas, dans la zone du pouce ;
+   l'onglet Visionner reçoit une marge basse de la hauteur de cette barre (variable --ctrlh, mesurée par ResizeObserver) */
+@media (max-width:1099px){
+  .ctrl{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;flex-direction:column;background:var(--bg);border-top:1px solid var(--line);padding:6px 0 env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+  .ctrl .inwin{order:1} .ctrl .pending{order:2} .ctrl .transport{order:3;padding-top:4px} .ctrl .mbig{order:4}
+  #view{padding-bottom:calc(var(--ctrlh,190px) + 8px)}
+  .player{border-bottom:0}
+}
 
 /* ---------- timeline ---------- */
 .tl{padding:8px 0 4px}
@@ -176,7 +193,12 @@ textarea.field{min-height:70px;resize:vertical}
 .mr.pend{border:2px dashed var(--ink);background:transparent}
 .mh{position:absolute;top:2px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:0}
 .mh.sens{background:var(--yellow)}
-.eg{position:absolute;top:26px;bottom:0;width:22px;margin-left:-11px;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2}
+.mr.sel{border-color:var(--ink);background:var(--band);box-shadow:inset 0 0 0 2px var(--ink)}
+/* poignées de bord : au doigt, seulement sur la plage sélectionnée (bouton « Ajuster » du bandeau), pour ne pas déplacer
+   une plage en voulant seulement poser le curseur ; à la souris, toujours disponibles */
+.eg{position:absolute;top:26px;bottom:0;width:22px;margin-left:-11px;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2;display:none}
+.mr.sel .eg{display:block}
+@media (hover:hover) and (pointer:fine){ .eg{display:block} }
 .eg.l{left:0}
 .eg.r{left:100%}
 .eg::after{content:"";position:absolute;left:8px;top:30%;bottom:30%;width:6px;border-radius:3px;background:var(--blue);border:1.5px solid #171618}
@@ -277,18 +299,6 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .cmplist input{width:20px;height:20px;margin-top:2px;accent-color:#171618}
 .cmplist small{display:block;color:var(--muted);font-size:12px}
 
-/* ---------- planche ---------- */
-.bhead{padding:14px 16px 6px;display:flex;flex-direction:column;gap:10px}
-.bhead .hint{margin:0}
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:8px 16px 30px}
-.tile{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft);cursor:pointer}
-.tile canvas{display:block;width:100%;aspect-ratio:16/9;background:#000}
-.tbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.tbar .btn{min-height:30px;padding:2px 8px;font-size:12px}
-.badges{position:absolute;top:6px;left:6px;display:flex;gap:4px}
-.badges b{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#171618;border:2px solid #171618;font-size:11px;display:flex;align-items:center;justify-content:center}
-.badges b.sens{background:var(--yellow)}
-
 /* ---------- mode PC : liste des interventions ---------- */
 body.srv .empty{max-width:760px}
 body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
@@ -388,7 +398,6 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <h1 class="ttl">Dérushage drone</h1>
     <nav class="tabs" role="tablist" id="tabs" hidden>
       <button class="tab" role="tab" id="tabView" aria-selected="true" aria-controls="view">Visionner</button>
-      <button class="tab" role="tab" id="tabBoard" aria-selected="false" aria-controls="board">Planche</button>
       <button class="tab" role="tab" id="tabSum" aria-selected="false" aria-controls="sum">Sommaire<span class="n" id="count">0</span></button>
       <button class="tab" role="tab" id="tabReel" aria-selected="false" aria-controls="reel">Réel<span class="n" id="rCount">0</span></button>
     </nav>
@@ -445,12 +454,13 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
             <button class="btn small" id="gapNext"></button>
           </div>
         </div>
+        <div class="ctrl" id="ctrl">
         <div class="transport">
-          <button class="btn ghost" id="back" aria-label="Reculer de 5 secondes">-5 s</button>
+          <button class="btn ghost hold" id="back" aria-label="Reculer de 5 secondes (maintenir pour enchaîner)">-5 s</button>
           <button class="btn play" id="play" aria-label="Lire"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg></button>
-          <button class="btn ghost" id="fwd" aria-label="Avancer de 5 secondes">+5 s</button>
-          <button class="btn ghost spd" id="r1" aria-pressed="true" title="Vitesse normale">x1</button>
-          <button class="btn ghost spd" id="rFast" aria-pressed="false" title="Lecture rapide (appui long : choisir la vitesse)">x16</button>
+          <button class="btn ghost hold" id="fwd" aria-label="Avancer de 5 secondes (maintenir pour enchaîner)">+5 s</button>
+          <button class="btn ghost spd" id="rFast" aria-pressed="false" title="Lecture rapide tant que le bouton est maintenu">x16</button>
+          <button class="btn ghost spdset" id="spdSet" aria-label="Réglages de la lecture rapide" aria-haspopup="menu" title="Vitesse et recul au relâchement"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
           <div class="spdpop" id="spdPop" role="menu" hidden></div>
         </div>
         <div class="mbig">
@@ -462,6 +472,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
         <div class="pending" id="pending" hidden>
           <span id="pendTxt"></span>
           <button class="btn small ghost" id="pendCancel">Annuler</button>
+        </div>
         </div>
       </div>
 
@@ -492,7 +503,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       <div class="sidelist" id="sideList"></div>
       <details class="tracks" id="tracks">
         <summary>Plus d'options</summary>
-        <p class="keys"><kbd>Espace</kbd> lecture, <kbd>J</kbd> recul 10 s, <kbd>K</kbd> pause et x1, <kbd>L</kbd> lecture rapide<br><kbd>Flèches</kbd> 5 s, <kbd>Maj + flèches</kbd> 1 min, <kbd>,</kbd> <kbd>.</kbd> image par image<br><kbd>P</kbd> photo, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>1</kbd> à <kbd>9</kbd> changer de piste</p>
+        <p class="keys"><kbd>Espace</kbd> lecture, <kbd>J</kbd> recul 10 s, <kbd>K</kbd> pause et x1, <kbd>L</kbd> lecture rapide (à nouveau : x1)<br><kbd>Flèches</kbd> 5 s, <kbd>Maj + flèches</kbd> 1 min, <kbd>,</kbd> <kbd>.</kbd> image par image<br><kbd>P</kbd> photo, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>1</kbd> à <kbd>9</kbd> changer de piste</p>
         <div class="foot">
           <label class="btn small ghost" for="fileIn">Ajouter des vidéos</label>
           <button class="btn small ghost" id="reset">Changer de vol</button>
@@ -504,19 +515,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     </div>
   </section>
 
-  <section id="board" hidden>
-    <div class="bhead">
-      <div class="chips" id="bTracks"></div>
-      <div class="chips" id="bStep"></div>
-      <p class="hint" id="bHint">Une vignette par intervalle sur toute la durée du vol. Touchez une vignette pour y aller, ou Marquer pour poser un marqueur à cet endroit.</p>
-    </div>
-    <div class="bgrid" id="bGrid"></div>
-  </section>
-
   <section id="sum" hidden>
     <div class="sumhead">
       <label for="interv">Intervention</label>
       <input class="field" id="interv" placeholder="Ex. : chien égaré, combe de Lancey" autocomplete="off">
+      <p class="hint miss" id="nameHint" hidden>Le nom de la mission est le titre de la vidéo : à renseigner avant de créer la vidéo compilée, le réel ou la story.</p>
       <label for="auteur" style="margin-top:10px">Auteur de la vidéo compilée (signe les commentaires internes)</label>
       <input class="field" id="auteur" placeholder="Ex. : Julien de Feydeau" autocomplete="name">
       <div class="flight" id="flight"></div>
@@ -692,7 +695,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.14";
+const APP_VERSION = "0.15";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["W","Z","T","V","N","S"];
 const THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
@@ -987,11 +990,11 @@ async function genThumbs(){
     $("thumbProg").textContent = `vignettes ${Math.round(n/todo.length*100)} %`;
     try {
       if(await canDecode(c.media)){
-        await thumbsFor(c, step, () => { const now = performance.now(); if(now - lastDraw > 400){ lastDraw = now; scheduleStrips(); refreshBoard(); } });
+        await thumbsFor(c, step, () => { const now = performance.now(); if(now - lastDraw > 400){ lastDraw = now; scheduleStrips(); } });
       } else c.noDecode = true;
     } catch(e){ c.thumbErr = true; }
     c.thumbsDone = true; n++;
-    scheduleStrips(); refreshBoard();
+    scheduleStrips();
   }
   $("thumbProg").textContent = S.clips.some(c => c.noDecode) ? "vignettes indisponibles pour certains fichiers (voir le message en haut)" : "";
   thumbBusy = false;
@@ -1138,8 +1141,23 @@ v.addEventListener("loadedmetadata", () => {
   v.playbackRate = S.rate;
   if(pendingSeek){ const p = pendingSeek; pendingSeek = null; v.currentTime = p.local; if(p.play) v.play().catch(() => {}); }
 });
-v.addEventListener("play", () => { updatePlayBtn(); loop(); });
-v.addEventListener("pause", updatePlayBtn);
+v.addEventListener("play", () => { updatePlayBtn(); loop(); keepAwake("lecture", true); });
+v.addEventListener("pause", () => { updatePlayBtn(); keepAwake("lecture", false); });
+/* écran maintenu allumé (Wake Lock) pendant la lecture et surtout pendant un calcul ; le verrou tombe quand la page
+   passe en arrière-plan, il est redemandé au retour. Sans effet sur les navigateurs qui ne le proposent pas. */
+const WAKE = {why:new Set(), lock:null, busy:false};
+function keepAwake(why, on){ if(on) WAKE.why.add(why); else WAKE.why.delete(why); wakeSync(); }
+async function wakeSync(){
+  if(!("wakeLock" in navigator) || WAKE.busy) return;
+  const want = WAKE.why.size > 0 && document.visibilityState === "visible";
+  if(want && !WAKE.lock){
+    WAKE.busy = true;
+    try { const l = await navigator.wakeLock.request("screen"); WAKE.lock = l; l.addEventListener("release", () => { if(WAKE.lock === l) WAKE.lock = null; }); } catch(e){}
+    WAKE.busy = false;
+    if(!WAKE.why.size) wakeSync();
+  } else if(!want && WAKE.lock){ const l = WAKE.lock; WAKE.lock = null; try { l.release(); } catch(e){} }
+}
+document.addEventListener("visibilitychange", wakeSync);
 v.addEventListener("seeked", () => { if(S.cur){ S.t = S.cur.s + v.currentTime; draw(); } });
 v.addEventListener("ended", () => {
   const c = S.cur; if(!c) return;
@@ -1289,7 +1307,7 @@ document.addEventListener("change", e => {
   const el = e.target; if(!el.dataset || !el.dataset.name) return;
   const m = S.markers.find(x => x.id === el.dataset.name); if(!m || el.value === "__custom") return;
   m.preset = el.value || null; m.title = el.value || "";
-  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  persist(); renderMarkers(); renderSummary();
 });
 function renderSideList(){
   const el = $("sideList"); if(!el) return;
@@ -1297,12 +1315,15 @@ function renderSideList(){
   el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button class="btn small ghost" data-sedit="${m.id}" aria-label="Détails">...</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
 }
 function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
+let SEL = null;                 // plage dont les poignées de bord sont affichées (au doigt)
+function selectRange(id){ SEL = SEL === id ? null : id; renderMarkers(); }
 function renderMarkers(){
   const p = pps();
   let html = "";
+  if(SEL && !S.markers.some(m => m.id === SEL && m.to != null)) SEL = null;
   sorted().forEach((m, i) => {
     const x = (m.at - S.base)*p;
-    if(m.to != null) html += `<div class="mr" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px"><span class="eg l" data-id="${m.id}" data-edge="l" title="Glisser pour ajuster le début"></span><span class="eg r" data-id="${m.id}" data-edge="r" title="Glisser pour ajuster la fin"></span></div>`;
+    if(m.to != null) html += `<div class="mr${m.id === SEL ? " sel" : ""}" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px"><span class="eg l" data-id="${m.id}" data-edge="l" title="Glisser pour ajuster le début"></span><span class="eg r" data-id="${m.id}" data-edge="r" title="Glisser pour ajuster la fin"></span></div>`;
     else html += `<div class="mi" style="left:${x}px"></div>`;
     html += `<button class="mh${isSens(m)?" sens":""}" data-id="${m.id}" style="left:${x}px" aria-label="Marqueur ${i+1}">${i+1}</button>`;
   });
@@ -1339,10 +1360,10 @@ function renderInWin(){
   if(w.cur){
     const m = w.cur.m, n = w.cur.i + 1;
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
-    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}`;
+    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}:${SEL === m.id}`;
     txt = (m.to != null ? `Dans la plage ${n} : ` : `Sur le repère ${n} : `)+label(m)+(m.to != null ? `, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : "")+(ec ? `, compilée en ${lensName(ec).toLowerCase()}` : "");
     if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Utiliser ${esc(lensName(shown).toLowerCase())}</button>`;
-    if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button>`;
+    if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button><button type="button" class="btn small${SEL === m.id ? "" : " ghost"}" data-wa="sel" data-id="${m.id}" aria-pressed="${SEL === m.id}">${SEL === m.id ? "Terminer" : "Ajuster"}</button>`;
     btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Détails</button>`;
   } else if(w.after || w.before){
     const o = w.after || w.before, n2 = o.i + 1;
@@ -1364,6 +1385,7 @@ $("inWin").addEventListener("click", e => {
   const abs = S.base + S.t, n = sorted().indexOf(m) + 1;
   if(b.dataset.wa === "edit"){ v.pause(); openSheet(m, false); return; }
   if(b.dataset.wa === "cam"){ setCam(m, track().lens); return; }
+  if(b.dataset.wa === "sel"){ selectRange(m.id); if(SEL) toast("Glissez les poignées sur la piste pour ajuster la plage."); return; }
   const old = {at:m.at, to:m.to};
   if(b.dataset.wa === "debut"){ if(abs > m.to - 1){ toast("Le début doit rester avant la fin de la plage."); return; } m.at = abs; }
   else { if(abs < m.at + 1){ toast("La fin doit rester après le début de la plage."); return; } m.to = abs; }
@@ -1406,9 +1428,23 @@ function renderComp(){
   const rc = $("rCount"); if(rc) rc.textContent = S.meta.reel && S.meta.reel.items ? S.meta.reel.items.length : 0;
   const b = $("cmpOpen"); if(b) b.textContent = pl.items.length ? `Créer la vidéo compilée (${len(pl.total)})` : "Créer la vidéo compilée";
 }
-$("mName").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); const iv = $("interv"); if(iv) iv.value = this.value; });
+$("mName").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); const iv = $("interv"); if(iv) iv.value = this.value; renderNeedName(); });
+/* le nom de la mission est le titre de la vidéo : obligatoire avant la vidéo compilée, le réel et la story */
+function hasName(){ return !!clean(S.meta.intervention || ""); }
+function renderNeedName(){
+  const off = !hasName();
+  ["cmpOpen","rGoReel","rGoStory"].forEach(id => { const b = $(id); if(b) b.classList.toggle("off", off); });
+  const h = $("nameHint"); if(h) h.hidden = !off;
+}
+function needName(){
+  if(hasName()) return false;
+  toast("Nommez d'abord la mission : c'est le titre de la vidéo.");
+  const f = $("sum").hidden ? $("mName") : $("interv");
+  try { f.scrollIntoView({block:"center"}); f.focus(); } catch(e){}
+  return true;
+}
 function renderHeader(){
-  renderMission();
+  renderMission(); renderNeedName();
   const n = S.clips.length, title = S.meta.intervention ? clean(S.meta.intervention) : "Intervention sans nom";
   $("hsub").textContent = n ? `${title}, ${S.real ? `vol du ${dayAbs(S.base)}` : `${n} fichier(s)`}` : "Aucun vol chargé";
   if(document.activeElement !== $("interv")) $("interv").value = S.meta.intervention || "";
@@ -1499,7 +1535,7 @@ function renderAll(){ renderHeader(); renderTimeline(); renderTracks(); renderSu
 let draft = null, draftIsNew = false;
 function addMarker(a, b){
   const m = {id:uid(), at:a, to:b, preset:null, title:"", themes:[], interest:0, sens:[NONE], note:"", cam:track() ? track().lens : null};
-  S.markers.push(m); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  S.markers.push(m); persist(); renderMarkers(); renderSummary();
   toast(`${b != null ? `Plage ${clockAbs(a)} à ${clockAbs(b)}` : `Repère ${clockAbs(a)}`} ajouté.`, "Annuler", () => {
     S.markers = S.markers.filter(x => x.id !== m.id); persist(); renderMarkers(); renderSummary(); toast("Marqueur retiré.");
   });
@@ -1620,7 +1656,7 @@ $("shSave").onclick = () => {
   const i = S.markers.findIndex(m => m.id === draft.id);
   if(i >= 0) S.markers[i] = draft; else S.markers.push(draft);
   const saved = draft;
-  closeSheet(); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  closeSheet(); persist(); renderMarkers(); renderSummary();
   toast(i >= 0 ? "Marqueur modifié." : `${label(saved)} ajouté à ${clockAbs(saved.at)}.`);
 };
 $("shDel").onclick = () => {
@@ -1841,34 +1877,71 @@ $("dirIn").addEventListener("change", e => {
    Transport, vitesse, zoom et pincement de la timeline, glissement des bords de plage, raccourcis clavier, onglets. */
 $("fileIn").addEventListener("change", e => { const fl = e.target.files; addFiles(fl).then(() => { e.target.value = ""; }); });
 $("play").onclick = togglePlay;
-$("back").onclick = () => { seek(S.t - 5, S.cur && !v.paused); };
-$("fwd").onclick = () => { seek(S.t + 5, S.cur && !v.paused); };
-let FAST = 16;
-const FAST_OPTS = [2,4,8,16];
+/* bouton à maintenir : un appui court agit une fois, un appui maintenu répète l'action (sauts enchaînés) */
+function holdRepeat(btn, fn){
+  let timer = 0, iv = 0, held = false;
+  btn.addEventListener("pointerdown", e => {
+    held = false; try { btn.setPointerCapture(e.pointerId); } catch(err){}
+    timer = setTimeout(() => { held = true; fn(); iv = setInterval(fn, 220); }, 400);
+  });
+  const end = () => { clearTimeout(timer); clearInterval(iv); iv = 0; };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev => { btn.addEventListener(ev, end); });
+  btn.addEventListener("contextmenu", e => { e.preventDefault(); });
+  btn.addEventListener("click", () => { if(held){ held = false; return; } fn(); });
+}
+holdRepeat($("back"), () => { seek(S.t - 5, S.cur && !v.paused); });
+holdRepeat($("fwd"), () => { seek(S.t + 5, S.cur && !v.paused); });
+/* lecture rapide : tant que le bouton x16 est maintenu ; au relâchement, retour à x1 avec un léger recul (REWIND)
+   qui compense le temps de réaction. Vitesse et recul se règlent par le bouton à côté et sont gardés dans ce navigateur. */
+let FAST = 16, REWIND = 1;
+const FAST_OPTS = [2,4,8,16], REWIND_OPTS = [0,0.5,1,2];
+try { const o = JSON.parse(localStorage.getItem("esam-vitesse") || "{}"); if(FAST_OPTS.indexOf(o.fast) >= 0) FAST = o.fast; if(REWIND_OPTS.indexOf(o.recul) >= 0) REWIND = o.recul; } catch(e){}
+function saveSpeed(){ try { localStorage.setItem("esam-vitesse", JSON.stringify({fast:FAST, recul:REWIND})); } catch(e){} }
 function setRate(r){
   S.rate = r; v.playbackRate = r;
-  $("r1").setAttribute("aria-pressed", r === 1); $("rFast").setAttribute("aria-pressed", r !== 1);
+  $("rFast").setAttribute("aria-pressed", r !== 1);
   $("rFast").textContent = `x${r !== 1 ? r : FAST}`;
 }
 function playAt(r){ setRate(r); if(!S.cur || v.paused) togglePlay(); }
+function fastStop(){
+  if(S.rate === 1) return;
+  setRate(1);
+  if(REWIND && S.cur && !v.paused) seek(Math.max(0, S.t - REWIND), true);
+}
 function hidePop(){ $("spdPop").hidden = true; }
 function showPop(){
   const p = $("spdPop");
-  p.innerHTML = FAST_OPTS.map(x => `<button type="button" data-r="${x}" aria-pressed="${x === FAST}">x${x}</button>`).join("");
+  p.innerHTML = `<div class="spdrow"><span>Vitesse du bouton maintenu</span>${FAST_OPTS.map(x => `<button type="button" data-r="${x}" aria-pressed="${x === FAST}">x${x}</button>`).join("")}</div>`
+    + `<div class="spdrow"><span>Recul au relâchement</span>${REWIND_OPTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${w === REWIND}">${String(w).replace(".", ",")} s</button>`).join("")}</div>`;
   p.hidden = false;
 }
-$("spdPop").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; FAST = +b.dataset.r; hidePop(); playAt(FAST); });
-document.addEventListener("pointerdown", e => { if(!$("spdPop").hidden && !e.target.closest("#spdPop,#rFast")) hidePop(); });
+$("spdPop").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.r){ FAST = +b.dataset.r; setRate(S.rate !== 1 ? FAST : 1); }
+  else if(b.dataset.w != null) REWIND = +b.dataset.w;
+  saveSpeed(); showPop();
+});
+$("spdSet").onclick = () => { if($("spdPop").hidden) showPop(); else hidePop(); };
+document.addEventListener("pointerdown", e => { if(!$("spdPop").hidden && !e.target.closest("#spdPop,#spdSet")) hidePop(); });
 (() => {
   const btn = $("rFast");
-  let timer = 0;
-  let longed = false;
-  btn.addEventListener("pointerdown", () => { longed = false; timer = setTimeout(() => { longed = true; showPop(); }, 450); });
-  ["pointerup","pointerleave","pointercancel"].forEach(ev => { btn.addEventListener(ev, () => { clearTimeout(timer); }); });
+  let held = false;
+  btn.addEventListener("pointerdown", e => {
+    if(!S.clips.length) return;
+    held = true; try { btn.setPointerCapture(e.pointerId); } catch(err){}
+    hidePop(); playAt(FAST);
+  });
+  const end = () => { if(!held) return; held = false; fastStop(); };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev => { btn.addEventListener(ev, end); });
   btn.addEventListener("contextmenu", e => { e.preventDefault(); });
-  btn.addEventListener("click", () => { if(longed){ longed = false; return; } hidePop(); playAt(FAST); });
+  btn.addEventListener("click", e => { e.preventDefault(); });          // tout se joue entre l'appui et le relâchement
+  btn.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); e.stopPropagation(); if(!e.repeat) playAt(FAST); } });
+  btn.addEventListener("keyup", e => { if(e.key === " " || e.key === "Enter") fastStop(); });
 })();
-$("r1").onclick = () => { hidePop(); setRate(1); };
+/* téléphone : la barre de commande est fixe en bas ; sa hauteur devient la marge basse de l'onglet (voir CSS .ctrl) */
+if(typeof ResizeObserver === "function"){
+  new ResizeObserver(en => { const h = en[0].contentRect.height; if(h) document.documentElement.style.setProperty("--ctrlh", `${Math.round(h)}px`); }).observe($("ctrl"));
+}
 $("pendCancel").onclick = cancelPending;
 $("zIn").onclick = () => { setZoom(S.zoom*2); };
 $("zOut").onclick = () => { setZoom(S.zoom/2); };
@@ -1888,6 +1961,7 @@ $("lanes").addEventListener("pointerup", e => {
   const rect = $("inner").getBoundingClientRect(), t = (e.clientX - rect.left)/pps();
   const playing = S.cur && !v.paused;
   if(t0.lane){ const i = +t0.lane.dataset.i; if(i !== S.active){ S.active = i; S.cur = null; renderTimeline(); } }
+  if(SEL && e.pointerType !== "mouse"){ SEL = null; renderMarkers(); }
   seek(t, playing);
 });
 $("lanes").addEventListener("pointercancel", () => { tap = null; });
@@ -2038,22 +2112,20 @@ $("list").addEventListener("input", e => {
   const m = S.markers.find(x => x.id === t.dataset.com); if(!m) return;
   m.comment = clean(t.value); persist();
 });
-$("interv").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); $("mName").value = this.value; });
+$("interv").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); $("mName").value = this.value; renderNeedName(); });
 
 function setTab(which){
   $("tabView").setAttribute("aria-selected", which === "view");
-  $("tabBoard").setAttribute("aria-selected", which === "board");
   $("tabSum").setAttribute("aria-selected", which === "sum");
   $("tabReel").setAttribute("aria-selected", which === "reel");
-  $("view").hidden = which !== "view"; $("sum").hidden = which !== "sum"; $("board").hidden = which !== "board"; $("reel").hidden = which !== "reel";
-  $("hov").hidden = true;
+  $("view").hidden = which !== "view"; $("sum").hidden = which !== "sum"; $("reel").hidden = which !== "reel";
+  $("hov").hidden = true; hidePop();
+  if(SEL){ SEL = null; renderMarkers(); }
   if(which !== "reel" && typeof reelLeave === "function") reelLeave();
   if(which === "reel"){ v.pause(); reelEnter(); }
   else if(which === "sum"){ v.pause(); renderHeader(); renderSummary(); }
-  else if(which === "board"){ v.pause(); renderBoard(); }
   else { renderTimeline(); }
 }
-$("tabBoard").onclick = () => { setTab("board"); };
 $("sideList").addEventListener("click", e => {
   if(e.target.closest("select")) return;
   const ed = e.target.closest("[data-sedit]");
@@ -2064,53 +2136,6 @@ $("sideList").addEventListener("click", e => {
   const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
 });
 
-/* ---------- planche ----------
-   Grille d'une vignette par intervalle sur la piste active, dessinée à la demande (IntersectionObserver). */
-const BOARD = {step:0, vis:new Set(), obs:null};
-const BSTEPS = [10,30,60,300], BLABELS = ["10 s","30 s","1 min","5 min"];
-function renderBoard(){
-  const tr = track(); if(!tr) return;
-  $("bTracks").innerHTML = S.tracks.map((t, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`).join("");
-  if(!BOARD.step){ BOARD.step = BSTEPS.find(x => S.dur/x <= 240) || 300; }
-  chipRow($("bStep"), BLABELS, (t, i) => BSTEPS[i] === BOARD.step);
-  const tiles = [], st = BOARD.step;
-  for(let t = 0; t < S.dur; t += st){
-    const c = clipAt(tr, t);
-    let tt = null;
-    if(c) tt = t; else { const n = tr.clips.find(x => x.ok && x.s > t && x.s < t + st); if(n) tt = n.s + 0.05; }
-    if(tt != null) tiles.push(tt);
-  }
-  const list = sorted();
-  $("bGrid").innerHTML = tiles.map(tt => {
-    let b = "";
-    list.forEach((m, k) => { const a = m.at - S.base, z = m.to != null ? m.to - S.base : a; if(z >= tt - 0.01 && a < tt + st) b += `<b class="${isSens(m)?"sens":""}">${k+1}</b>`; });
-    return `<div class="tile" data-t="${tt}"><canvas width="192" height="108"></canvas><div class="badges">${b}</div><div class="tbar"><span>${clockAbs(S.base+tt)}</span><button type="button" class="btn small ghost" data-mark="${tt}">Marquer</button></div></div>`;
-  }).join("") || '<p class="emptylist">Aucune image sur cette piste.</p>';
-  BOARD.vis.clear();
-  if(BOARD.obs) BOARD.obs.disconnect();
-  BOARD.obs = new IntersectionObserver(entries => {
-    entries.forEach(en => { if(en.isIntersecting){ BOARD.vis.add(en.target); drawTile(en.target); } else BOARD.vis.delete(en.target); });
-  }, {rootMargin:"300px"});
-  document.querySelectorAll("#bGrid .tile").forEach(el => { BOARD.obs.observe(el); });
-}
-function drawTile(el){
-  if(el.dataset.ok) return;
-  const th = thumbAt(track(), +el.dataset.t), cv = el.querySelector("canvas");
-  const ctx = cv.getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0,0,192,108);
-  if(!th){ ctx.fillStyle = "#777"; ctx.font = "600 12px Montserrat, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Vignette en cours", 96, 58); return; }
-  const k = Math.min(192/thW(th), 108/thH(th)), dw = thW(th)*k, dh = thH(th)*k;
-  drawThumb(ctx, th, (192-dw)/2, (108-dh)/2, dw, dh); el.dataset.ok = "1";
-}
-function refreshBoard(){ if($("board").hidden) return; BOARD.vis.forEach(drawTile); }
-$("bTracks").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; S.active = +b.dataset.i; S.cur = null; renderBoard(); });
-$("bStep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; BOARD.step = BSTEPS[+b.dataset.k]; renderBoard(); });
-$("bGrid").addEventListener("click", e => {
-  const mk = e.target.closest("[data-mark]"), tile = e.target.closest(".tile"); if(!tile) return;
-  const t = +tile.dataset.t;
-  if(mk){ addMarker(S.base+t, null); return; }
-  setTab("view"); seek(t, false);
-  const sc = $("scroller"); sc.scrollLeft = Math.max(0, t*pps() - sc.clientWidth/2);
-});
 $("tabView").onclick = () => { setTab("view"); };
 $("tabSum").onclick = () => { setTab("sum"); };
 
@@ -2122,7 +2147,7 @@ $("reset").onclick = () => {
   if(!BACKEND.pc) $("exp").textContent = "Exporter la fiche";
   cmpForget();
   cancelPending();
-  $("view").hidden = true; $("sum").hidden = true; $("board").hidden = true; $("reel").hidden = true; reelLeave(); $("tabs").hidden = true; $("empty").hidden = false; BOARD.step = 0;
+  $("view").hidden = true; $("sum").hidden = true; $("reel").hidden = true; reelLeave(); $("tabs").hidden = true; $("empty").hidden = false; SEL = null;
   $("hsub").textContent = "Aucun vol chargé"; document.body.classList.remove("loaded"); $("mission").hidden = true; setRate(1);
   toast("Vos marqueurs restent enregistrés pour ce vol.");
   BACKEND.reset();
@@ -2137,7 +2162,7 @@ document.addEventListener("keydown", e => {
   else if(e.key === "ArrowRight"){ e.preventDefault(); seek(S.t + (e.shiftKey ? 60 : 5), playing); }
   else if(k === "j"){ seek(S.t - 10, playing); }
   else if(k === "k"){ v.pause(); setRate(1); }
-  else if(k === "l"){ playAt(FAST); }
+  else if(k === "l"){ if(S.rate !== 1) fastStop(); else playAt(FAST); }
   else if(e.key === ","){ v.pause(); seek(S.t - 1/30, false); }
   else if(e.key === "."){ v.pause(); seek(S.t + 1/30, false); }
   else if(k === "m"){ startInstant(); }
@@ -2278,7 +2303,7 @@ function buildSrt(spans){
    Les deux moteurs appellent jobRun / jobProgress / jobDone / jobError ; les boutons « Enregistrer » et
    « Recommencer » exécutent les fonctions passées à jobDone, sans drapeau global sur ce qui est affiché. */
 const JOB = {onSave:null, onBack:null};
-function jobView(which){ ["Setup","Run","Done"].forEach(w => { $(`cmp${w}`).hidden = w !== which; }); }
+function jobView(which){ ["Setup","Run","Done"].forEach(w => { $(`cmp${w}`).hidden = w !== which; }); keepAwake("calcul", which === "Run"); }
 function jobOpen(){ const d = $("cmp"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); } }
 function jobClose(){ const d = $("cmp"); if(d.open) d.close(); }
 function jobRun(msg, W, H){
@@ -2317,6 +2342,7 @@ function cmpForget(){ if(CMP.url) URL.revokeObjectURL(CMP.url); CMP.url = null; 
 function cmpRestart(){ cmpForget(); jobView("Setup"); renderCmpSetup(); }
 $("cmpOpen").onclick = () => {
   if(!S.markers.length){ toast("Ajoutez d'abord des marqueurs."); return; }
+  if(needName()) return;
   if(!BACKEND.pc && (typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined")){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
   v.pause();
   if(CMP.blob) jobDone(cmpDoneOpts()); else { jobView("Setup"); renderCmpSetup(); jobOpen(); }
@@ -2733,7 +2759,7 @@ async function loadSheets(){
           c.thumbs.push({t: idx*sh.every, img:img, sx:(k % sh.cols)*sh.tw, sy:Math.floor(k / sh.cols)*sh.th, w:sh.tw, h:sh.th});
         }
       } catch(e){}
-      n++; scheduleStrips(); refreshBoard();
+      n++; scheduleStrips();
     }
   }
   $("thumbProg").textContent = "";
@@ -4155,6 +4181,7 @@ async function rSaveOuts(){
   toast(REEL.out.length > 1 ? `${REEL.out.length} vidéos enregistrées dans le dossier des rushs.` : `Vidéo enregistrée dans le dossier des rushs : ${REEL.out[0].name}`);
 }
 function rGo(story){
+  if(needName()) return;
   if(REEL.playing) rStop();
   BACKEND.reel(story).catch(err => {
     CMP.running = false;

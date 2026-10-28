@@ -10,7 +10,7 @@ Deux fichiers de code, aucune étape de construction, aucune dépendance Python 
 
 | Fichier | Rôle | Taille |
 |---|---|---|
-| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 3 900 lignes |
+| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 4 200 lignes |
 | `server.py` | Serveur HTTP du PC de traitement (bibliothèque standard, `ThreadingHTTPServer`), calculs ffmpeg, veille. | environ 870 lignes |
 | `vendor/` | mp4box 0.5.3 (lecture des en-têtes MP4), mp4-muxer 5.2.1 (écriture MP4), polices Anton et Montserrat. Servis en local, repli sur jsDelivr si un fichier manque. | 290 Ko |
 | `tests/` | Fabrique de faux rushs, tests de bout en bout (Playwright), tests unitaires. | |
@@ -40,13 +40,12 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | storage, fiche | localStorage, fiche Markdown enregistrée automatiquement | `persist`, `writeFiche`, `restore` |
 | loading | Lecture des fichiers choisis, timeline commune | `addFiles`, `parseName`, `rebuild` |
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
-| playback | Lecture du clip de la piste active | `seek`, `togglePlay`, `setTrack` |
-| drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
+| playback | Lecture du clip de la piste active ; écran maintenu allumé (Wake Lock) pendant la lecture et les calculs | `seek`, `togglePlay`, `setTrack`, `keepAwake` |
+| drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX ; nom de la mission obligatoire avant toute production (`needName`) | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
 | markers | Création et édition des marqueurs (dialogue `#sheet`) | `addMarker`, `markStart`, `markEnd`, `openSheet` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement des bords, clavier, onglets | `setZoom`, `setTab`, `keydown` |
-| planche | Grille de vignettes | `renderBoard`, `drawTile` |
+| events | Transport (x16 maintenu, -5 s et +5 s répétés), zoom et pincement, glissement des bords (au doigt : plage sélectionnée par « Ajuster », `SEL`), clavier, onglets, barre de commande fixe en bas sur téléphone (`.ctrl`, hauteur dans `--ctrlh`) | `holdRepeat`, `fastStop`, `setZoom`, `setTab`, `keydown` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
