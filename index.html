@@ -2521,7 +2521,7 @@ function drawIntro(ctx, W, H, pl){
 }
 /* carton de fin ESAM, commun à la vidéo compilée et au réel : logo, slogan, appel à suivre et soutenir, site.
    W x H quelconque (16:9 ou 9:16) ; o = {texte (slogan), sous (appel)}. Le site est toujours affiché. */
-const OUTRO_SEC = 5, OUTRO_TXT = "Un animal en situation périlleuse ? Ne prenez aucun risque, appelez l'ESAM !", OUTRO_SOUS = "Suivez-nous et soutenez-nous", OUTRO_SITE = "esam-secours.fr";
+const OUTRO_SEC = 5, OUTRO_TXT = "Un animal en situation périlleuse ? Appelez l'ESAM !", OUTRO_SOUS = "Suivez-nous et soutenez-nous", OUTRO_SITE = "esam-secours.fr";
 function drawOutro(ctx, W, H, o){
   const u = unitOf(W, H), maxW = W*0.86;
   ctx.fillStyle = "#171618"; ctx.fillRect(0, 0, W, H);
