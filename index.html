@@ -164,9 +164,9 @@ textarea.field{min-height:70px;resize:vertical}
 .ovclock .clocksub{font-size:12px;font-weight:600;opacity:.85;white-space:nowrap;color:var(--muted);text-align:right;padding-bottom:4px}
 .gap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--onstage);text-align:center;padding:20px}
 .gap .btn{background:var(--bg);color:var(--ink);border-color:var(--ink)}
-.scrubprev{position:absolute;inset:0;background:var(--stage);display:flex;align-items:center;justify-content:center}
-.scrubprev canvas{max-width:100%;max-height:100%}
-.scrubprev span{position:absolute;right:10px;top:10px;background:var(--blue);color:var(--onblue);font-weight:700;font-size:13px;padding:4px 10px;border-radius:6px}
+/* aperçu pendant un glissement : même cadre que la vidéo (l'heure est dans .ovclock) */
+.scrubprev{position:absolute;inset:0;background:var(--stage)}
+.scrubprev canvas{display:block;width:100%;height:100%;object-fit:contain}
 .transport{position:relative;display:flex;gap:8px;padding:8px 12px}
 .transport .btn{flex:1;min-height:44px;padding:6px 4px}
 .transport .play{flex:1.8;background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -699,7 +699,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <div class="player" id="player">
         <div class="stage">
           <video id="v" playsinline muted preload="auto" aria-label="Vidéo de la piste affichée"></video>
-          <div class="scrubprev" id="scrubPrev" hidden><canvas id="scrubCv" aria-hidden="true"></canvas><span id="scrubTime"></span></div>
+          <div class="scrubprev" id="scrubPrev" hidden><canvas id="scrubCv" aria-hidden="true"></canvas></div>
           <div class="camtag" id="camtag"></div>
           <button class="capbtn" id="cap" aria-label="Capturer l'image en pleine résolution" title="Photo pleine résolution (P)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
           <div class="ovclock"><span class="clock" id="clock">00:00:00</span><span class="clocksub" id="clocksub"></span></div>
@@ -1012,9 +1012,11 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.15";
+const APP_VERSION = "0.16";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
-const ORDER = ["W","Z","T","V","N","S"];
+const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
+const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
+function lensRank(order, l){ const i = order.indexOf(l); return i < 0 ? 99 : i; }
 const THEMES = ["Recherche","Repérage","Approche","Récupération","Retrouvailles","Équipe en action","Plan paysage"];
 const INTEREST = ["Utile","Bon","Excellent"];
 const SENS = ["Visage identifiable","Plaque ou véhicule","Animal blessé","Lieu à ne pas diffuser"];
@@ -1412,7 +1414,7 @@ function rebuild(){
   const groups = {};
   S.clips.forEach(c => { (groups[c.lens] = groups[c.lens] || []).push(c); });
   const lenses = Object.keys(groups).sort((a, b) => {
-    let ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); ia = ia < 0 ? 99 : ia; ib = ib < 0 ? 99 : ib; return ia - ib || a.localeCompare(b);
+    return lensRank(ORDER, a) - lensRank(ORDER, b) || a.localeCompare(b);
   });
   let base = Infinity;
   timed.forEach(c => { base = Math.min(base, c.start + (S.offsets[c.lens] || 0)); });
@@ -1458,18 +1460,21 @@ function nextClip(tr, t){ return tr ? tr.clips.filter(c => c.ok && c.s >= t).sor
 function seek(t, play){
   t = clamp(t, 0, S.dur);
   S.t = t;
+  if(S.stopAt != null && t >= S.stopAt) S.stopAt = null;     // saut au-delà de la fin du passage lancé par « Voir » : la lecture ne s'y arrête plus
   const tr = track(), c = clipAt(tr, t);
   if(!c){
-    S.cur = null; v.pause(); v.removeAttribute("src"); try{ v.load(); }catch(e){}
-    showGap(tr, t);
+    S.cur = null; pendingSeek = null; v.pause(); v.removeAttribute("src"); try{ v.load(); }catch(e){}
+    hidePrev(); showGap(tr, t);
   } else {
     $("gap").hidden = true;
     const local = t - c.s;
-    if(S.cur !== c){
+    if(S.cur !== c || v.error){                              // après une erreur (réseau), le même fichier est rechargé
       S.cur = c; pendingSeek = {local:local, play:play};
       v.src = c.url;
+    } else if(pendingSeek && v.readyState < 1){              // fichier encore en chargement : seul le dernier instant demandé compte
+      pendingSeek = {local:local, play:play || pendingSeek.play};
     } else {
-      v.currentTime = local;
+      pendingSeek = null; v.currentTime = local;
       if(play) v.play().catch(() => {});
     }
   }
@@ -1487,15 +1492,19 @@ v.addEventListener("loadedmetadata", () => {
   v.playbackRate = S.rate;
   if(pendingSeek){ const p = pendingSeek; pendingSeek = null; v.currentTime = p.local; if(p.play) v.play().catch(() => {}); }
 });
-v.addEventListener("play", () => { updatePlayBtn(); loop(); });
+v.addEventListener("play", () => { hidePrev(); updatePlayBtn(); loop(); });
 v.addEventListener("pause", updatePlayBtn);
-v.addEventListener("seeked", () => { if(S.cur){ S.t = S.cur.s + v.currentTime; draw(); } });
+v.addEventListener("seeked", () => { if(S.cur){ S.t = S.cur.s + v.currentTime; draw(); } if(!scrub && !edrag) hidePrev(); });
 v.addEventListener("ended", () => {
   const c = S.cur; if(!c) return;
   const n = track().clips.filter(x => x.ok && x !== c && x.s >= c.e - 0.5).sort((a, b) => a.s-b.s)[0];
   if(n) seek(n.s, true); else { S.t = c.e; draw(); }
 });
-v.addEventListener("error", () => { if(S.cur) toast(`Lecture impossible de ${S.cur.name} sur cet appareil.`); });
+v.addEventListener("error", () => {
+  if(!S.cur) return;
+  pendingSeek = null; hidePrev();
+  toast(v.error && v.error.code === 2 ? "Lecture interrompue (connexion). Touchez Lire pour reprendre." : `Lecture impossible de ${S.cur.name} sur cet appareil.`);
+});
 /* mise en tampon (réseau faible, Tailscale) : « Chargement » discret sur l'image après 400 ms d'attente */
 let bufT = 0;
 function setBuf(on){ clearTimeout(bufT); if(on) bufT = setTimeout(() => { $("buf").hidden = false; }, 400); else $("buf").hidden = true; }
@@ -1516,10 +1525,11 @@ function loop(){
 function togglePlay(){
   if(!S.cur){
     const n = nextClip(track(), S.t);
-    if(n) seek(n.s, true); else toast("Fin des images sur cette piste.");
+    if(clipAt(track(), S.t)) seek(S.t, true); else if(n) seek(n.s, true); else toast("Fin des images sur cette piste.");
     return;
   }
   S.stopAt = null;
+  if(v.error){ seek(S.t, true); return; }                    // reprise après une erreur de lecture
   if(v.paused) v.play().catch(() => {}); else v.pause();
 }
 const ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>';
@@ -1789,12 +1799,16 @@ function renderHeader(){
   $("flight").textContent = n ? `${(S.real ? `Rushs du ${dayAbs(S.base)}, de ${clockAbs(S.base)} à ${clockAbs(S.base+S.dur)}. ` : "")
 + S.tracks.map(t => `${t.name} (${t.clips.length})`).join(", ")}.` : "";
 }
+/* pistes dans l'ordre de préférence des caméras (CAM_PRIO), qui n'est pas l'ordre d'affichage (ORDER) */
+function tracksByCam(){
+  return S.tracks.map((tr, i) => ({i:i, tr:tr})).sort((x, y) => lensRank(CAM_PRIO, x.tr.lens) - lensRank(CAM_PRIO, y.tr.lens) || x.i - y.i);
+}
 function camsFor(m){
   const a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
-  return S.tracks.map((tr, i) => ({
-    i:i,
-    tr:tr,
-    c: tr.clips.find(c => c.ok && c.s <= z && c.e > a)
+  return tracksByCam().map(x => ({
+    i:x.i,
+    tr:x.tr,
+    c: x.tr.clips.find(c => c.ok && c.s <= z && c.e > a)
   }))
     .filter(x => x.c);
 }
@@ -2361,20 +2375,31 @@ function drawThumbInto(cv, th, W, H){
   const k = Math.min(W/thW(th), H/thH(th)), dw = thW(th)*k, dh = thH(th)*k;
   drawThumb(ctx, th, (W-dw)/2, (H-dh)/2, dw, dh);
 }
+/* aperçu pendant un glissement (règle, bord de passage) : la vignette couvre la scène à la taille de la vidéo.
+   Au relâchement elle reste jusqu'à ce que la vidéo affiche l'instant demandé (seeked), 3 s au plus. */
+let prevTimer = 0;
+function showPrev(th){ clearTimeout(prevTimer); $("scrubPrev").hidden = false; drawThumbInto($("scrubCv"), th, thW(th)*2, thH(th)*2); }
+function hidePrev(){ clearTimeout(prevTimer); $("scrubPrev").hidden = true; }
+function releasePrev(){ clearTimeout(prevTimer); if(!$("scrubPrev").hidden) prevTimer = setTimeout(hidePrev, 3000); }
 function scrubTo(){
-  scrubRaf = 0; const rect = $("inner").getBoundingClientRect();
+  scrubRaf = 0; if(!scrub) return;
+  const rect = $("inner").getBoundingClientRect();
   const t = clamp((scrubX - rect.left)/pps(), 0, S.dur); scrubT = t; S.t = t;
   const th = thumbAt(track(), t);
-  if(th){
-    const st = $("scrubPrev"); st.hidden = false;
-    drawThumbInto($("scrubCv"), th, thW(th)*2, thH(th)*2);
-    $("scrubTime").textContent = clockAbs(S.base+t);
-  } else {
+  if(th) showPrev(th);
+  else {
+    hidePrev();
     const now = performance.now(); if(now - scrubSeekAt > 300){ scrubSeekAt = now; seek(t, false); }
   }
   draw();
 }
-function endScrub(){ if(!scrub) return; scrub = false; $("scrubPrev").hidden = true; seek(scrubT, false); }
+/* fin du glissement : le dernier déplacement, encore en attente d'affichage, est pris en compte ici et ne peut plus
+   rouvrir l'aperçu après coup (il restait alors figé sur l'image) */
+function endScrub(){
+  if(!scrub) return;
+  if(scrubRaf){ cancelAnimationFrame(scrubRaf); scrubTo(); }
+  scrub = false; seek(scrubT, false); releasePrev();
+}
 $("ruler").addEventListener("pointerdown", function(e){ scrub = true; this.setPointerCapture(e.pointerId); v.pause(); scrubX = e.clientX; scrubTo(); });
 $("ruler").addEventListener("pointermove", e => { if(!scrub) return; scrubX = e.clientX; if(!scrubRaf) scrubRaf = requestAnimationFrame(scrubTo); });
 $("ruler").addEventListener("pointerup", endScrub);
@@ -2423,13 +2448,13 @@ $("mlayer").addEventListener("pointermove", e => {
   const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p)}px`;
   S.t = t;
   const th = thumbAt(track(), t);
-  if(th){ $("scrubPrev").hidden = false; drawThumbInto($("scrubCv"), th, thW(th)*2, thH(th)*2); $("scrubTime").textContent = clockAbs(abs); }
+  if(th) showPrev(th); else hidePrev();
   draw();
 });
 function endEdge(){
   if(!edrag) return;
-  const d = edrag; edrag = null; $("scrubPrev").hidden = true;
-  seek(d.t, false); persist(); renderMarkers(); renderSummary();
+  const d = edrag; edrag = null;
+  seek(d.t, false); releasePrev(); persist(); renderMarkers(); renderSummary();
   const m = d.m, n = sorted().indexOf(m) + 1;
   toast(`Passage ${n} : ${clockAbs(m.at)} à ${clockAbs(m.to)}.`, "Annuler", () => { m.at = d.old.at; m.to = d.old.to; persist(); renderMarkers(); renderSummary(); });
 }
@@ -2539,7 +2564,7 @@ function drawTile(el){
   drawThumb(ctx, th, (192-dw)/2, (108-dh)/2, dw, dh); el.dataset.ok = "1";
 }
 function refreshBoard(){ if($("board").hidden) return; BOARD.vis.forEach(drawTile); }
-$("bTracks").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; S.active = +b.dataset.i; S.cur = null; renderBoard(); });
+$("bTracks").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; S.active = +b.dataset.i; S.cur = null; seek(S.t, false); renderBoard(); });
 $("bStep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; BOARD.step = BSTEPS[+b.dataset.k]; renderBoard(); });
 $("bGrid").addEventListener("click", e => {
   const mk = e.target.closest("[data-mark]"), tile = e.target.closest(".tile"); if(!tile) return;
@@ -2736,7 +2761,7 @@ function planFor(m){
     }))
       .filter(p => p.to - p.from > 0.2);
   }
-  const order = [trackIdx(m.cam)].concat(S.tracks.map((t, i) => i));
+  const order = [trackIdx(m.cam)].concat(tracksByCam().map(x => x.i));
   for(let k=0;k<order.length;k++){
     const tr = S.tracks[order[k]]; if(!tr) continue;
     const pcs = piecesOf(tr);
@@ -3499,7 +3524,7 @@ function rHas(tr, it){ return tr.clips.some(c => c.ok && c.s < it.z && c.e > it.
 function rTrack(it){
   const i = trackIdx(it.cam);
   if(i >= 0 && rHas(S.tracks[i], it)) return S.tracks[i];
-  return S.tracks.find(tr => rHas(tr, it)) || null;
+  const x = tracksByCam().find(y => rHas(y.tr, it)); return x ? x.tr : null;
 }
 function rPieces(it, tr, decode){
   return tr.clips.filter(c => c.ok && c.s < it.z && c.e > it.a && (!decode || (c.media && !c.noDecode) || c.remote))

@@ -40,12 +40,12 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | storage, fiche | localStorage, fiche Markdown enregistrée automatiquement | `persist`, `writeFiche`, `restore` |
 | loading | Lecture des fichiers choisis, timeline commune | `addFiles`, `parseName`, `rebuild` |
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
-| playback | Lecture du clip de la piste active | `seek`, `togglePlay`, `setTrack` |
+| playback | Lecture du clip de la piste active ; `seek` recharge le fichier après une erreur de lecture | `seek`, `togglePlay`, `setTrack` |
 | drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
 | markers | Création et édition des marqueurs (dialogue `#sheet` : noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `renderInWin` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement des bords, raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`, `#reset`) | `setZoom`, `setTab`, `keydown`, `goHome` |
+| events | Transport, zoom et pincement, glissement sur la règle et des bords (aperçu de vignette `#scrubPrev`, ouvert et fermé par `showPrev`, `hidePrev`, `releasePrev` seulement), raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`, `#reset`) | `setZoom`, `setTab`, `keydown`, `goHome` |
 | clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
@@ -73,7 +73,7 @@ Conventions du script :
 S = {
   clips: [],        // un par fichier : {id, name, size, url, lens, start (heure absolue ou null), dur, ok,
                     //   media (mode navigateur : en-têtes MP4), remote (mode PC), thumbs, sheet, s, e (place sur la timeline)}
-  tracks: [],       // une par caméra : {lens, name, clips}, triées par ORDER (W, Z, T, V, N, S, autres)
+  tracks: [],       // une par caméra : {lens, name, clips}, triées par ORDER (S, W, Z, T, V, N, autres) ; caméra par défaut : CAM_PRIO
   active: 0,        // piste affichée
   t: 0,             // instant courant, en secondes depuis S.base
   base: 0,          // heure absolue (secondes Unix) du début de la timeline ; 0 si aucun fichier n'est daté
@@ -87,7 +87,7 @@ S = {
 }
 ```
 
-Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti). Sans nom DJI (galerie Android, qui renomme en `1000012345.mp4`), `autoLens()` devine la piste : image 5:4 = thermique, et deux fichiers qui se chevauchent vont sur des pistes distinctes (`?`, `?2`, ...).
+Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). Deux ordres distincts : `ORDER` pour l'affichage des pistes (écran en premier), `CAM_PRIO` pour la caméra prise quand le choix d'un passage n'a pas d'image (`tracksByCam`, utilisé par `camsFor`, `planFor`, `rTrack`). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti). Sans nom DJI (galerie Android, qui renomme en `1000012345.mp4`), `autoLens()` devine la piste : image 5:4 = thermique, et deux fichiers qui se chevauchent vont sur des pistes distinctes (`?`, `?2`, ...).
 
 ### 3.2 Marqueur
 

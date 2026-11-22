@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.15
+version: 0.16
 date_maj: 2026-11-22
 ---
 
@@ -161,6 +161,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.16 | 2026-11-22 | Lecteur : l'image ne reste plus figée sur une vignette après un glissement sur la règle ou sur le bord d'un passage (l'aperçu se referme toujours, et il occupe la même taille que la vidéo) ; après « Voir » un passage, un saut plus loin ne met plus la lecture en pause ; après une coupure de connexion, « Lire » reprend la vidéo. Pistes : « Écran » passe en première ligne (la caméra choisie par défaut pour la vidéo compilée et le réel ne change pas). |
 | 0.15 | 2026-11-22 | Ergonomie revue de bout en bout. Sécurité : supprimer un marqueur s'annule (le passage revient aussi dans le réel) ; un passage sensible est rappelé en jaune avant de créer un réel ou une vidéo ; avertissement si l'on ferme l'onglet pendant un calcul dans le navigateur. Téléphone : fiche de marqueur plus courte avec Enregistrer toujours visible, boutons et pistes qui ne bougent plus pendant la lecture, paysage utilisable, cibles de 44 px, plus de zoom automatique à la saisie. Réel : volets Montage, Passage, Habillage, « Cadrer » après un ajout, titre qui ne recouvre plus le cartouche ESAM, nom du fichier produit en fin de calcul. Sommaire remis d'aplomb et en deux colonnes sur PC ; retour à la liste des interventions par le logo ; aide dans l'appli (bouton Aide) ; filtre dans la liste des interventions. Clavier, focus et contrastes lisibles au soleil ; thème automatique, clair ou sombre (Plus d'options). Vocabulaire unifié : intervention, passage, repère. |
 | 0.14 | 2026-10-27 | Dossier de travail : « Ouvrir le dossier des rushs » importe toutes les vidéos et photos du dossier et de ses sous-dossiers (sauf `proxies`) et reprend la fiche qui s'y trouve ; sur ordinateur (Chrome, Edge), la fiche et les vidéos produites y sont enregistrées et le dernier dossier se rouvre d'un clic (« Reprendre ») ; sur téléphone, le dossier est importé avec les noms d'origine, mais le travail reste gardé dans le navigateur |
 | 0.13 | 2026-10-27 | Téléphone : vidéos choisies dans la galerie (noms remplacés par des numéros) réparties sur des pistes distinctes au lieu d'une seule, thermique reconnue à son format d'image, message invitant à passer par l'application Fichiers pour garder les noms DJI ; le bouton « Choisir les vidéos » ouvre de préférence le gestionnaire de fichiers ; vignettes de la piste affichée calculées en premier |
