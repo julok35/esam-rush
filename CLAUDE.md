@@ -21,7 +21,8 @@ Projet : outil de dérushage des vidéos drone de l'ESAM (secours animalier en m
 - Vidéos de téléphone en portrait : matrice de rotation à appliquer (vignettes et compilation). Heure de début prise dans `creation_time` (UTC).
 - Vidéos DJI : heure de début lue dans le nom de fichier `DJI_AAAAMMJJHHMMSS_NNNN_X`, X = W (grand angle), Z (zoom), T (thermique), S (écran).
 - Une compilation de plusieurs Go dans le navigateur plantait à 100 % : ne jamais accumuler la sortie en mémoire.
-- La caméra compilée pour un passage est `effCam(m)` : le choix `m.cam` s'il a de l'image, sinon la première caméra disponible.
+- La caméra compilée pour un passage est `effCam(m)` : le choix `m.cam` s'il a de l'image, sinon la première caméra disponible dans l'ordre `CAM_PRIO` (pas l'ordre d'affichage des pistes `ORDER`, où l'écran vient en premier).
+- Aperçu de vignette pendant un glissement (`#scrubPrev`) : un déplacement traité après le relâchement le rouvrait et l'image restait figée ; ne l'ouvrir et le fermer que par `showPrev`, `hidePrev`, `releasePrev`.
 - Mode PC : une vignette est une case d'une planche JPEG (`{img, sx, sy, w, h}`), jamais un ImageBitmap par vignette (152 s d'ouverture et 1 Go sur 3 h de rushs). Dessiner avec `drawThumb`, mesurer avec `tests/fabriquer_longue.py`.
 - Les tests de bout en bout supposent le fuseau Europe/Paris (heure des faux rushs) : `TZ=Europe/Paris python tests/test_reel.py` ailleurs.
 
