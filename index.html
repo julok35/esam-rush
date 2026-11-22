@@ -33,10 +33,10 @@
   --paleyellow:#3b3510; --band:rgba(168,200,251,.28); color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);scroll-padding-bottom:110px}
+html{height:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + var(--top) + var(--stick) + 8px);scroll-padding-bottom:110px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Montserrat,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible,label.btn:focus-within{outline:3px solid var(--blue);outline-offset:2px}
+:is(a[href],button,input,select,textarea,summary,label.btn,video[controls],[tabindex]):focus-visible{outline:3px solid var(--ring);outline-offset:2px;box-shadow:0 0 0 2px var(--bg)}
 [hidden]{display:none!important}
 .wrap{max-width:920px;margin:0 auto}
 .miss{color:var(--red);font-weight:700}
@@ -55,8 +55,8 @@ body.loaded .top .ttl{display:none}
 .tab .n{display:inline-block;min-width:22px;padding:0 6px;border-radius:11px;background:var(--blue);color:var(--onblue);font-size:12px;margin-left:6px}
 .ver{flex:none;position:relative;border:1px solid var(--line);background:var(--soft);color:var(--muted);border-radius:14px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap;min-height:28px}
 .ver::after{content:"";position:absolute;inset:-8px -3px}          /* zone de toucher de 44 px autour de la pastille */
-.ver.pc{background:var(--blue);color:#171618;border-color:#171618}
-.ver.warn{background:var(--yellow);color:#171618;border-color:#171618}
+.ver.pc{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
+.ver.warn{background:var(--yellow);color:var(--onblue);border-color:var(--onblue)}
 /* retour à la liste des interventions (mode PC) ou à l'accueil (navigateur) : logo, chevron et libellé */
 .home{display:flex;align-items:center;gap:6px;flex:none;border:0;background:none;padding:0 6px 0 0;min-height:44px;border-radius:10px;color:var(--ink)}
 .home[disabled]{cursor:default}
@@ -84,24 +84,24 @@ body.loaded .home:hover .homel{text-decoration:underline;text-underline-offset:3
 /* ---------- boutons, champs, puces ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid var(--ink);background:var(--bg);border-radius:10px;padding:10px 14px;font-weight:600;min-height:44px}
 .btn.primary{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
-.btn.ghost{border-color:var(--line)}
+.btn.ghost{border-color:var(--ctl)}
 .btn.small{min-height:36px;padding:6px 10px;font-size:13px;border-width:1.5px}
-.btn[disabled]{opacity:.45;cursor:not-allowed}
+/* désactivé : un seul traitement pour tous les boutons, dans le bloc « fondations » en fin de feuille */
 input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.field{width:100%;border:2px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--ink)}
+.field{width:100%;border:2px solid var(--ctl);border-radius:10px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--ink)}
 .field:focus{border-color:var(--blue)}
 textarea.field{min-height:70px;resize:vertical}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .grp{margin:14px 0}
 .grp>.lbl{font-weight:700;font-size:13px;margin-bottom:8px;display:block}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1.5px solid var(--line);background:var(--bg);border-radius:20px;padding:8px 12px;font-size:13px;font-weight:600;min-height:38px}
+.chip{border:1.5px solid var(--ctl);background:var(--bg);border-radius:20px;padding:8px 12px;font-size:13px;font-weight:600;min-height:38px}
 .chip[aria-pressed="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
-.chip.s[aria-pressed="true"]{background:var(--yellow);color:#171618;border-color:#171618}
+.chip.s[aria-pressed="true"]{background:var(--yellow);color:var(--onblue);border-color:var(--onblue)}
 .bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;margin:10px 0 6px}
 .bar>i{display:block;height:100%;width:0;background:var(--blue)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:50;max-width:90vw;display:flex;align-items:center;gap:12px}
-.toast button{background:var(--blue);color:#171618;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px;min-height:44px;min-width:44px;flex:none}
+.toast button{background:var(--blue);color:var(--onblue);border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px;min-height:44px;min-width:44px;flex:none}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,8px)}}}
 /* sur téléphone, le toast se pose en haut pour ne pas cacher la timeline ni les boutons du bas ;
    toast() le place sur l'image dans Visionner, ailleurs sous le nom de l'intervention s'il est à l'écran */
@@ -151,35 +151,35 @@ textarea.field{min-height:70px;resize:vertical}
 
 /* ---------- lecteur (onglet Visionner) ---------- */
 .player{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--top));z-index:15;background:var(--bg);border-bottom:1px solid var(--line)}
-.stage{position:relative;background:#000;aspect-ratio:16/9;width:100%;max-height:42vh;overflow:hidden}
-.stage video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.stage{position:relative;background:var(--stage);aspect-ratio:16/9;width:100%;max-height:42vh;overflow:hidden}
+.stage video{width:100%;height:100%;object-fit:contain;display:block;background:var(--stage)}
 .stage.inside{box-shadow:inset 0 0 0 4px var(--blue)}
 .stage.inside video{outline:4px solid var(--blue);outline-offset:-4px}
 .camtag{position:absolute;left:10px;top:10px;background:var(--blue);color:var(--onblue);font-weight:700;font-size:13px;padding:4px 10px;border-radius:6px}
-.capbtn{position:absolute;right:8px;top:8px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center}
-.ovclock{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:3px 10px;display:flex;align-items:baseline;gap:8px;pointer-events:none}
+.capbtn{position:absolute;right:8px;top:8px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:var(--onstage);display:flex;align-items:center;justify-content:center}
+.ovclock{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);color:var(--onstage);border-radius:8px;padding:3px 10px;display:flex;align-items:baseline;gap:8px;pointer-events:none}
 .ovclock .clock{font-family:Anton,Impact,sans-serif;font-size:22px;line-height:1.1;letter-spacing:.3px;font-variant-numeric:tabular-nums}
 .ovclock .clocksub{font-size:12px;font-weight:600;opacity:.85;white-space:nowrap;color:var(--muted);text-align:right;padding-bottom:4px}
-.gap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;text-align:center;padding:20px}
-.gap .btn{background:#fff;color:#171618;border-color:#fff}
-.scrubprev{position:absolute;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
+.gap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--onstage);text-align:center;padding:20px}
+.gap .btn{background:var(--bg);color:var(--ink);border-color:var(--ink)}
+.scrubprev{position:absolute;inset:0;background:var(--stage);display:flex;align-items:center;justify-content:center}
 .scrubprev canvas{max-width:100%;max-height:100%}
 .scrubprev span{position:absolute;right:10px;top:10px;background:var(--blue);color:var(--onblue);font-weight:700;font-size:13px;padding:4px 10px;border-radius:6px}
 .transport{position:relative;display:flex;gap:8px;padding:8px 12px}
 .transport .btn{flex:1;min-height:44px;padding:6px 4px}
 .transport .play{flex:1.8;background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.spd[aria-pressed="true"]{background:var(--blue);color:#171618;border-color:#171618}
+.spd[aria-pressed="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
 .spdpop{position:absolute;right:12px;bottom:calc(100% - 4px);z-index:30;background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:6px;display:flex;gap:6px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .spdpop button{min-width:52px;min-height:44px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font-weight:700}
-.spdpop button[aria-pressed="true"]{background:var(--blue);color:#171618;border-color:#171618}
+.spdpop button[aria-pressed="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
 /* x16 : la flèche signale le menu des vitesses (appui long, clic droit ou flèche bas) */
 .spd .dd{margin-left:2px;opacity:.75;flex:none}
 /* mise en tampon (réseau faible) : signe discret en bas à droite de l'image */
-.buf{position:absolute;right:8px;bottom:8px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;pointer-events:none}
+.buf{position:absolute;right:8px;bottom:8px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.6);color:var(--onstage);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;pointer-events:none}
 .buf svg{flex:none}
 @media (prefers-reduced-motion:no-preference){ .buf svg{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}} }
 .mbig{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 12px 10px}
-.mb{min-height:58px;border-radius:12px;border:2px solid #171618;background:var(--blue);color:#171618;font-weight:700;font-size:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.1;touch-action:manipulation}
+.mb{min-height:58px;border-radius:12px;border:2px solid var(--onblue);background:var(--blue);color:var(--onblue);font-weight:700;font-size:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.1;touch-action:manipulation}
 .mb .ic{font-family:Anton,Impact,sans-serif;font-size:20px;line-height:1}
 .mb.pt{background:var(--bg);color:var(--ink);border-color:var(--ink)}
 .mb[disabled]{opacity:.35;cursor:not-allowed}
@@ -188,13 +188,13 @@ textarea.field{min-height:70px;resize:vertical}
 .mb:active{transform:scale(.97)}
 /* bandeau d'état sous Début, Fin, Repère : hauteur fixe, pour que les boutons et la timeline ne bougent jamais */
 .inwin{display:flex;align-items:center;gap:8px;height:56px;margin:0 12px 8px;padding:4px 4px 4px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:600;color:var(--muted);overflow:hidden}
-.inwin.on{background:var(--blue);border-color:#171618;color:#171618}
+.inwin.on{background:var(--blue);border-color:var(--onblue);color:var(--onblue)}
 .inwin.pend{border:2px dashed var(--ink);color:var(--ink)}
 .inwin .iwl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3}
 .inwin .iwl small{display:block;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
 .inwin .iwb{display:flex;gap:6px;flex:none}
 .inwin .btn{min-height:44px;padding:4px 12px;font-size:13px;border-width:1.5px}
-.inwin.on .btn{background:#fff;color:#171618;border-color:#171618}
+.inwin.on .btn{background:var(--bg);color:var(--ink);border-color:var(--onblue)}
 /* téléphone : le texte sur une ligne, les boutons dessous (défilement horizontal s'ils débordent) */
 @media (max-width:520px){
   .inwin{height:78px;flex-direction:column;align-items:stretch;justify-content:center;gap:4px;padding:4px 4px 4px 10px}
@@ -239,11 +239,11 @@ textarea.field{min-height:70px;resize:vertical}
 .eg::before{content:"";position:absolute;top:0;bottom:0;left:-11px;right:-11px}
 .eg.l{left:0}
 .eg.r{left:100%}
-.eg::after{content:"";position:absolute;left:8px;top:30%;bottom:30%;width:6px;border-radius:3px;background:var(--blue);border:1.5px solid #171618}
+.eg::after{content:"";position:absolute;left:8px;top:30%;bottom:30%;width:6px;border-radius:3px;background:var(--blue);border:1.5px solid var(--onblue)}
 .ph{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
 .ph::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:var(--ink)}
-.hov{position:fixed;z-index:40;background:#171618;color:#fff;border-radius:8px;padding:4px;pointer-events:none;font-size:12px;font-weight:600}
-.hov canvas{display:block;border-radius:5px;background:#000}
+.hov{position:fixed;z-index:40;background:var(--onblue);color:var(--onstage);border-radius:8px;padding:4px;pointer-events:none;font-size:12px;font-weight:600}
+.hov canvas{display:block;border-radius:5px;background:var(--stage)}
 .hov div{padding:4px 4px 2px}
 .tlhint{margin:6px 16px 0;font-size:12px;color:var(--muted)}
 
@@ -313,7 +313,7 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   .srow{display:grid;grid-template-columns:28px 64px 1fr auto;gap:8px;align-items:center;padding:6px 4px;border-top:1px solid var(--line);font-size:13px;cursor:pointer;border-radius:6px}
   .srow:hover{background:var(--soft)}
   .srow .sgo{grid-column:1 / span 2;display:grid;grid-template-columns:28px 64px;gap:8px;align-items:center;text-align:left;background:none;border:0;padding:4px 0;border-radius:6px;min-height:44px;color:inherit}
-  .srow .n{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#171618;border:2px solid #171618;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .srow .n{width:24px;height:24px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
   .srow .n.sens{background:var(--yellow)}
   .srow .t{font-weight:700;font-variant-numeric:tabular-nums}
   .srow .btn{min-height:44px;min-width:44px;padding:2px 8px;font-size:12px}
@@ -410,12 +410,12 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 #shDel:hover{border-color:var(--red)}
 
 /* ---------- dialogue de calcul (vidéo compilée, réel, story) ---------- */
-.cmpcanvas{width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;display:block}
+.cmpcanvas{width:100%;aspect-ratio:16/9;background:var(--stage);border-radius:8px;display:block}
 .cmplist{list-style:none;margin:0;padding:0;max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
 .cmplist li{border-top:1px solid var(--line)}
 .cmplist li:first-child{border-top:0}
 .cmplist label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;font-size:14px;cursor:pointer}
-.cmplist input{width:20px;height:20px;margin-top:2px;accent-color:#171618}
+.cmplist input{width:20px;height:20px;margin-top:2px;accent-color:var(--ink)}
 .cmplist small{display:block;color:var(--muted);font-size:12px}
 
 /* ---------- planche ---------- */
@@ -426,11 +426,11 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .tile{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft);cursor:pointer}
 .tile .tgo{display:block;width:100%;padding:0;border:0;background:none;border-radius:0}
 .tile .tgo:focus-visible{outline-offset:-3px}
-.tile canvas{display:block;width:100%;aspect-ratio:16/9;background:#000}
+.tile canvas{display:block;width:100%;aspect-ratio:16/9;background:var(--stage)}
 .tbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
 .tbar .btn{min-height:30px;padding:2px 8px;font-size:12px}
 .badges{position:absolute;top:6px;left:6px;display:flex;gap:4px}
-.badges b{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#171618;border:2px solid #171618;font-size:11px;display:flex;align-items:center;justify-content:center}
+.badges b{width:22px;height:22px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:11px;display:flex;align-items:center;justify-content:center}
 .badges b.sens{background:var(--yellow);border-radius:4px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
 @media (max-width:1099px){ .tbar .btn{min-height:44px;padding:4px 12px} }
 
@@ -471,17 +471,17 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 }
 .rtot b{font-family:Anton,Impact,sans-serif;font-size:24px;font-weight:400;display:block;line-height:1.15}
 .rtot small{display:block;font-size:12px;color:var(--muted)}
-.rstage{scroll-margin-top:64px;position:relative;background:#000;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.rstage{scroll-margin-top:64px;position:relative;background:var(--stage);border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
 .rstage canvas{display:block;max-width:100%;width:100%;height:auto;cursor:grab}
 .rstage.v canvas{width:auto;height:min(62vh,640px);cursor:pointer}
-.rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
+.rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--onstage);padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
 .rtrans{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 .rplay{flex:none;width:48px;padding:0}
 .rtl{position:relative;flex:1;height:44px}
 .rbar{position:absolute;left:0;right:0;top:16px;height:12px;border-radius:6px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
 .rbar .in{position:absolute;top:0;bottom:0;background:var(--blue)}
 .rbar .k{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px}
-.rbar .k.fz{background:#F9DD10;border:1px solid var(--ink)}
+.rbar .k.fz{background:var(--yellow);border:1px solid var(--ink)}
 .rbar .sg{position:absolute;top:0;bottom:0;border-left:2px solid var(--bg)}
 .rbar .fin{position:absolute;top:0;bottom:0;right:0;background:var(--ink);opacity:.55}
 .rtl input{position:absolute;inset:0;width:100%;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none}
@@ -517,7 +517,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rphotos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .rphotos:empty{display:none}
 .rphotos button{width:100%;padding:0;border:1.5px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);overflow:hidden;cursor:pointer;display:block}
-.rphotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#000}
+.rphotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--stage)}
 .rphotos small{display:block;font-size:11px;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rmus{font-size:14px}
 .rmus.miss{color:var(--red);font-weight:600}
@@ -532,10 +532,66 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   .rstage.v canvas{height:min(70vh,760px)}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
+/* ---------- fondations : focus, contrastes, cibles tactiles, thème ----------
+   Règles transversales regroupées ici. Celles qui visent un composant d'une autre partie de la feuille
+   y sont ajoutées plutôt que dans la ligne du composant. Variables propres à ces règles :
+   --ctl     bord des contrôles (champs, listes, puces, boutons secondaires), 3:1 au moins sur --bg et --soft ;
+             --line reste pour les séparateurs décoratifs
+   --ring    anneau de focus, doublé d'un liseré --bg (box-shadow) : l'un des deux tranche sur tout fond
+   --tap     hauteur minimale d'une cible au doigt
+   --press   voile posé sur un bouton pendant l'appui (--hover : survol à la souris ; --pressinv : sur fond encre)
+   --fillbd  bord des pastilles pleines (bleu, jaune) : encre en clair, aucun en sombre (la couleur fait le bord)
+   --dlgedge, --dlgshadow   détache les dialogues de la page assombrie : ombre en clair, bord net en sombre
+             (une ombre ne se voit pas sur un fond presque noir)
+   --stage, --onstage, --onstage-muted   fond de la scène vidéo et textes posés dessus, identiques dans les deux thèmes
+   --stick   hauteur du lecteur collant, tenue à jour par le script, pour que le focus ne passe pas dessous */
+:root{
+  --ctl:#85888e; --ring:var(--ink); --tap:44px; --press:rgba(23,22,24,.12); --hover:rgba(23,22,24,.06);
+  --fillbd:var(--onblue); --dlgedge:0; --dlgshadow:0 -6px 32px rgba(0,0,0,.35); --stage:#000; --onstage:#fff; --onstage-muted:#a6a8ae; --stick:0px; --pressinv:rgba(255,255,255,.24);
+  padding-left:env(safe-area-inset-left,0px); padding-right:env(safe-area-inset-right,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --ctl:#74767d; --press:rgba(241,242,244,.16); --hover:rgba(241,242,244,.08); --fillbd:transparent; --dlgedge:1px solid var(--ctl); --dlgshadow:none; --red:#FF5558; --pressinv:rgba(23,22,24,.16); }
+}
+:root[data-theme="dark"]{ --ctl:#74767d; --press:rgba(241,242,244,.16); --hover:rgba(241,242,244,.08); --fillbd:transparent; --dlgedge:1px solid var(--ctl); --dlgshadow:none; --red:#FF5558; --pressinv:rgba(23,22,24,.16); }
+/* défilement : pas de rebond ni de rechargement par tirage de la page (en mode navigateur, recharger perd les fichiers
+   choisis) ; un dialogue ouvert bloque le défilement de la page derrière lui */
+html{overscroll-behavior-y:none}
+dialog,.cmplist,.vside,.rside{overscroll-behavior:contain}
+.tabs{overscroll-behavior-x:contain}
+@media (pointer:coarse){ html:has(dialog[open]){overflow:hidden} }   /* au doigt seulement : sur PC, masquer la barre de défilement décalerait la page */
+/* texte réservé aux lecteurs d'écran (titres de structure) ; le titre h1 reste lisible par eux sous 700 px */
+.vh{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+@media (max-width:699px){ body.loaded .top .ttl{display:block;position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap} }
+/* focus : les onglets sont dans une barre qui rogne ce qui dépasse, l'anneau passe à l'intérieur */
+.tabs .tab:focus-visible{outline-offset:-5px;box-shadow:inset 0 0 0 2px var(--bg)}
+::placeholder{color:var(--muted);opacity:1}
+/* bord des contrôles (les états pressés, à faire et désactivés gardent leur propre bord) */
+.namesel,.camsel,.ver,.spdpop button,.rlist .ib{border-color:var(--ctl)}
+/* pastilles pleines : bord encre en clair, aucun en sombre */
+.btn.primary,.chip[aria-pressed="true"],.chip.s[aria-pressed="true"],.spd[aria-pressed="true"],.spdpop button[aria-pressed="true"],.mb:not(.pt),.inwin.on,.ver.pc,.ver.warn{border-color:var(--fillbd)}
+/* dialogues : bord et ombre, pour qu'ils se détachent de la page assombrie en thème sombre */
+dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
+/* heure secondaire sur la vidéo : lisible sur toute image (voile sombre et ombre) */
+.ovclock .clocksub{font-size:12px;color:var(--onstage);opacity:.85;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+/* désactivé : un seul traitement, lisible au soleil (fond, texte et bord pointillé, sans transparence) */
+:is(.btn,.mb,.chip,.rlist .ib,.spdpop button,.toast button):disabled{opacity:1;background:var(--soft);color:var(--muted);border-color:var(--ctl);border-style:dashed;box-shadow:none;animation:none;cursor:not-allowed}
+/* retour d'appui immédiat et survol à la souris : un voile sur le fond, quelle que soit sa couleur */
+:is(.btn,.mb,.chip,.tab,.lab,.spdpop button,.rlist .ib,.ver,.toast button):active:not(:disabled){background-image:linear-gradient(var(--press),var(--press))}
+.transport .play:active:not(:disabled){background-image:linear-gradient(var(--pressinv),var(--pressinv))}
+@media (hover:hover){ :is(.btn,.chip,.tab,.lab,.spdpop button,.rlist .ib,.ver):hover:not(:disabled):not(:active){background-image:linear-gradient(var(--hover),var(--hover))} }
+@media (hover:none){ .mname:hover:not(:focus){border-bottom-color:transparent} .srow:hover{background:none} }
+/* écran tactile ou étroit : cibles de 44 px, champs et listes à 16 px (sinon l'iPhone zoome à la saisie) */
+@media (pointer:coarse),(max-width:1099px){
+  .btn.small,.chip{min-height:var(--tap)}
+  :is(input.field,textarea,select){font-size:16px}
+}
 </style>
-<!-- Bibliothèques servies depuis vendor/ (versions figées) ; si le fichier local manque, repli sur jsDelivr. -->
-<script src="vendor/mp4box-0.5.3.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/mp4box@0.5.3/dist/mp4box.all.min.js'"></script>
-<script src="vendor/mp4-muxer-5.2.1.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js'"></script>
+<!-- Bibliothèques servies depuis vendor/ (versions figées) ; si le fichier local manque, repli sur jsDelivr.
+     defer : elles ne bloquent plus l'affichage ; l'appli ne s'en sert qu'à l'ouverture de fichiers ou au calcul.
+     Le repli crée un nouvel élément : changer le src d'un script déjà lancé ne le recharge pas. -->
+<script defer src="vendor/mp4box-0.5.3.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mp4box@0.5.3/dist/mp4box.all.min.js';document.head.appendChild(s)"></script>
+<script defer src="vendor/mp4-muxer-5.2.1.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js';document.head.appendChild(s)"></script>
 </head>
 <body>
 <div class="wrap">
@@ -555,12 +611,14 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <button type="button" class="ver" id="ver" title="Version de l'appli" aria-haspopup="dialog">v</button>
   </header>
 
-  <input type="file" id="fileIn" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG,.srt,.SRT">
-  <input type="file" id="dirIn" webkitdirectory multiple>
-  <input type="file" id="mdIn" accept=".md,.json,text/markdown,application/json,text/plain">
-  <input type="file" id="rMusIn" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
-  <input type="file" id="rPhotoIn" multiple accept="image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
+  <!-- champs fichier invisibles, hors de l'ordre de tabulation : le bouton (label.btn) qui les ouvre est l'unique arrêt -->
+  <input type="file" id="fileIn" tabindex="-1" aria-hidden="true" multiple accept="video/*,.mp4,.MP4,.mov,.MOV,image/jpeg,.jpg,.JPG,.jpeg,.JPEG,.srt,.SRT">
+  <input type="file" id="dirIn" tabindex="-1" aria-hidden="true" aria-label="Dossier des rushs" webkitdirectory multiple>
+  <input type="file" id="mdIn" tabindex="-1" aria-hidden="true" accept=".md,.json,text/markdown,application/json,text/plain">
+  <input type="file" id="rMusIn" tabindex="-1" aria-hidden="true" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac">
+  <input type="file" id="rPhotoIn" tabindex="-1" aria-hidden="true" multiple accept="image/jpeg,.jpg,.JPG,.jpeg,.JPEG">
 
+  <main id="main">
   <section id="empty" class="empty">
   <div id="localBox">
     <h2>Les rushs d'une intervention, calés sur la même heure</h2>
@@ -595,14 +653,15 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <div class="mline"><div class="mcomp" id="mComp"></div><button type="button" class="msave" id="mSave" hidden></button></div>
   </div>
 
-  <section id="view" hidden>
+  <section id="view" hidden role="tabpanel" aria-labelledby="tabView">
+    <h2 class="vh">Visionner</h2>
     <div class="codecnote" id="codecNote" hidden></div>
     <div class="vgrid">
     <div class="vmain">
       <div class="player" id="player">
         <div class="stage">
-          <video id="v" playsinline muted preload="auto"></video>
-          <div class="scrubprev" id="scrubPrev" hidden><canvas id="scrubCv"></canvas><span id="scrubTime"></span></div>
+          <video id="v" playsinline muted preload="auto" aria-label="Vidéo de la piste affichée"></video>
+          <div class="scrubprev" id="scrubPrev" hidden><canvas id="scrubCv" aria-hidden="true"></canvas><span id="scrubTime"></span></div>
           <div class="camtag" id="camtag"></div>
           <button class="capbtn" id="cap" aria-label="Capturer l'image en pleine résolution" title="Photo pleine résolution (P)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
           <div class="ovclock"><span class="clock" id="clock">00:00:00</span><span class="clocksub" id="clocksub"></span></div>
@@ -674,6 +733,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
         <div class="foot">
           <label class="btn small ghost" for="fileIn">Ajouter des vidéos</label>
           <button class="btn small ghost" id="reset">Changer d'intervention</button>
+          <button type="button" class="btn small ghost" id="themeBtn">Thème : automatique</button>
         </div>
         <div class="olbl">Fichiers et calage des pistes</div>
         <div id="trackRows"></div>
@@ -682,7 +742,8 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     </div>
   </section>
 
-  <section id="board" hidden>
+  <section id="board" hidden role="tabpanel" aria-labelledby="tabBoard">
+    <h2 class="vh">Planche</h2>
     <div class="bhead">
       <h2>Planche de vignettes</h2>
       <div class="chips" id="bTracks"></div>
@@ -692,7 +753,8 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <div class="bgrid" id="bGrid"></div>
   </section>
 
-  <section id="sum" hidden>
+  <section id="sum" hidden role="tabpanel" aria-labelledby="tabSum">
+    <h2 class="vh">Sommaire</h2>
     <div class="sumside">
     <div class="sumhead">
       <label for="auteur">Auteur de la vidéo compilée (signe les commentaires internes)</label>
@@ -709,7 +771,8 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <ol class="list" id="list"></ol>
     <p class="emptylist" id="emptyList">Aucun marqueur pour l'instant : la vidéo compilée et la fiche se créent à partir des marqueurs. Pendant la lecture, touchez Début puis Fin pour un passage, ou Repère pour un instant.</p>
   </section>
-<section id="reel" hidden data-pane="montage">
+<section id="reel" hidden data-pane="montage" role="tabpanel" aria-labelledby="tabReel">
+  <h2 class="vh">Réel et story</h2>
   <div class="rhead">
     <div class="rtot"><b id="rDur">Réel : 0 s</b><small id="rInfo"></small></div>
     <div class="chips rpanes" id="rPanes" role="tablist" aria-label="Partie du réel"></div>
@@ -718,7 +781,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     <div class="rmain">
       <div class="chips rmode" id="rMode"></div>
       <div class="rstage" id="rStage">
-        <canvas id="rCv" width="960" height="540"></canvas>
+        <canvas id="rCv" width="960" height="540" role="img" aria-label="Aperçu du réel"></canvas>
         <div class="rempty" id="rEmpty" hidden></div>
       </div>
       <div class="rtrans" id="rTrans">
@@ -783,6 +846,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
     </div>
   </div>
 </section>
+  </main>
 </div>
 
 <dialog class="sheet" id="sheet" aria-labelledby="shTitle">
@@ -821,11 +885,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   </form>
 </dialog>
 
-<dialog class="sheet" id="fallback">
+<dialog class="sheet" id="fallback" aria-labelledby="fbTitle">
   <div class="sheetin">
-    <h3>Copier la fiche</h3>
+    <h3 id="fbTitle">Copier la fiche</h3>
     <p style="margin:0 0 10px;font-size:14px">Le téléchargement n'est pas disponible ici. Copiez le texte ci-dessous et collez-le dans un fichier .md.</p>
-    <textarea class="field" id="fbText" readonly style="min-height:240px;font-size:12px"></textarea>
+    <textarea class="field" id="fbText" readonly style="min-height:240px" aria-labelledby="fbTitle"></textarea>
     <div class="sheetbtns">
       <button type="button" class="btn ghost" id="fbClose">Fermer</button>
       <button type="button" class="btn primary grow" id="fbCopy">Copier</button>
@@ -876,14 +940,14 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
       </div>
     </div>
     <div id="cmpRun" hidden>
-      <canvas class="cmpcanvas" id="cmpCanvas"></canvas>
+      <canvas class="cmpcanvas" id="cmpCanvas" role="img" aria-label="Aperçu de la vidéo en cours de calcul"></canvas>
       <div class="bar"><i id="cmpBar"></i></div>
       <div style="font-weight:600;font-size:14px" id="cmpStatus"></div>
       <p class="warn">Le calcul continue si vous passez sur une autre fenêtre ou un autre onglet. Ne fermez simplement pas cet onglet.</p>
       <div class="sheetbtns"><button type="button" class="btn ghost grow" id="cmpCancel">Annuler</button></div>
     </div>
     <div id="cmpDone" hidden>
-      <video id="cmpResult" controls playsinline style="width:100%;border-radius:8px;background:#000"></video>
+      <video id="cmpResult" controls playsinline aria-label="Vidéo produite" style="width:100%;border-radius:8px;background:var(--stage)"></video>
       <p class="warn" id="cmpInfo"></p>
       <div class="sheetbtns">
         <button type="button" class="btn ghost" id="cmpClose2">Fermer</button>
@@ -896,7 +960,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 <video id="cmpV" muted playsinline preload="auto" hidden></video>
 <img id="logoImg" alt="" hidden>
 
-<div class="hov" id="hov" hidden><canvas id="hovCv" width="240" height="135"></canvas><div id="hovTxt"></div></div>
+<div class="hov" id="hov" hidden><canvas id="hovCv" width="240" height="135" aria-hidden="true"></canvas><div id="hovTxt"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -929,6 +993,7 @@ let pendingSeek = null, raf = 0, dl = null;
 
 /* ---------- utils ----------
    Formats d'heure et de durée, échappement HTML, slug, toast. S.real = horodatage réel (vol daté) ou relatif. */
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function clean(s){ return String(s == null ? "" : s).replace(/[\u2013\u2014]/g, "-"); }
 function pad(n){ return (n < 10 ? "0" : "") + n; }
 function nMarq(n){ return `${n} marqueur${n > 1 ? "s" : ""}`; }
@@ -2246,7 +2311,7 @@ let scrubT = 0, scrubSeekAt = 0;
 function drawThumbInto(cv, th, W, H){
   cv.width = W; cv.height = H; const ctx = cv.getContext("2d");
   ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
-  if(!th){ ctx.fillStyle = "#888"; ctx.font = "600 13px Montserrat, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Pas de vignette", W/2, H/2+4); return; }
+  if(!th){ ctx.fillStyle = cssVar("--onstage-muted"); ctx.font = "600 13px Montserrat, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Pas de vignette", W/2, H/2+4); return; }
   const k = Math.min(W/thW(th), H/thH(th)), dw = thW(th)*k, dh = thH(th)*k;
   drawThumb(ctx, th, (W-dw)/2, (H-dh)/2, dw, dh);
 }
@@ -2368,6 +2433,7 @@ function setTab(which){
   $("tabBoard").setAttribute("aria-selected", which === "board");
   $("tabSum").setAttribute("aria-selected", which === "sum");
   $("tabReel").setAttribute("aria-selected", which === "reel");
+  syncTabs();
   $("view").hidden = which !== "view"; $("sum").hidden = which !== "sum"; $("board").hidden = which !== "board"; $("reel").hidden = which !== "reel";
   $("hov").hidden = true;
   if(which !== "reel" && typeof reelLeave === "function") reelLeave();
@@ -2422,7 +2488,7 @@ function drawTile(el){
   if(el.dataset.ok) return;
   const th = thumbAt(track(), +el.dataset.t), cv = el.querySelector("canvas");
   const ctx = cv.getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0,0,192,108);
-  if(!th){ ctx.fillStyle = "#777"; ctx.font = "600 12px Montserrat, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Vignette en cours", 96, 58); return; }
+  if(!th){ ctx.fillStyle = cssVar("--onstage-muted"); ctx.font = "600 12px Montserrat, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Vignette en cours", 96, 58); return; }
   const k = Math.min(192/thW(th), 108/thH(th)), dw = thW(th)*k, dh = thH(th)*k;
   drawThumb(ctx, th, (192-dw)/2, (108-dh)/2, dw, dh); el.dataset.ok = "1";
 }
@@ -2480,8 +2546,8 @@ function renderResume(){
 }
 
 document.addEventListener("keydown", e => {
-  if(!S.clips.length || $("sheet").open || /input|textarea/i.test(e.target.tagName)) return;
-  if($("cmp").open || $("view").hidden) return;
+  if(!S.clips.length || document.querySelector("dialog[open]") || keyTaken(e)) return;
+  if($("view").hidden) return;
   const k = e.key.toLowerCase(), playing = S.cur && !v.paused;
   if(e.key === " "){ e.preventDefault(); togglePlay(); }
   else if(e.key === "ArrowLeft"){ e.preventDefault(); seek(S.t - (e.shiftKey ? 60 : 5), playing); }
@@ -2498,6 +2564,60 @@ document.addEventListener("keydown", e => {
   else if(k === "r"){ toggleRange(); }
   else if(/^[1-9]$/.test(e.key)){ setTrack(+e.key - 1); }
 });
+/* ---------- clavier, onglets, thème ----------
+   keyTaken(e) : la touche revient à l'élément focalisé et non aux raccourcis de lecture. Les raccourcis d'une
+   touche sont ignorés dans tout champ, liste déroulante ou élément éditable ; Espace et Entrée activent le bouton,
+   le lien, le summary ou l'onglet atteint au clavier (après un clic à la souris, Espace garde la lecture, comme
+   dans un lecteur vidéo) ; les flèches restent aux onglets, curseurs et menus. */
+let viaKbd = false;      // le focus courant a été atteint au clavier (Tab, flèches des onglets), pas au clic
+document.addEventListener("pointerdown", () => { viaKbd = false; }, true);
+document.addEventListener("keydown", e => { if(e.key === "Tab") viaKbd = true; }, true);
+document.addEventListener("touchstart", () => {}, {passive:true});   // Safari iOS n'applique :active qu'avec un écouteur tactile
+function keyTaken(e){
+  const t = e.target, k = e.key;
+  if(e.ctrlKey || e.metaKey || e.altKey) return true;
+  if(!t || !t.closest) return false;
+  if(t.isContentEditable || t.closest("input,textarea,select")) return true;
+  if((k === " " || k === "Enter") && viaKbd && t.closest('button,a[href],summary,[role="button"],[role="tab"]')) return true;
+  if(/^Arrow/.test(k) && t.closest('[role="tab"],[role="tablist"],[role="menu"],[role="slider"],[role="radiogroup"],[role="listbox"]')) return true;
+  return false;
+}
+/* boutons de choix de fichier : le label.btn devient un vrai bouton (arrêt de tabulation, Entrée et Espace) */
+document.querySelectorAll("label.btn[for]").forEach(l => { l.tabIndex = 0; l.setAttribute("role", "button"); });
+document.addEventListener("keydown", e => {
+  const l = e.target.closest && e.target.closest("label.btn[for]");
+  if(!l || !(e.key === "Enter" || (e.key === " " && viaKbd))) return;
+  e.preventDefault(); const inp = $(l.htmlFor); if(inp) inp.click();
+});
+/* onglets principaux : un seul arrêt de tabulation (l'onglet affiché), flèches gauche et droite, Début et Fin */
+function syncTabs(){ document.querySelectorAll("#tabs .tab").forEach(b => { b.tabIndex = b.getAttribute("aria-selected") === "true" ? 0 : -1; }); }
+syncTabs();
+$("tabs").addEventListener("keydown", e => {
+  const tabs = Array.from($("tabs").querySelectorAll(".tab")), i = tabs.indexOf(document.activeElement), n = tabs.length;
+  if(i < 0) return;
+  const j = {ArrowRight:(i + 1) % n, ArrowLeft:(i + n - 1) % n, Home:0, End:n - 1}[e.key];
+  if(j == null) return;
+  e.preventDefault(); viaKbd = true; tabs[j].focus(); tabs[j].click();
+});
+/* hauteur du lecteur collant : réservée au-dessus de l'élément qui reçoit le focus (scroll-padding-top de html) */
+if(typeof ResizeObserver === "function"){
+  new ResizeObserver(() => { document.documentElement.style.setProperty("--stick", `${$("player").offsetHeight}px`); }).observe($("player"));
+}
+/* thème : automatique (réglage de l'appareil), clair ou sombre ; mémorisé dans ce navigateur */
+const THEME_NAMES = {"":"automatique", light:"clair", dark:"sombre"};
+let theme = "";
+try { theme = localStorage.getItem("esam-theme") || ""; } catch(e){}
+function applyTheme(){
+  if(theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
+  $("themeBtn").textContent = `Thème : ${THEME_NAMES[theme] || THEME_NAMES[""]}`;
+}
+applyTheme();
+$("themeBtn").onclick = () => {
+  theme = theme === "" ? "light" : theme === "light" ? "dark" : "";
+  try { if(theme) localStorage.setItem("esam-theme", theme); else localStorage.removeItem("esam-theme"); } catch(e){}
+  applyTheme(); if(S.clips.length) renderTimeline();     // la timeline lit ses couleurs dans les variables CSS
+};
+
 let rz = 0;
 window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if(S.clips.length) renderTimeline(); }, 150); });
 
@@ -2992,6 +3112,7 @@ async function api(path, body){
 function enc(x){ return encodeURIComponent(x); }
 async function srvInit(){
   if(!/^https?:$/.test(location.protocol)) return;
+  if(/\.github\.io$/i.test(location.hostname)) return;   // GitHub Pages : pas de PC derrière, la sonde n'y laisserait qu'une erreur 404 en console
   try { SRV = await api("api/status"); } catch(e){ SRV = null; }
   if(!SRV || !SRV.ok){ SRV = null; return; }
   BACKEND = PC;
@@ -4287,7 +4408,7 @@ rcv.addEventListener("wheel", e => {
   clearTimeout(REEL.wheelT); REEL.wheelT = setTimeout(() => { rSave(); renderReelEdit(); }, 400);
 }, {passive:false});
 document.addEventListener("keydown", e => {
-  if($("reel").hidden || $("cmp").open || /input|textarea|select/i.test(e.target.tagName)) return;
+  if($("reel").hidden || document.querySelector("dialog[open]") || keyTaken(e)) return;
   if(e.key === " "){ e.preventDefault(); rPlay(); }
 });
 
