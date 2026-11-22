@@ -155,7 +155,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 - L'heure n'est pas incrustée sur la vidéo compilée par le PC (elle figure sur les cartons).
 - Le son n'est pas conservé dans la vidéo compilée.
-- La lecture à x16 dépend du débit montant de la connexion de la maison ; si l'image saccade, préférez x8.
+- La lecture à x16 dépend du débit montant de la connexion de la maison ; si l'image saccade, préférez x8 (appui long ou clic droit sur x16 pour choisir la vitesse).
 
 ## Changelog
 
