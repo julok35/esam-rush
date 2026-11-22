@@ -32,7 +32,7 @@ Le même `index.html` sert les deux modes. Ce qui diffère est isolé dans un ob
 
 ## 2. Carte de `index.html`
 
-Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme`), puis le HTML (une `<section>` par onglet, trois `<dialog>`), puis le script. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
+Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par onglet dans `<main>`, trois `<dialog>`), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
 
 | Section | Rôle | Fonctions d'entrée |
 |---|---|---|
@@ -45,7 +45,8 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | markers | Création et édition des marqueurs (dialogue `#sheet`) | `addMarker`, `markStart`, `markEnd`, `openSheet` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement des bords, clavier, onglets | `setZoom`, `setTab`, `keydown` |
+| events | Transport, zoom et pincement, glissement des bords, raccourcis clavier, onglets | `setZoom`, `setTab`, `keydown` |
+| clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
@@ -60,6 +61,8 @@ Conventions du script :
 - Les fonctions sont déclarées (`function f(){}`), donc utilisables avant leur définition ; les constantes et l'état sont en `const` et `let`.
 - `$("id")` est le seul accès au DOM ; les identifiants HTML sont en camelCase (`rStage`, `cmpInfo`).
 - Les messages sont en français ; une alerte dans un texte est entre crochets (`[Fiche non enregistrée : ...]`) et stylée par la classe `miss`.
+- Couleurs : toujours une variable. `--line` pour les séparateurs décoratifs, `--ctl` pour le bord d'un contrôle (3:1), `--onblue` pour l'encre fixe sur bleu ou jaune, `--stage` et `--onstage` pour la scène vidéo ; les couleurs dessinées dans les vidéos produites restent en dur dans le script.
+- Clavier : tout nouveau raccourci passe par `keyTaken(e)` ; un champ fichier reste invisible (`tabindex="-1"`) et s'ouvre par un `label.btn`, rendu focalisable par le script.
 
 ## 3. Modèle de données
 
@@ -124,6 +127,7 @@ Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de
 |---|---|---|
 | localStorage `esam-derush:<clé>` | `{markers, meta, offsets}` | à chaque `persist()` |
 | localStorage `esam-auteur` | auteur des commentaires | à la saisie |
+| localStorage `esam-theme` | thème choisi (`light` ou `dark`, absent : automatique) | au réglage (Plus d'options) |
 | `.derushage/etat.json` (mode PC) | `{markers, meta, offsets}` | `persist()`, 0,7 s après la dernière modification |
 | `ESAM_Derushage_<date>_<mission>.md` | fiche lisible + bloc `<!-- derushage-data {...} -->` | 1,5 s après la dernière modification (PC ou dossier ouvert) |
 
