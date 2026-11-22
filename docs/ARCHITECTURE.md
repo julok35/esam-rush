@@ -112,7 +112,7 @@ Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W gra
     photo, dur, x, zoom,         // photo : chemin relatif, durée, cadrage, zoom lent
     texte, tBox: {x, y, s, c, fond}, tDur,   // texte du passage, sa boîte, sa durée (0 = tout le passage)
     flous: [{id, s, keys: [{t, x, y}]}]}],   // zones de flou doux, en fraction de l'image source
- titre, titreDur, titreBox: {x, y, s, c},
+ titre, titreDur, titreBox: {x, y, s, c, haut},   // haut : y est le bord haut du titre (sinon son centre, réels plus anciens)
  elems: [{id, kind: "texte"|"fleche"|"cercle"|"cadre", a, d, x, y, s, rot, c, texte, fond}],  // temps du réel
  logo: {mode: "cartouche"|"logo"|"non", x, y, s},
  fin: {on, texte, sous},
@@ -143,12 +143,13 @@ Reprendre une fiche remplace les marqueurs (pas de fusion) ; l'opération est an
 | `capture(tr, t)` | `captureLocal` : WebCodecs, puis téléchargement | `captureRemote` : `POST api/photo` (clip du PC), sinon `captureLocal` |
 | `compile()` | `runCompile` : WebCodecs + mp4-muxer | `runRemote` : cartons rendus en PNG, `POST api/video`, `pollJob` |
 | `reel(story)` | `runReelLocal` : `rRender` par morceaux de story | `runReelRemote` : calques PNG, `POST api/reel`, `pollJob` |
+| `busy(on)` | pendant un calcul : avertissement `beforeunload` et écran maintenu allumé (`navigator.wakeLock`), relâchés à la fin, à l'annulation ou en erreur | rien (le calcul continue sur le PC) |
 | `compileFailed(msg)` | erreur dans le dialogue | retour à la vue Setup et toast |
 | `reset()` | rien | retour à la liste des interventions |
 
 Le reste du code appelle `BACKEND.x()` sans tester le mode. `pcOpen()` (une intervention est ouverte sur le PC) sert aux quelques textes et chemins qui dépendent du mode (photos, musique).
 
-Dialogue de calcul : `jobRun(message, W, H)` ouvre la vue de progression et rend le canvas d'aperçu ; `jobProgress(fraction, texte)` ; `jobDone({info, url, saveLabel, onSave, onBack})` ou `jobError(message, onBack)` affichent le résultat. Les boutons « Enregistrer » et « Recommencer » exécutent les fonctions passées, ce qui évite tout drapeau global sur ce qui est affiché.
+Dialogue de calcul : `jobRun(message, W, H, titre)` ouvre la vue de progression (titre : « Vidéo compilée », « Réel » ou « Story ») et rend le canvas d'aperçu ; `jobProgress(fraction, texte)` ; `jobDone({info, url, files: [{name, href}], where, title, saveLabel, onSave, onBack})` ou `jobError(message, onBack)` affichent le résultat (en mode PC, `href` lit le fichier produit par `/files/`). Les messages d'erreur passent par `errMsg()` (jamais de nom d'exception à l'écran). Les boutons « Enregistrer » et « Recommencer » exécutent les fonctions passées, ce qui évite tout drapeau global sur ce qui est affiché.
 
 ## 5. API HTTP de `server.py`
 

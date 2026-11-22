@@ -417,6 +417,18 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .cmplist label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;font-size:14px;cursor:pointer}
 .cmplist input{width:20px;height:20px;margin-top:2px;accent-color:var(--ink)}
 .cmplist small{display:block;color:var(--muted);font-size:12px}
+/* sensibilité avant diffusion : pastille jaune (comme .mh.sens) et libellé écrit, jamais la couleur seule */
+.stag{display:inline-block;background:var(--paleyellow);color:var(--ink);border:1.5px solid var(--yellow);border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;line-height:1.5;margin-top:3px}
+.stag::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--yellow);border:1.5px solid var(--onblue);margin-right:5px;vertical-align:-1px}
+.senswarn{background:var(--paleyellow);color:var(--ink);border:2px solid var(--yellow);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;margin:10px 0 0}
+.senswarn b{display:block;font-weight:700}
+#cmpTitle:focus{outline:none}
+#cmpResult{max-height:52vh;max-height:52dvh;object-fit:contain}
+.cmpfile{font-size:14px;font-weight:600;margin:10px 0 0;overflow-wrap:anywhere}
+.cmpfile b{display:block;font-size:16px}
+.cmpfile a{color:var(--ink);text-underline-offset:3px}
+/* bouton « Enregistrer » toujours visible, même sous une vidéo verticale haute */
+#cmpSetup .sheetbtns, #cmpDone .sheetbtns{position:sticky;bottom:0;background:var(--bg);padding:10px 0;margin-top:8px;z-index:1}
 
 /* ---------- planche ---------- */
 .bhead{padding:14px 16px 6px;display:flex;flex-direction:column;gap:10px}
@@ -460,28 +472,33 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 
 /* ---------- réel et story ---------- */
 #reel{padding:0 16px 40px}
-.rhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 10px}
-.rmode{padding:0 0 10px}
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:8px 10px;flex-wrap:wrap;padding:10px 0 8px}
+.rmode{padding:0 0 8px}
 .rpanes{display:none}
+.rpanes .chip[aria-selected="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
 /* téléphone : un volet à la fois (Montage, Passage, Habillage), la barre « Créer » reste visible partout */
 @media (max-width:1099px){
-  .rpanes{display:flex}
+  .rpanes{display:flex;width:100%;flex-wrap:nowrap}
+  .rpanes .chip{flex:1}
   #reel[data-pane="montage"] .rmain, #reel[data-pane="montage"] #rPaneHab, #reel[data-pane="passage"] #rPaneMontage, #reel[data-pane="passage"] #rPaneHab, #reel[data-pane="habillage"] .rmain, #reel[data-pane="habillage"] #rPaneMontage{display:none}
+  /* hors du volet Montage, le détail du réel s'efface : une ligne de moins au-dessus de l'image */
+  #reel:not([data-pane="montage"]) #rInfo{display:none}
   .rside .rh:first-child{margin-top:4px}
 }
 .rtot b{font-family:Anton,Impact,sans-serif;font-size:24px;font-weight:400;display:block;line-height:1.15}
 .rtot small{display:block;font-size:12px;color:var(--muted)}
 .rstage{scroll-margin-top:64px;position:relative;background:var(--stage);border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
 .rstage canvas{display:block;max-width:100%;width:100%;height:auto;cursor:grab}
+.rstage canvas:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
 .rstage.v canvas{width:auto;height:min(62vh,640px);cursor:pointer}
 .rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--onstage);padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
 .rtrans{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 .rplay{flex:none;width:48px;padding:0}
 .rtl{position:relative;flex:1;height:44px}
 .rbar{position:absolute;left:0;right:0;top:16px;height:12px;border-radius:6px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
-.rbar .in{position:absolute;top:0;bottom:0;background:var(--blue)}
+.rbar .in{position:absolute;top:0;bottom:0;background:var(--blue);box-shadow:inset 0 0 0 1.5px var(--onblue)}
 .rbar .k{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px}
-.rbar .k.fz{background:var(--yellow);border:1px solid var(--ink)}
+.rbar .k.fz{background:var(--bg);border:1.5px solid var(--ink)}
 .rbar .sg{position:absolute;top:0;bottom:0;border-left:2px solid var(--bg)}
 .rbar .fin{position:absolute;top:0;bottom:0;right:0;background:var(--ink);opacity:.55}
 .rtl input{position:absolute;inset:0;width:100%;height:44px;margin:0;background:transparent;-webkit-appearance:none;appearance:none}
@@ -495,22 +512,35 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .redit .rsel{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
 .redit .rsel b{font-size:16px}
 .redit .hint{margin:8px 0 0}
+.rtarget{margin-top:10px}
+.rtarget .lbl{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
 .rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .rh{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:22px 0 8px}
 .rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px}
 .rlist:empty{display:none}
-.rlist li{border-top:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:6px 8px}
+.rlist li{border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:6px 8px}
 .rlist li:first-child{border-top:0}
-.rlist li.sel{background:var(--clip)}
+.rlist li.sel{background:var(--clip);box-shadow:inset 0 0 0 2px var(--ink)}
+.rlist li:first-child.sel{border-radius:9px 9px 0 0}
+.rlist li:last-child.sel{border-radius:0 0 9px 9px}
+.rlist li:only-child.sel{border-radius:9px}
 .rlist .rn{flex:none;width:26px;height:26px;border-radius:50%;background:var(--blue);color:var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.rlist .rn.sens{background:var(--yellow);color:var(--onblue);border:2px solid var(--onblue)}
 .rlist .rtx{flex:1;min-width:0;text-align:left;background:none;border:0;padding:6px 2px;color:inherit;font:inherit;cursor:pointer;min-height:44px}
 .rlist .rtx b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rlist .rtx small{display:block;font-size:12px;color:var(--muted)}
-.rlist .ib{flex:none;width:38px;height:38px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.rlist .ib{flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
 .rlist .ib:disabled{opacity:.3}
 .rlist.add .rn{background:var(--soft);color:var(--ink);border:1.5px dashed var(--muted)}
+.rlist.add .rn.sens{background:var(--yellow);color:var(--onblue);border:2px solid var(--onblue)}
 .radd{margin-top:10px}
-.radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:40px}
+.radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:44px;display:flex;align-items:center;gap:6px}
+.radd summary::before{content:"";width:0;height:0;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
+.radd[open] summary::before{transform:rotate(90deg)}
+.radd summary::-webkit-details-marker{display:none}
+.radd summary{list-style:none}
+.rnone{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:4px}
+.rnone p{margin:0 0 12px;max-width:52ch}
 .rrange{width:100%;accent-color:var(--blue);height:32px}
 .chip.rcol i{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:6px;vertical-align:-2px;border:1.5px solid var(--line)}
 .relems .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -525,10 +555,15 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rexport{position:sticky;bottom:0;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);margin-top:18px;display:flex;flex-wrap:wrap;gap:8px;z-index:3}
 .rexport .btn{flex:1}
 .rexport .warn{flex-basis:100%;margin:2px 0 0}
+.rexport .senswarn{flex-basis:100%;margin:0}
 @media (min-width:1100px){
-  #reel{padding:0 24px 40px}
-  .rgrid{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:28px;align-items:start}
-  .rside{position:sticky;top:96px;max-height:calc(100vh - 110px);overflow:auto;padding-right:6px}
+  /* la colonne de droite commence en haut de l'onglet (à côté de l'en-tête du réel) : « Créer le réel » visible dès l'arrivée */
+  #reel{padding:0 24px 40px;display:grid;grid-template-columns:minmax(0,1fr) 420px;column-gap:28px;align-items:start}
+  .rhead{grid-column:1}
+  .rgrid{display:contents}
+  .rmain{grid-column:1}
+  .rside{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--top) + 12px);max-height:calc(100vh - var(--top) - 72px);max-height:calc(100dvh - var(--top) - 72px);overflow:auto;padding:10px 6px 0 0}
+  .rside .rh:first-child{margin-top:0}
   .rstage.v canvas{height:min(70vh,760px)}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
@@ -778,10 +813,10 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <div class="chips rpanes" id="rPanes" role="tablist" aria-label="Partie du réel"></div>
   </div>
   <div class="rgrid">
-    <div class="rmain">
+    <div class="rmain" id="rPanePassage">
       <div class="chips rmode" id="rMode"></div>
       <div class="rstage" id="rStage">
-        <canvas id="rCv" width="960" height="540" role="img" aria-label="Aperçu du réel"></canvas>
+        <canvas id="rCv" width="960" height="540" tabindex="0" aria-label="Image du passage"></canvas>
         <div class="rempty" id="rEmpty" hidden></div>
       </div>
       <div class="rtrans" id="rTrans">
@@ -789,11 +824,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <div class="rtl" id="rTl"><div class="rbar" id="rBar"></div><input type="range" id="rSlider" min="0" max="1000" step="1" value="0" aria-label="Position"></div>
         <span class="rtime" id="rTime">0:00</span>
       </div>
+      <p class="keys" id="rKeys"><kbd>Espace</kbd> lecture, <kbd>Flèches</kbd> 1 s, <kbd>Maj + flèches</kbd> 5 s, <kbd>I</kbd> début ici, <kbd>O</kbd> fin ici, <kbd>A</kbd> cadrage ou aperçu<br>Sur l'image (clic ou <kbd>Tab</kbd>) : <kbd>Flèches</kbd> déplacer le cadre, le flou ou l'élément choisi, <kbd>Entrée</kbd> élément suivant, <kbd>+</kbd> <kbd>-</kbd> taille, <kbd>Échap</kbd> terminer</p>
       <div class="redit" id="rEdit"></div>
     </div>
     <div class="rside">
       <div id="rPaneMontage">
       <h3 class="rh">Montage</h3>
+      <div class="rnone" id="rNone" hidden>
+        <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
+        <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
+      </div>
       <ol class="rlist" id="rList"></ol>
       <details class="radd" id="rAddBox"><summary id="rAddSum">Ajouter des passages</summary><ul class="rlist add" id="rAdd"></ul></details>
       <details class="radd" id="rPhBox"><summary id="rPhSum">Ajouter des photos</summary>
@@ -839,6 +879,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       </div>
       </div>
       <div class="rexport">
+        <div class="senswarn" id="rSensW" hidden></div>
         <button type="button" class="btn primary" id="rGoReel">Créer le réel</button>
         <button type="button" class="btn" id="rGoStory">Créer la story</button>
         <p class="warn" id="rEst"></p>
@@ -923,9 +964,9 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
   </div>
 </dialog>
 
-<dialog class="sheet" id="cmp">
+<dialog class="sheet" id="cmp" aria-labelledby="cmpTitle">
   <div class="sheetin">
-    <h3>Vidéo compilée</h3>
+    <h3 id="cmpTitle" tabindex="-1">Vidéo compilée</h3>
     <div id="cmpSetup">
       <p style="margin:0 0 12px;font-size:14px">Les passages cochés sont enchaînés dans l'ordre chronologique, chacun précédé d'un carton sur fond noir (nom, heure de début et de fin, commentaire), à la résolution d'origine des rushs.</p>
       <ul class="cmplist" id="cmpList"></ul>
@@ -933,6 +974,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
       <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
       <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
+      <div class="senswarn" id="cmpSensW" hidden></div>
       <p class="warn" id="cmpEst"></p>
       <div class="sheetbtns">
         <button type="button" class="btn ghost" id="cmpClose">Fermer</button>
@@ -943,11 +985,12 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <canvas class="cmpcanvas" id="cmpCanvas" role="img" aria-label="Aperçu de la vidéo en cours de calcul"></canvas>
       <div class="bar"><i id="cmpBar"></i></div>
       <div style="font-weight:600;font-size:14px" id="cmpStatus"></div>
-      <p class="warn">Le calcul continue si vous passez sur une autre fenêtre ou un autre onglet. Ne fermez simplement pas cet onglet.</p>
+      <p class="warn">Le calcul se fait dans ce navigateur et continue si vous changez de fenêtre. Gardez cet onglet ouvert : l'appli vous prévient si vous tentez de le fermer.</p>
       <div class="sheetbtns"><button type="button" class="btn ghost grow" id="cmpCancel">Annuler</button></div>
     </div>
     <div id="cmpDone" hidden>
-      <video id="cmpResult" controls playsinline aria-label="Vidéo produite" style="width:100%;border-radius:8px;background:var(--stage)"></video>
+      <video id="cmpResult" controls playsinline preload="metadata" aria-label="Vidéo produite" style="width:100%;border-radius:8px;background:var(--stage)"></video>
+      <p class="cmpfile" id="cmpFile" hidden></p>
       <p class="warn" id="cmpInfo"></p>
       <div class="sheetbtns">
         <button type="button" class="btn ghost" id="cmpClose2">Fermer</button>
@@ -2710,12 +2753,23 @@ function buildPlan(){
   const total = 3 + items.reduce((t, it) => t + cardSec(it) + it.len, 0);
   return {items:items, skipped:skipped, total:total};
 }
+/* sensibilité d'un marqueur en clair, pour les rappels avant diffusion : « Visage identifiable, animal blessé » */
+function sensTxt(m){ return m && isSens(m) ? m.sens.map((x, i) => i ? x.toLowerCase() : x).join(", ") : ""; }
+function sensTag(txt){ return txt ? `<span class="stag">${esc(txt)}</span>` : ""; }
+/* encadré de rappel (non bloquant) : titre et phrases ; vide si rien à signaler */
+function sensWarn(el, lines, end){
+  const t = lines.join(" ; ");
+  el.hidden = !t;
+  el.innerHTML = t ? `<b>À vérifier avant de publier</b>${esc(t.charAt(0).toUpperCase() + t.slice(1))}.${end ? ` ${esc(end)}` : ""}` : "";
+}
 function renderCmpSetup(){
-  const list = sorted();
+  const list = sorted(), sens = [];
   $("cmpList").innerHTML = list.map((m, i) => {
     const it = planFor(m);
-    return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}` : '<span class="miss">[aucune image]</span>'}</small></span></label></li>`;
+    if(it && !CMP.off[m.id] && isSens(m)) sens.push(`passage ${i+1} sensible (${sensTxt(m).toLowerCase()})`);
+    return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}` : '<span class="miss">[aucune image]</span>'}</small>${sensTag(sensTxt(m))}</span></label></li>`;
   }).join("") || '<li><label>Aucun marqueur.</label></li>';
+  sensWarn($("cmpSensW"), sens, "La vidéo compilée ne floute rien.");
   const od = outDims(buildPlan().items);
   $("cmpResInfo").textContent = od ? `${od.W} x ${od.H}${CMP.fmt === "v" ? " (hauteur d'origine, image recadrée au centre)" : " (celle des rushs d'origine)"}` : "-";
   chipRow($("cmpWin"), ["Aucune","5 s","10 s"], (t, i) => CMP.win === [0,5,10][i]);
@@ -2749,11 +2803,33 @@ function buildSrt(spans){
    Les deux moteurs appellent jobRun / jobProgress / jobDone / jobError ; les boutons « Enregistrer » et
    « Recommencer » exécutent les fonctions passées à jobDone, sans drapeau global sur ce qui est affiché. */
 const JOB = {onSave:null, onBack:null};
-function jobView(which){ ["Setup","Run","Done"].forEach(w => { $(`cmp${w}`).hidden = w !== which; }); }
-function jobOpen(){ const d = $("cmp"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); } }
+const LOCAL_RUN_MSG = "Le calcul se fait dans ce navigateur et continue si vous changez de fenêtre. Gardez cet onglet ouvert : l'appli vous prévient si vous tentez de le fermer.";
+function jobView(which){ ["Setup","Run","Done"].forEach(w => { $(`cmp${w}`).hidden = w !== which; }); if($("cmp").open) jobFocus(); }
+/* focus à l'ouverture et à chaque changement de vue : le titre (réglages, progression) ou l'action principale (résultat) */
+function jobFocus(){
+  let el = $("cmpTitle");
+  if(!$("cmpDone").hidden) el = !$("cmpSave").hidden ? $("cmpSave") : $("cmpClose2");
+  try { el.focus({preventScroll:true}); } catch(e){}
+}
+function jobTitle(t){ $("cmpTitle").textContent = t; }
+function jobOpen(){ const d = $("cmp"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); } jobFocus(); }
 function jobClose(){ const d = $("cmp"); if(d.open) d.close(); }
-function jobRun(msg, W, H){
-  // vue de progression ; rend le canevas d'aperçu, dimensionné au format W x H
+/* durée d'un calcul en clair (un calcul court ne s'affiche pas « en 0 s ») */
+function enDuree(sec){ return sec < 1 ? "en moins d'une seconde" : `en ${len(sec)}`; }
+/* message d'erreur lisible : pas de nom d'exception, causes courantes traduites */
+function errMsg(err){
+  if(!err) return "erreur inconnue";
+  const m = String(err.message || err), n = err.name || "";
+  if(/failed to fetch|networkerror|load failed/i.test(m)) return "le PC ne répond pas (connexion perdue ?)";
+  if(n === "QuotaExceededError") return "plus assez de place sur cet appareil";
+  if(n === "NotAllowedError") return "autorisation refusée par le navigateur";
+  if(n === "NotSupportedError") return "format vidéo non pris en charge par ce navigateur";
+  if(n === "EncodingError" || n === "OperationError") return "l'encodeur vidéo du navigateur s'est arrêté";
+  return m;
+}
+function jobRun(msg, W, H, title){
+  // vue de progression ; rend le canevas d'aperçu, dimensionné au format W x H ; title : ce qui est fabriqué
+  if(title) jobTitle(title);
   $("cmpRun").querySelector(".warn").textContent = msg;
   jobProgress(0, "Préparation");
   const pcv = $("cmpCanvas"), V = W < H; pcv.width = V ? 360 : 640; pcv.height = Math.round(pcv.width*H/W);
@@ -2763,10 +2839,15 @@ function jobRun(msg, W, H){
 }
 function jobProgress(frac, txt){ $("cmpBar").style.width = `${frac*100}%`; $("cmpStatus").textContent = txt; }
 function jobDone(o){
-  // o : {info, error, url (aperçu vidéo), saveLabel, onSave, onBack}
+  // o : {info, error, url (aperçu vidéo), files: [{name, href}] (fichiers produits), where, title, saveLabel, onSave, onBack}
   JOB.onSave = o.onSave || null; JOB.onBack = o.onBack || null;
+  if(o.title) jobTitle(o.title);
   const el = $("cmpInfo"); el.textContent = o.error ? `[${o.info}]` : o.info; el.classList.toggle("miss", !!o.error);
+  const fl = $("cmpFile"), files = o.error ? [] : o.files || [];
+  fl.hidden = !files.length;
+  fl.innerHTML = files.length ? `<b>${esc(o.where || (files.length > 1 ? "Fichiers" : "Fichier"))}</b>${files.map(f => f.href ? `<a href="${esc(f.href)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : esc(f.name)).join("<br>")}` : "";
   const vid = $("cmpResult"); vid.hidden = !o.url; if(o.url) vid.src = o.url; else vid.removeAttribute("src");
+  vid.onerror = () => { vid.hidden = true; };           // vidéo que ce navigateur ne sait pas lire (H.265) : le lien reste
   $("cmpSave").hidden = !o.onSave; $("cmpSave").textContent = o.saveLabel || "Enregistrer la vidéo";
   $("cmpBack").hidden = !o.onBack;
   jobView("Done"); jobOpen();
@@ -2780,28 +2861,31 @@ $("cmpCancel").onclick = jobCancel;
 $("cmpClose").onclick = jobClose;
 $("cmpClose2").onclick = jobClose;
 $("cmp").addEventListener("cancel", e => { if(CMP.running) e.preventDefault(); });
-$("cmp").addEventListener("close", () => { JOB.onSave = JOB.onBack = null; $("cmpResult").removeAttribute("src"); });
+$("cmp").addEventListener("close", () => { JOB.onSave = JOB.onBack = null; $("cmpResult").onerror = null; $("cmpResult").removeAttribute("src"); });
 
 /* ----- compilation : réglages, résultat ----- */
-function cmpDoneOpts(){ return {info:CMP.info, url:CMP.url, onSave:saveCompiled, onBack:cmpRestart}; }
+function cmpDoneOpts(){ return {info:CMP.info, url:CMP.url, onSave:saveCompiled, onBack:cmpRestart, title:"Vidéo compilée",
+  files:[{name:cmpName()}].concat(CMP.srt ? [{name:srtName()}] : [])}; }
 function cmpForget(){ if(CMP.url) URL.revokeObjectURL(CMP.url); CMP.url = null; CMP.blob = null; CMP.srt = null; CMP.info = ""; }
 function cmpRestart(){ cmpForget(); jobView("Setup"); renderCmpSetup(); }
 $("cmpOpen").onclick = () => {
   if(!S.markers.length){ toast("Ajoutez d'abord des marqueurs."); return; }
   if(!BACKEND.pc && (typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined")){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
-  v.pause();
+  v.pause(); jobTitle("Vidéo compilée");
   if(CMP.blob) jobDone(cmpDoneOpts()); else { jobView("Setup"); renderCmpSetup(); jobOpen(); }
 };
 $("cmpList").addEventListener("change", e => { const c = e.target; if(c.dataset.id){ CMP.off[c.dataset.id] = !c.checked; renderCmpSetup(); renderComp(); } });
 $("cmpWin").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.win = [0,5,10][+b.dataset.k]; renderCmpSetup(); renderComp(); });
 $("cmpFmt").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.fmt = +b.dataset.k ? "v" : "h"; renderCmpSetup(); });
 $("cmpClock").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.clock = !+b.dataset.k; renderCmpSetup(); });
-$("cmpGo").onclick = () => { BACKEND.compile().catch(err => {
-  CMP.running = false;
-  const msg = err ? ((err.name && err.name !== "Error" ? `${err.name} : ` : "") + (err.message || String(err))) : "erreur inconnue";
-  try { console.error(err); } catch(e){}
-  BACKEND.compileFailed(msg);
-}); };
+$("cmpGo").onclick = () => {
+  BACKEND.busy(true);
+  BACKEND.compile().then(() => { BACKEND.busy(false); }, err => {
+    BACKEND.busy(false); CMP.running = false;
+    try { console.error(err); } catch(e){}
+    BACKEND.compileFailed(errMsg(err));
+  });
+};
 
 function once(el, ev, ms){
   return new Promise((res, rej) => {
@@ -2983,7 +3067,7 @@ async function runCompile(){
   let encErr = null;
   const enc = new VideoEncoder({output:function(chunk, meta){ muxer.addVideoChunk(chunk, meta); }, error:function(e){ encErr = e; }});
   enc.configure(enc0.cfg);
-  CMP.running = true;CMP.cancel = false;jobView("Run");
+  CMP.running = true;CMP.cancel = false;$("cmpRun").querySelector(".warn").textContent = LOCAL_RUN_MSG;jobView("Run");
   let outT = 0;
   let sinceKey = -1;
   let doneSec = 0;
@@ -3059,7 +3143,7 @@ async function runCompile(){
     CMP.blob = file; CMP.ext = "mp4"; CMP.lastFmt = CMP.fmt; CMP.srt = buildSrt(spans);
     if(CMP.url) URL.revokeObjectURL(CMP.url);
     CMP.url = URL.createObjectURL(file);
-    CMP.info = `Vidéo de ${len(pl.total)}, ${W} x ${H}, ${enc0.label}, ${(file.size/1048576).toFixed(0)} Mo, calculée en ${len((performance.now()-t0)/1000)}.${pl.skipped ? ` ${pl.skipped} marqueur(s) sans image ignoré(s).` : ""}${CMP.srt ? ` ${CMP.srt.count} commentaire(s) interne(s) dans un fichier de sous-titres à part.` : ""}`;
+    CMP.info = `Vidéo de ${len(pl.total)}, ${W} x ${H}, ${enc0.label}, ${(file.size/1048576).toFixed(0)} Mo, calculée ${enDuree((performance.now()-t0)/1000)}.${pl.skipped ? ` ${pl.skipped} marqueur(s) sans image ignoré(s).` : ""}${CMP.srt ? ` ${CMP.srt.count} commentaire(s) interne(s) dans un fichier de sous-titres à part.` : ""}`;
     jobDone(cmpDoneOpts());
     if(S.dirHandle){ saveToDir().catch(e => { toast(`Enregistrement dans le dossier impossible : ${e.message}`); }); }
     toast("Vidéo compilée prête.");
@@ -3076,7 +3160,7 @@ async function saveToDir(){
   if(dir.requestPermission && (await dir.queryPermission({mode:"readwrite"})) !== "granted" && (await dir.requestPermission({mode:"readwrite"})) !== "granted") throw new Error("autorisation refusée");
   const w = await (await dir.getFileHandle(name, {create:true})).createWritable(); await w.write(CMP.blob); await w.close();
   if(CMP.srt){ const w2 = await (await dir.getFileHandle(srtName(), {create:true})).createWritable(); await w2.write(CMP.srt.text); await w2.close(); }
-  CMP.info += ` Enregistrée dans le dossier des rushs : ${name}${CMP.srt ? ` et ${srtName()}` : ""}.`;
+  CMP.info += ` Enregistrée dans le dossier des rushs${CMP.srt ? ", avec ses sous-titres" : ""}.`;
   $("cmpInfo").textContent = CMP.info;
   toast("Vidéo enregistrée dans le dossier des rushs.");
 }
@@ -3245,7 +3329,7 @@ async function runRemote(){
   try { await Promise.all([document.fonts.load("40px Anton"), document.fonts.load("600 40px Montserrat"), document.fonts.load("400 40px Montserrat"), document.fonts.load("700 40px Montserrat")]); } catch(e){}
   const cv = rCanvas(W, H), ctx = cv.getContext("2d");
   drawIntro(ctx, W, H, pl); const intro = cv.toDataURL("image/png");
-  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", W, H);
+  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", W, H, "Vidéo compilée");
   pcv.getContext("2d").drawImage(cv, 0, 0, pcv.width, pcv.height);
   const lg = document.createElement("canvas"); lg.width = lg.height = 256; drawLogo(lg.getContext("2d"), 128, 128, 126);
   const logo = lg.toDataURL("image/png");
@@ -3273,22 +3357,28 @@ async function pollJob(){
   const el = (Date.now()/1000 - j.debut), rest = j.avance > 0.03 ? el*(1 - j.avance)/j.avance : 0;
   jobProgress(j.avance, `${j.libelle} (${Math.round(j.avance*100)} %${rest > 5 ? `, reste environ ${len(rest)}` : ""})`);
   const back = j.type === "reel" ? jobClose : cmpRestart;
+  // fichier produit, lisible depuis le dossier de l'intervention (route /files/ du PC)
+  const fileOf = n => ({name:n, href:`files/${enc(j.dossier || SRVD)}/${enc(n)}`});
   if(j.etat === "termine"){
     CMP.running = false; CMP.job = null;
     const r = j.resultat || {};
     if(r.fichiers){
-      jobDone({onBack:back, info:`${r.fichiers.length > 1 ? `${r.fichiers.length} vidéos enregistrées` : "Vidéo enregistrée"} dans le Drive : ${r.fichiers.join(", ")} (${r.largeur} x ${r.hauteur}, ${len(r.duree)} au total, ${r.taille_mo} Mo), calculée${r.fichiers.length > 1 ? "s" : ""} en ${len(el)}.${r.musique ? " Avec la musique." : " Sans musique."} Elle${r.fichiers.length > 1 ? "s apparaîtront" : " apparaîtra"} dans le Drive dès la fin de la synchronisation.`});
-      toast(r.fichiers.length > 1 ? "Story prête." : "Réel prêt.");
+      const many = r.fichiers.length > 1, fs = r.fichiers.map(fileOf), sw = rSensLines();
+      jobDone({onBack:back, url:fs[0] && fs[0].href, files:fs, where:many ? `${r.fichiers.length} vidéos dans le dossier de l'intervention` : "Dans le dossier de l'intervention",
+        info:`${r.largeur} x ${r.hauteur}, ${len(r.duree)} au total, ${r.taille_mo} Mo, calculée${many ? "s" : ""} ${enDuree(el)}.${r.musique ? " Avec la musique." : " Sans musique."} Elle${many ? "s apparaîtront" : " apparaîtra"} dans le Drive dès la fin de la synchronisation.${many ? " L'aperçu montre le premier morceau." : ""}${sw.length ? ` Rappel : ${sw.join(" ; ")}.` : ""}`});
+      toast(many ? "Story prête." : "Réel prêt.");
       return;
     }
-    jobDone({onBack:back, info:`Vidéo enregistrée dans le Drive : ${r.fichier} (${r.largeur} x ${r.hauteur}, ${len(r.duree)}, ${r.taille_mo} Mo), calculée en ${len(el)}.${r.chapitres ? ` ${r.chapitres} chapitres inscrits dans la vidéo${r.fichier_chapitres ? `, liste dans ${r.fichier_chapitres}` : ""}.` : ""}${r.fichier_commentaires ? ` ${r.commentaires} commentaire(s) interne(s) dans ${r.fichier_commentaires}.` : ""} Elle apparaîtra dans le Drive dès la fin de la synchronisation.`});
+    const fs2 = [fileOf(r.fichier)].concat(r.fichier_commentaires ? [fileOf(r.fichier_commentaires)] : [], r.fichier_chapitres ? [fileOf(r.fichier_chapitres)] : []);
+    jobDone({onBack:back, url:fs2[0].href, files:fs2, where:"Dans le dossier de l'intervention", info:`${r.largeur} x ${r.hauteur}, ${len(r.duree)}, ${r.taille_mo} Mo, calculée ${enDuree(el)}.${r.chapitres ? ` ${r.chapitres} chapitres inscrits dans la vidéo.` : ""}${r.fichier_commentaires ? ` ${r.commentaires} commentaire(s) interne(s) dans le fichier de sous-titres, à part de la vidéo.` : ""} Elle apparaîtra dans le Drive dès la fin de la synchronisation.`});
     toast("Vidéo compilée prête.");
     return;
   }
   if(j.etat === "annule"){ CMP.running = false; CMP.job = null; back(); toast("Calcul annulé."); return; }
-  if(j.etat === "erreur" || j.etat === "interrompu"){
+  if(j.etat === "interrompu"){ CMP.running = false; CMP.job = null; jobError("Le calcul a été interrompu : le programme du PC a redémarré. Relancez le calcul.", back); return; }
+  if(j.etat === "erreur"){
     CMP.running = false; CMP.job = null;
-    jobError(`Le calcul a échoué sur le PC : ${j.erreur || "erreur inconnue"} Le détail est dans le fichier derushage.log du PC.`, back);
+    jobError(`Le calcul a échoué sur le PC : ${String(j.erreur || "erreur inconnue").replace(/\.?$/, ".")} Le détail est dans le fichier derushage.log du PC.`, back);
     return;
   }
   jobT = setTimeout(pollJob, 1500);
@@ -3297,13 +3387,34 @@ async function pollJob(){
 /* ---------- moteur de calcul : navigateur (LOCAL) ou PC (PC) ---------- */
 /* Les deux moteurs exposent la même interface. BACKEND vaut LOCAL au chargement et passe à PC dans srvInit()
    quand server.py répond. Le reste du code ne teste jamais le mode : il appelle BACKEND. */
+/* calcul dans le navigateur : avertissement avant de quitter la page et écran maintenu allumé (Wake Lock) tant qu'il tourne */
+const GUARD = {on:false, lock:null, asking:false};
+function guardUnload(e){ e.preventDefault(); e.returnValue = ""; return ""; }
+function guardWake(){
+  if(!GUARD.on || GUARD.lock || GUARD.asking || !navigator.wakeLock || document.visibilityState !== "visible") return;
+  GUARD.asking = true;
+  navigator.wakeLock.request("screen").then(l => {
+    GUARD.asking = false;
+    if(!GUARD.on){ l.release().catch(() => {}); return; }
+    GUARD.lock = l; l.addEventListener("release", () => { if(GUARD.lock === l) GUARD.lock = null; });
+  }, () => { GUARD.asking = false; });
+}
+function localBusy(on){
+  on = !!on; if(on === GUARD.on) return;
+  GUARD.on = on;
+  if(on){ window.addEventListener("beforeunload", guardUnload); guardWake(); return; }
+  window.removeEventListener("beforeunload", guardUnload);
+  if(GUARD.lock){ const l = GUARD.lock; GUARD.lock = null; l.release().catch(() => {}); }
+}
+document.addEventListener("visibilitychange", guardWake);   // le verrou d'écran tombe quand la page est cachée : le reprendre au retour
 const LOCAL = {
   pc:false,
   saveState:function(){},                 // le navigateur n'a que localStorage et la fiche (persist)
   capture:captureLocal,                   // photo décodée dans le navigateur (WebCodecs)
   compile:runCompile,                     // vidéo compilée par WebCodecs + mp4-muxer
   reel:runReelLocal,                      // réel ou story rendus par le navigateur
-  compileFailed:function(msg){ jobError(`Le calcul dans le navigateur a échoué (${msg}). Appli v${APP_VERSION}, stockage : ${CMP.store || "?"}.`, cmpRestart); },
+  busy:localBusy,                         // calcul en cours : avertir avant de fermer l'onglet, garder l'écran allumé
+  compileFailed:function(msg){ jobError(`La vidéo n'a pas pu être fabriquée dans ce navigateur : ${msg}. Réessayez, ou faites le calcul sur le PC de traitement. (Appli v${APP_VERSION}, stockage : ${CMP.store || "?"})`, cmpRestart); },
   reset:function(){}
 };
 let PC = {
@@ -3328,7 +3439,8 @@ let PC = {
   capture:function(tr, t){ const c = clipAt(tr, t); return c && c.remote ? captureRemote(c, t - c.s) : captureLocal(tr, t); },
   compile:runRemote,
   reel:runReelRemote,
-  compileFailed:function(msg){ jobView("Setup"); toast(`Lancement impossible : ${msg}`); },
+  busy:function(){},                      // le calcul tourne sur le PC : l'appli peut être fermée
+  compileFailed:function(msg){ jobView("Setup"); toast(`Le PC n'a pas pu lancer le calcul : ${msg}. Réessayez dans un instant.`); },
   reset:function(){ SRVD = null; refreshList(); }
 };
 let BACKEND = LOCAL;
@@ -3338,8 +3450,10 @@ let BACKEND = LOCAL;
    Le même code dessine l'aperçu, le rendu navigateur (rRender) et les calques PNG envoyés au PC (runReelRemote). */
 const RW = 1080, RH = 1920, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
 const RTDURS = [3,5,8,0], RXDURS = [0,3,5,8], RPDURS = [2,3,4,5,6,8], RLOGOS = ["cartouche","logo","non"];
-/* places par défaut (centre en fraction de l'image, taille) : hors des zones couvertes par Instagram (haut, bas, bord droit) */
-const RBOX = {titre:{x:0.5, y:0.27, s:1}, texte:{x:0.5, y:0.71, s:1}, cartouche:{x:0.27, y:0.155, s:1}, logo:{x:0.16, y:0.16, s:1}, el:{x:0.5, y:0.5, s:1}};
+/* places par défaut (centre en fraction de l'image, taille) : hors des zones couvertes par Instagram (haut, bas, bord droit).
+   Le titre est ancré par le haut (haut:true, y = bord haut) juste sous le cartouche : il s'allonge vers le bas sans le recouvrir.
+   Un titre enregistré auparavant (sans « haut ») garde son ancrage au centre, donc sa place. */
+const RBOX = {titre:{x:0.5, y:0.215, s:1, haut:true}, texte:{x:0.5, y:0.71, s:1}, cartouche:{x:0.27, y:0.155, s:1}, logo:{x:0.16, y:0.16, s:1}, el:{x:0.5, y:0.5, s:1}};
 /* couleurs de la charte pour textes et formes */
 const RCOLS = [["Blanc","#ffffff"],["Jaune","#F9DD10"],["Bleu","#A8C8FB"],["Rouge","#E20C0F"],["Noir","#171618"]];
 /* éléments libres posés sur le réel : {id, kind, a (début en s du réel), d (durée, 0 = jusqu'à la fin), x, y, s, rot, c, texte, fond} */
@@ -3523,7 +3637,7 @@ function drawTitle(ctx, W, H, txt, box){
   ctx.save();
   ctx.font = `${112*u}px ${ANTON}`; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   const ls = rLines(ctx, clean(txt).toUpperCase(), Math.min(907*u, W*0.92), 4), lh = 124*u, cap = 92*u;
-  const hgt = cap + (ls.length - 1)*lh + 48*u, top = cy - hgt/2, y0 = top + cap;
+  const hgt = cap + (ls.length - 1)*lh + 48*u, top = box.haut ? cy : cy - hgt/2, y0 = top + cap;
   const bw = Math.max.apply(null, ls.map(l => ctx.measureText(l).width));
   ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 28*u; ctx.shadowOffsetY = 4*u;
   const col = box.c || "#ffffff";
@@ -3893,9 +4007,12 @@ function rDraw(){
     REEL.boxes = drawLayers(rctx, W, H, rLayers(pl), REEL.o);
     const sb = REEL.lsel && REEL.boxes.find(b => b.key === REEL.lsel);
     if(sb){
-      rctx.save(); rctx.setLineDash([10, 7]); rctx.lineWidth = 3; rctx.strokeStyle = "#F9DD10";
+      // sélection en bleu de la charte, doublée de noir pour rester lisible sur toute image ; le jaune reste réservé à la sensibilité
+      rctx.save(); rctx.lineWidth = 5; rctx.strokeStyle = "rgba(23,22,24,.85)";
+      rctx.strokeRect(sb.x - 6, sb.y - 6, sb.w + 12, sb.h + 12);
+      rctx.setLineDash([10, 7]); rctx.lineWidth = 3; rctx.strokeStyle = "#A8C8FB";
       rctx.strokeRect(sb.x - 6, sb.y - 6, sb.w + 12, sb.h + 12); rctx.setLineDash([]);
-      rctx.fillStyle = "#F9DD10"; rctx.strokeStyle = "#171618"; rctx.beginPath(); rctx.arc(sb.x + sb.w + 6, sb.y + sb.h + 6, 13, 0, Math.PI*2); rctx.fill(); rctx.stroke();
+      rctx.fillStyle = "#A8C8FB"; rctx.strokeStyle = "#171618"; rctx.lineWidth = 3; rctx.beginPath(); rctx.arc(sb.x + sb.w + 6, sb.y + sb.h + 6, 13, 0, Math.PI*2); rctx.fill(); rctx.stroke();
       rctx.restore();
     }
     return;
@@ -3916,10 +4033,14 @@ function rDraw(){
     rctx.lineWidth = 4; rctx.strokeStyle = inside ? "#A8C8FB" : "#E20C0F"; rctx.strokeRect(cr.sx + 2, cr.sy + 2, cr.cw - 4, cr.ch - 4);
     (it.flous || []).forEach((z, i) => {
       const r = rZone(z, it.photo ? 0 : t, sw, sh);
-      rctx.save(); rctx.lineWidth = z === sel ? 4 : 2; rctx.strokeStyle = z === sel ? "#F9DD10" : "#fff"; if(z !== sel) rctx.setLineDash([8, 6]);
+      rctx.save();
+      if(z === sel){ rctx.lineWidth = 7; rctx.strokeStyle = "rgba(23,22,24,.85)"; rctx.strokeRect(r.x, r.y, r.w, r.h); }
+      rctx.lineWidth = z === sel ? 4 : 2; rctx.strokeStyle = z === sel ? "#A8C8FB" : "#fff"; if(z !== sel) rctx.setLineDash([8, 6]);
       rctx.strokeRect(r.x, r.y, r.w, r.h);
-      rctx.fillStyle = z === sel ? "#F9DD10" : "#fff"; rctx.font = `700 18px ${MONT}`; rctx.textAlign = "left"; rctx.textBaseline = "top";
-      rctx.fillText(`Flou ${i + 1}`, r.x + 4, r.y + 4); rctx.restore();
+      rctx.font = `700 18px ${MONT}`; rctx.textAlign = "left"; rctx.textBaseline = "top";
+      const lw = rctx.measureText(`Flou ${i + 1}`).width;
+      rctx.fillStyle = "rgba(23,22,24,.75)"; rctx.fillRect(r.x + 2, r.y + 2, lw + 8, 24);
+      rctx.fillStyle = z === sel ? "#A8C8FB" : "#fff"; rctx.fillText(`Flou ${i + 1}`, r.x + 6, r.y + 5); rctx.restore();
     });
     if(!inside){
       rctx.fillStyle = "rgba(0,0,0,.5)"; rctx.fillRect(0, sh - 44, sw, 44);
@@ -3997,6 +4118,24 @@ function reelEnter(){
   else rSeekApercu(REEL.o, false);
 }
 function reelLeave(){ if(REEL.playing) rStop(); REEL.drag = null; REEL.ldrag = null; }
+/* passages sensibles (visage, plaque...) du montage : rappel visible, non bloquant ; nf = nombre de flous posés */
+function rSensItems(){
+  const out = [];
+  reelData().items.forEach((x, i) => { const m = x.photo ? null : rMarker(x); if(m && isSens(m)) out.push({i:i, it:x, m:m, nf:(x.flous || []).length}); });
+  return out;
+}
+function rSensLines(){ return rSensItems().filter(o => !o.nf).map(o => `passage ${o.i + 1} sensible (${sensTxt(o.m).toLowerCase()}) sans flou`); }
+function rScrollTo(el){
+  const smooth = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  try { el.scrollIntoView({block:"start", behavior:smooth ? "smooth" : "auto"}); } catch(e){ el.scrollIntoView(); }
+}
+/* après un ajout : ouvrir le volet Passage (téléphone) et amener l'image, prête à cadrer */
+function rGoCadrer(){
+  rPane("passage");
+  if(REEL.mode !== "cadrage") rSetMode("cadrage");
+  rScrollTo($("rStage"));
+  try { rcv.focus({preventScroll:true}); } catch(e){}
+}
 function rSave(){ persist(); renderComp(); }
 function renderReel(){
   const r = reelData(), pl = reelPlan(false), it = rSelItem();
@@ -4004,18 +4143,20 @@ function renderReel(){
   // en-tête
   const cuts = storyCuts(pl), nst = cuts.length - 1;
   $("rDur").textContent = `Réel : ${pl.segs.length ? len(pl.total) : "vide"}`;
-  $("rInfo").textContent = pl.segs.length ? `1080 x 1920, ${pl.segs.length} passage${pl.segs.length > 1 ? "s" : ""}, story en ${nst} morceau${nst > 1 ? "x" : ""} de 60 s max` : "Ajoutez des passages au montage";
-  chipRow($("rMode"), ["Cadrage du passage","Aperçu du réel"], (t, i) => (REEL.mode === "apercu") === !!i);
+  const none = !S.markers.length && !r.items.length;
+  $("rInfo").textContent = pl.segs.length ? `1080 x 1920, ${pl.segs.length} passage${pl.segs.length > 1 ? "s" : ""}, story en ${nst} morceau${nst > 1 ? "x" : ""} de 60 s max` : none ? "Aucun passage marqué pour l'instant" : "Ajoutez des passages au montage";
+  $("rNone").hidden = !none;
+  chipRow($("rMode"), ["Cadrage","Aperçu du réel"], (t, i) => (REEL.mode === "apercu") === !!i);
   // montage
   $("rList").innerHTML = r.items.map((x, i) => {
-    const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, nf = (x.flous || []).length;
+    const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, nf = (x.flous || []).length, m = x.photo ? null : rMarker(x), sn = sensTxt(m);
     const src = x.photo ? (ph ? `Photo${x.zoom === false ? '' : ', zoom lent'}` : '<span class="miss">[photo à choisir à nouveau]</span>') : (tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>');
-    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small></button><button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button></li>`;
+    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button><button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button></li>`;
   }).join("");
   const free = sorted().filter(m => !r.items.some(x => x.id === m.id));
   $("rAdd").innerHTML = free.map(m => {
     const n = sorted().indexOf(m) + 1, a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
-    return `<li><span class="rn">${n}</span><button type="button" class="rtx" data-radd="${m.id}"><b>${esc(label(m))}</b><small>${clockAbs(m.at)}${m.to != null ? `, ${len(z - a)}` : ', repère (6 s autour)'}</small></button></li>`;
+    return `<li><span class="rn${isSens(m) ? ' sens' : ''}">${n}</span><button type="button" class="rtx" data-radd="${m.id}"><b>${esc(label(m))}</b><small>${clockAbs(m.at)}${m.to != null ? `, ${len(z - a)}` : ', repère (6 s autour)'}</small>${sensTag(sensTxt(m))}</button></li>`;
   }).join("");
   $("rAddBox").hidden = !free.length;
   $("rAddSum").textContent = `Ajouter des passages (${free.length})`;
@@ -4041,10 +4182,11 @@ function renderReel(){
   if(pl.skipped) tips.push(`${pl.skipped} passage(s) sans image ignoré(s)`);
   if(pl.total > 90) tips.push("au-delà d'une minute et demie, un réel est rarement regardé jusqu'au bout");
   $("rEst").textContent = empty ? "Ajoutez au moins un passage." : (pcOpen() ? "Calcul sur le PC en pleine résolution, vidéo déposée dans le dossier de l'intervention." : "Calcul dans ce navigateur, garder l'onglet ouvert.")+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
+  sensWarn($("rSensW"), empty ? [] : rSensLines(), "");
   // scène
   const noItem = REEL.mode === "cadrage" && !it, noSeg = REEL.mode === "apercu" && empty;
   $("rEmpty").hidden = !(noItem || noSeg);
-  $("rEmpty").textContent = r.items.length ? "Choisissez un passage du montage pour régler son cadrage." : "Ajoutez des passages ou des photos au montage.";
+  $("rEmpty").textContent = r.items.length ? "Choisissez un passage du montage pour régler son cadrage." : none ? "Marquez d'abord des passages dans Visionner." : "Ajoutez des passages ou des photos au montage.";
   $("rTrans").hidden = noItem || noSeg || (REEL.mode === "cadrage" && !!(it && it.photo));
   rBar(); rTime(); rPlayBtn(); rDraw();
 }
@@ -4064,22 +4206,33 @@ function renderPhotos(){
 function rTextCtl(it){
   return `<div class="grp"><label class="lbl" for="rTexte">Texte sur ce passage</label><input class="field" id="rTexte" maxlength="90" autocomplete="off" placeholder="Ex. : ${esc(rLabel(it))}" value="${esc(it.texte || "")}">${it.texte ? `<span class="lbl" style="margin-top:10px;display:block">Durée du texte</span><div class="chips">${RXDURS.map(d => `<button type="button" class="chip" data-rtdur="${d}" aria-pressed="${(it.tDur || 0) === d}">${d ? `${d} s` : 'Tout le passage'}</button>`).join("")}</div><p class="hint">Un texte plus long que le passage continue sur les suivants.</p><div class="rbtns"><button type="button" class="btn small ghost" data-rplace="txt:${it.id}">Placer, taille et couleur</button></div>` : ''}</div>`;
 }
+/* ce que le doigt ou la souris déplace sur l'image : le cadre ou un flou ; placé juste sous l'image */
+function rTargetCtl(it){
+  const fl = it.flous || [], z = rZoneSel(it);
+  return `<div class="rtarget"><span class="lbl">Déplacer sur l'image</span><div class="chips"><button type="button" class="chip" data-rfsel="" aria-pressed="${!z}">Le cadre</button>${fl.map((f, i) => `<button type="button" class="chip" data-rfsel="${f.id}" aria-pressed="${f === z}">Flou ${i + 1}</button>`).join("")}<button type="button" class="chip" data-rfadd="1">+ Flou (visage, plaque)</button></div></div>`;
+}
+/* réglages du flou choisi */
 function rFlouCtl(it){
-  const fl = it.flous || [], z = rZoneSel(it), near = z && !it.photo && (z.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  return `<div class="grp"><span class="lbl">Flous (visages, plaques, lieux)</span><p class="hint" style="margin:0 0 8px">${fl.length ? `Choisissez ce que le doigt ou la souris déplace sur l'image.${it.photo ? '' : ' Pendant la lecture, gardez le doigt sur la zone et suivez ce qu\'il faut cacher : le flou enregistre le mouvement.'}` : 'Ajoutez une zone floutée, puis glissez-la sur ce qu\'il faut cacher.'}</p><div class="chips">${fl.length ? `<button type="button" class="chip" data-rfsel="" aria-pressed="${!z}">Le cadre</button>` : ''}${fl.map((f, i) => `<button type="button" class="chip" data-rfsel="${f.id}" aria-pressed="${f === z}">Flou ${i + 1}</button>`).join("")}<button type="button" class="chip" data-rfadd="1">+ Ajouter un flou</button></div>${z ? `<span class="lbl" style="margin-top:10px;display:block">Taille du flou ${fl.indexOf(z) + 1}</span><div class="chips">${RFSIZES.map((s, i) => `<button type="button" class="chip" data-rfsize="${s}" aria-pressed="${Math.abs(z.s - s) < 0.001}">${["Petit","Moyen","Grand"][i]}</button>`).join("")}</div><div class="rbtns">${it.photo ? '' : `<button type="button" class="btn small ghost" data-rfkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button>`}<button type="button" class="btn small ghost" data-rfdel="1">Supprimer ce flou</button></div>` : ''}</div>`;
+  const fl = it.flous || [], z = rZoneSel(it);
+  if(!z) return "";
+  const near = !it.photo && (z.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
+  return `<div class="grp"><span class="lbl">Flou ${fl.indexOf(z) + 1}</span><p class="hint" style="margin:0 0 8px">Glissez-le sur ce qu'il faut cacher${it.photo ? '.' : ' ; pendant la lecture, suivez-le du doigt.'}</p><div class="chips">${RFSIZES.map((s, i) => `<button type="button" class="chip" data-rfsize="${s}" aria-pressed="${Math.abs(z.s - s) < 0.001}">${["Petit","Moyen","Grand"][i]}</button>`).join("")}</div><div class="rbtns">${it.photo ? '' : `<button type="button" class="btn small ghost" data-rfkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button>`}<button type="button" class="btn small ghost" data-rfdel="1">Supprimer ce flou</button></div></div>`;
 }
 function renderReelEdit(){
   const it = rSelItem(), box = $("rEdit");
+  // libellé du canevas : ce que les flèches déplacent quand il a le focus
+  rcv.setAttribute("aria-label", REEL.mode === "apercu" ? `Aperçu du réel. ${REEL.lsel ? "Flèches : déplacer l'élément choisi, plus et moins : sa taille, Entrée : élément suivant, Échap : terminer." : "Entrée : choisir un élément à déplacer."}`
+    : `Image du passage. ${rZoneSel(it) ? "Flèches : déplacer le flou choisi, Échap : revenir au cadre." : "Flèches gauche et droite : déplacer le cadre."}`);
   if(REEL.mode === "apercu"){ box.innerHTML = rElemsPanel(); return; }
   if(!it){ box.innerHTML = ""; return; }
-  const idx = reelData().items.indexOf(it);
+  const idx = reelData().items.indexOf(it), z = rZoneSel(it);
   if(it.photo){
-    box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(rLabel(it))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${len(rItemDur(it))} dans le réel</span></div><div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div><div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rFlouCtl(it)}${rTextCtl(it)}`;
+    box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(rLabel(it))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${len(rItemDur(it))} dans le réel</span></div>${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
     return;
   }
-  const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it);
+  const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = (it.flous || []).length;
   const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len((it.z - it.a)/(it.vit||1))} dans le réel</span></div><div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div><div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image. Pendant la lecture, suivez l'animal du doigt : le cadre enregistre votre mouvement et le lisse.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre pour l\'instant.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>${rFlouCtl(it)}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div></div>${rTextCtl(it)}`;
+  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len((it.z - it.a)/(it.vit||1))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rTargetCtl(it)}<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div></div>${rTextCtl(it)}`;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -4108,11 +4261,11 @@ function rElemsPanel(){
   h += `<div class="grp"><span class="lbl">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === k}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div><span class="lbl" style="margin-top:10px;display:block">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div></div>`;
   const box = k && rBoxOf(k);
   if(!box){
-    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Aperçu en basse définition, sur les proxies ; la vidéo finale est calculée en 1080 x 1920 à partir des rushs d'origine.</p>`;
+    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Cet aperçu est allégé : la vidéo finale sera nette, en 1080 x 1920, tirée des rushs d'origine.</p>`;
   }
   const el = k.indexOf("el:") === 0 ? rElem(k.slice(3)) : null, isTxt = k === "titre" || k.indexOf("txt:") === 0 || (el && el.kind === "texte");
   const nm = k === "titre" ? "Titre d'accroche" : k === "logo" ? "Logo ESAM" : el ? rElName(el) : "Texte du passage";
-  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b></div><p class="hint">Glissez-le sur l'image ; tirez le rond jaune pour changer sa taille.</p>`;
+  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
   if(el && el.kind === "texte") h += `<div class="grp"><label class="lbl" for="rElTxt">Texte</label><input class="field" id="rElTxt" maxlength="90" autocomplete="off" value="${esc(el.texte || "")}"></div>`;
   h += `<div class="grp"><label class="lbl" for="rElSize">Taille : <span id="rElSizeV">${Math.round((box.s || 1)*100)} %</span></label><input type="range" class="rrange" id="rElSize" min="40" max="300" step="5" value="${Math.round((box.s || 1)*100)}"></div>`;
   if(el && el.kind !== "texte") h += `<div class="grp"><label class="lbl" for="rElRot">Orientation : <span id="rElRotV">${el.rot || 0}°</span></label><input type="range" class="rrange" id="rElRot" min="-180" max="180" step="5" value="${el.rot || 0}"></div>`;
@@ -4127,19 +4280,30 @@ function rElemsPanel(){
   h += `<div class="rbtns"><button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>${k.indexOf("txt:") === 0 && r.items.filter(x => x.texte).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même réglage pour tous les textes</button>' : ''}${el ? '<button type="button" class="btn small ghost" data-rel-del="1">Supprimer</button>' : ''}<button type="button" class="btn small ghost" data-runsel="1">Terminé</button></div>`;
   return h;
 }
-/* volet affiché sur téléphone : montage, passage (scène et réglages) ou habillage ; sans effet sur PC */
+/* volet affiché sur téléphone : montage, passage (scène et réglages) ou habillage ; sans effet sur PC.
+   Onglets ARIA (role=tab, aria-selected, flèches gauche et droite) ; créés une fois pour garder le focus. */
+const RPANES = [["montage","Montage","rPaneMontage"],["passage","Passage","rPanePassage"],["habillage","Habillage","rPaneHab"]];
 function rPane(name){
   $("reel").dataset.pane = name;
-  chipRow($("rPanes"), ["Montage","Aperçu","Habillage"], (t, i) => ["montage","passage","habillage"][i] === name);
+  const box = $("rPanes");
+  if(!box.children.length) box.innerHTML = RPANES.map((p, i) => `<button type="button" class="chip" role="tab" id="rTab${i}" data-k="${i}" aria-controls="${p[2]}">${p[1]}</button>`).join("");
+  RPANES.forEach((p, i) => { const b = box.children[i], on = p[0] === name; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; });
 }
-$("rPanes").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) rPane(["montage","passage","habillage"][+b.dataset.k]); });
+$("rPanes").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) rPane(RPANES[+b.dataset.k][0]); });
+$("rPanes").addEventListener("keydown", e => {
+  const b = e.target.closest(".chip"); if(!b) return;
+  const i = +b.dataset.k, n = RPANES.length;
+  const j = e.key === "ArrowRight" ? (i + 1)%n : e.key === "ArrowLeft" ? (i + n - 1)%n : e.key === "Home" ? 0 : e.key === "End" ? n - 1 : -1;
+  if(j < 0) return;
+  e.preventDefault(); rPane(RPANES[j][0]); $("rPanes").children[j].focus();
+});
 function rSelect(id, keepPane){
   if(REEL.playing) rStop();
   REEL.sel = id; REEL.mode = "cadrage"; REEL.fsel = null;
   const it = rItem(id); if(!keepPane) rPane("passage"); renderReel();
   if(it) rSeekCadrage(it.photo ? 0 : it.a, false);
   const rc = $("rStage").getBoundingClientRect();
-  if(rc.top < 56 || rc.top > window.innerHeight*0.45){ try { $("rStage").scrollIntoView({block:"start", behavior:"smooth"}); } catch(e){ $("rStage").scrollIntoView(); } }
+  if(rc.height && (rc.top < 56 || rc.top > window.innerHeight*0.45)) rScrollTo($("rStage"));
 }
 function rSetMode(mode){
   if(REEL.playing) rStop();
@@ -4166,7 +4330,7 @@ function rPlace(key){
   rSeekApercu(Math.min(l.b - 0.05, l.a + (l.fi ? 0.6 : 0.1)), false);
   renderReelEdit();
   const rc = $("rStage").getBoundingClientRect();
-  if(rc.top < 56 || rc.bottom > window.innerHeight){ try { $("rStage").scrollIntoView({block:"start", behavior:"smooth"}); } catch(e){ $("rStage").scrollIntoView(); } }
+  if(rc.top < 56 || rc.bottom > window.innerHeight) rScrollTo($("rStage"));
 }
 function rResize(key, f){
   const b = rBoxOf(key); if(!b) return;
@@ -4175,6 +4339,7 @@ function rResize(key, f){
 
 /* ----- événements ----- */
 $("tabReel").onclick = () => { setTab("reel"); };
+$("rGoView").onclick = () => { setTab("view"); };
 $("rMode").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) rSetMode(+b.dataset.k ? "apercu" : "cadrage"); });
 $("rPlay").onclick = rPlay;
 $("rSlider").addEventListener("input", function(){
@@ -4211,7 +4376,7 @@ $("rAdd").addEventListener("click", e => {
   const m = S.markers.find(x => x.id === b.dataset.radd); if(!m) return;
   const it = rNew(m); rInsert(it, m.at);
   rSave(); rSelect(it.id, true);
-  toast("Passage ajouté au réel. Réglez son cadrage.");
+  toast(isSens(m) ? "Passage sensible ajouté : pensez au flou." : "Passage ajouté au réel.", "Cadrer", rGoCadrer);
 });
 $("rPhList").addEventListener("click", e => {
   const b = e.target.closest("[data-rph]"); if(!b) return;
@@ -4219,7 +4384,7 @@ $("rPhList").addEventListener("click", e => {
   const it = {id:`ph${uid()}`, photo:p.name, dur:4, x:0.5, zoom:true, vit:1, texte:"", keys:[]};
   rInsert(it, p.t && S.real ? p.t : null);
   rSave(); rSelect(it.id, true);
-  toast("Photo ajoutée au réel. Réglez son cadrage.");
+  toast("Photo ajoutée au réel.", "Cadrer", rGoCadrer);
 });
 $("rPhotoIn").addEventListener("change", e => {
   const n = phFiles(e.target.files); e.target.value = "";
@@ -4240,7 +4405,7 @@ $("rEdit").addEventListener("click", e => {
     }
     const key = REEL.lsel; if(!key) return;
     const bx = rBoxOf(key), el = key.indexOf("el:") === 0 ? rElem(key.slice(3)) : null;
-    if(b.dataset.rreset){ if(bx) Object.assign(bx, {x:rDefBox(key).x, y:rDefBox(key).y, s:rDefBox(key).s}); }
+    if(b.dataset.rreset){ if(bx){ Object.assign(bx, {x:rDefBox(key).x, y:rDefBox(key).y, s:rDefBox(key).s}); if(key === "titre") bx.haut = true; } }
     else if(b.dataset.rcol){ if(bx) bx.c = b.dataset.rcol; }
     else if(b.dataset.rfond != null){ if(bx) bx.fond = b.dataset.rfond === "1"; }
     else if(b.dataset.rall){ const src = rBoxOf(key); reelData().items.forEach(x => { if(x.texte) x.tBox = Object.assign({}, src); }); toast("Tous les textes ont ce réglage."); }
@@ -4260,19 +4425,13 @@ $("rEdit").addEventListener("click", e => {
   if(b.dataset.rfadd){
     const t = it.photo ? 0 : REEL.t, prev = rZoneSel(it);
     const z = {id:uid(), s:prev ? prev.s : RFSIZES[1], keys:[{t:Math.round(t*100)/100, x:0.5, y:0.5}]};
-    it.flous = (it.flous || []).concat([z]); REEL.fsel = z.id;
-    toast("Flou ajouté au centre : glissez-le sur ce qu'il faut cacher.");
+    it.flous = (it.flous || []).concat([z]); REEL.fsel = z.id;     // pas de toast : il masquerait l'image à l'instant où il faut y glisser le flou (consigne dans les réglages du flou)
   }
   else if(b.dataset.rfsize){ const zs = rZoneSel(it); if(zs) zs.s = +b.dataset.rfsize; }
   else if(b.dataset.rfdel){ it.flous = (it.flous || []).filter(f => f.id !== REEL.fsel); REEL.fsel = null; }
   else if(b.dataset.rfkey === "del"){ const zk = rZoneSel(it); if(zk){ const rest = zk.keys.filter(k => Math.abs(k.t - REEL.t) >= 0.5); if(rest.length) zk.keys = rest; else toast("Dernier point : déplacez le flou ou supprimez-le."); } }
-  else if(b.dataset.rtrim === "a"){
-    if(REEL.t >= it.z - 0.5){ toast("Le début doit être avant la fin du passage."); return; }
-    it.a = Math.max(0, REEL.t);
-  } else if(b.dataset.rtrim === "z"){
-    if(REEL.t <= it.a + 0.5){ toast("La fin doit être après le début du passage."); return; }
-    it.z = Math.min(S.dur, REEL.t);
-  } else if(b.dataset.rkey === "del"){
+  else if(b.dataset.rtrim){ if(!rTrim(it, b.dataset.rtrim)) return; }
+  else if(b.dataset.rkey === "del"){
     it.keys = (it.keys || []).filter(k => Math.abs(k.t - REEL.t) >= 0.5);
   } else if(b.dataset.rkey === "clear"){ it.keys = []; }
   else if(b.dataset.rcam){ it.cam = b.dataset.rcam; REEL.cur = null; rSave(); renderReel(); rSeekCadrage(REEL.t, false); return; }
@@ -4407,9 +4566,64 @@ rcv.addEventListener("wheel", e => {
   e.preventDefault(); rResize(REEL.lsel, e.deltaY < 0 ? 1.06 : 1/1.06); rDraw();
   clearTimeout(REEL.wheelT); REEL.wheelT = setTimeout(() => { rSave(); renderReelEdit(); }, 400);
 }, {passive:false});
+/* début ou fin du passage à l'instant courant (bouton ou touches I et O) */
+function rTrim(it, w){
+  if(w === "a"){
+    if(REEL.t >= it.z - 0.5){ toast("Le début doit être avant la fin du passage."); return false; }
+    it.a = Math.max(0, REEL.t);
+  } else {
+    if(REEL.t <= it.a + 0.5){ toast("La fin doit être après le début du passage."); return false; }
+    it.z = Math.min(S.dur, REEL.t);
+  }
+  return true;
+}
+/* clavier sur l'image (canevas focalisé) : alternative au glisser pour le cadre, les flous et les éléments de l'aperçu */
+function rKeySave(full){ clearTimeout(REEL.keyT); REEL.keyT = setTimeout(() => { rSave(); if(full) renderReel(); else renderReelEdit(); }, 400); }
+function rKeyMove(e){
+  const d = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]}[e.key], big = e.shiftKey;
+  if(REEL.mode === "apercu"){
+    if(e.key === "Enter"){
+      if(!REEL.boxes.length) return false;
+      const i = REEL.boxes.findIndex(b => b.key === REEL.lsel);
+      REEL.lsel = REEL.boxes[(i + 1) % REEL.boxes.length].key; renderReelEdit(); rDraw(); return true;
+    }
+    const key = REEL.lsel, bx = key && rBoxOf(key); if(!bx) return false;
+    if(e.key === "Escape"){ REEL.lsel = null; renderReelEdit(); rDraw(); return true; }
+    if(e.key === "+" || e.key === "=" || e.key === "-"){ rResize(key, e.key === "-" ? 1/1.06 : 1.06); }
+    else if(d){ const st = big ? 0.05 : 0.01; bx.x = Math.round(clamp(bx.x + d[0]*st, 0.03, 0.97)*1000)/1000; bx.y = Math.round(clamp(bx.y + d[1]*st, 0.03, 0.97)*1000)/1000; }
+    else return false;
+    rDraw(); rKeySave(false); return true;
+  }
+  const it = rSelItem(); if(!it) return false;
+  const z = rZoneSel(it), st = big ? 0.1 : 0.02;
+  if(e.key === "Escape" && z){ REEL.fsel = null; renderReelEdit(); rBar(); rDraw(); return true; }
+  if(!d) return false;
+  if(z){
+    const t = it.photo ? 0 : REEL.t, pos = {x:clamp(rKeyAt(z.keys, t, "x", 0.5) + d[0]*st, 0, 1), y:clamp(rKeyAt(z.keys, t, "y", 0.5) + d[1]*st, 0, 1)};
+    if(it.photo) z.keys = [{t:0, x:pos.x, y:pos.y}]; else z.keys = rKeyPut(z.keys, t, pos);
+  } else {
+    if(!d[0]) return false;
+    if(it.photo) it.x = Math.round(clamp((it.x != null ? it.x : 0.5) + d[0]*st, 0, 1)*1000)/1000;
+    else rUpsert(it, REEL.t, rX(it, REEL.t) + d[0]*st);
+  }
+  rDraw(); rBar(); rKeySave(true); return true;
+}
+/* raccourcis de l'onglet Réel (affichés sur PC sous la lecture) */
 document.addEventListener("keydown", e => {
-  if($("reel").hidden || document.querySelector("dialog[open]") || keyTaken(e)) return;
+  if($("reel").hidden || document.querySelector("dialog[open]") || e.defaultPrevented || keyTaken(e)) return;
+  if(e.target === rcv && rKeyMove(e)){ e.preventDefault(); return; }
+  const k = e.key.toLowerCase(), it = rSelItem();
   if(e.key === " "){ e.preventDefault(); rPlay(); }
+  else if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+    e.preventDefault();
+    const dt = (e.key === "ArrowLeft" ? -1 : 1)*(e.shiftKey ? 5 : 1);
+    if(REEL.mode === "apercu"){ rSeekApercu(REEL.o + dt, REEL.playing); }
+    else if(it && !it.photo){ const rg = rRange(it); rSeekCadrage(clamp(REEL.t + dt, rg.lo, rg.hi), REEL.playing); }
+    rTime(); clearTimeout(REEL.keyT2); REEL.keyT2 = setTimeout(renderReelEdit, 300);
+  }
+  else if((k === "i" || k === "o") && REEL.mode === "cadrage" && it && !it.photo){ if(rTrim(it, k === "i" ? "a" : "z")){ rSave(); renderReel(); } }
+  else if(k === "a" && reelData().items.length){ rSetMode(REEL.mode === "apercu" ? "cadrage" : "apercu"); }
+  else if(e.key === "Escape" && REEL.mode === "apercu" && REEL.lsel){ REEL.lsel = null; renderReelEdit(); rDraw(); }
 });
 
 /* ----- calcul : mode PC ----- */
@@ -4446,7 +4660,7 @@ async function runReelRemote(story){
         });
   let fin = null;
   if(r.fin.on){ drawFin(ctx, RW, RH, r); fin = {image:cv.toDataURL("image/png"), duree:RFIN}; }
-  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", RW, RH);
+  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", RW, RH, story ? "Story" : "Réel");
   ctx.fillStyle = "#222"; ctx.fillRect(0, 0, RW, RH);
   if(pl.segs[0].photo) drawPhoto(ctx, RW, RH, await phImage(pl.segs[0].photo), pl.segs[0].it, 0, pl.segs[0].dur);
   drawLayers(ctx, RW, RH, L, Math.min(1, pl.clips/2));
@@ -4491,7 +4705,7 @@ async function runReelLocal(story){
   if(!enc0) throw new Error("aucun encodeur vidéo disponible pour 1080 x 1920");
   await rFonts();
   const cuts = story ? storyCuts(pl) : [0, pl.total], n = cuts.length - 1;
-  const pcv = jobRun("Le calcul se fait dans ce navigateur. Il continue si vous changez de fenêtre, ne fermez simplement pas cet onglet.", RW, RH);
+  const pcv = jobRun(LOCAL_RUN_MSG, RW, RH, story ? "Story" : "Réel");
   CMP.running = true; CMP.cancel = false;
   let pcm = null, aenc0 = null;
   if(REEL.music && REEL.music.file){
@@ -4510,7 +4724,9 @@ async function runReelLocal(story){
   if(REEL.url) URL.revokeObjectURL(REEL.url);
   REEL.url = URL.createObjectURL(outs[0].blob);
   const size = outs.reduce((t, o) => t + o.blob.size, 0);
-  jobDone({url:REEL.url, onSave:rSaveAll, onBack:jobClose, saveLabel:n > 1 ? `Enregistrer les ${n} vidéos` : "Enregistrer la vidéo", info:`${n > 1 ? `${n} vidéos de story` : story ? "Story" : "Réel"} : ${len(pl.total)}, 1080 x 1920, ${enc0.label}${pcm ? `, musique en ${aenc0.label}` : ", sans son"}, ${(size/1048576).toFixed(0)} Mo, calculé en ${len((performance.now() - t0)/1000)}.${n > 1 ? " L'aperçu montre le premier morceau." : ""}${REEL.music && !aenc0 ? " Ce navigateur ne sait pas encoder le son : vidéo sans musique." : ""}${pcm && aenc0.mux === "opus" ? " Son en Opus : si Instagram refuse le fichier, passez par le mode PC." : ""}`});
+  const sw = rSensLines();
+  jobDone({url:REEL.url, onSave:rSaveAll, onBack:jobClose, saveLabel:n > 1 ? `Enregistrer les ${n} vidéos` : "Enregistrer la vidéo", files:outs.map(o => ({name:o.name})), where:n > 1 ? `${n} fichiers` : "Nom du fichier",
+    info:`${n > 1 ? `${n} vidéos de story` : story ? "Story" : "Réel"} : ${len(pl.total)}, 1080 x 1920, ${enc0.label}${pcm ? `, musique en ${aenc0.label}` : ", sans son"}, ${(size/1048576).toFixed(0)} Mo, calculé ${enDuree((performance.now() - t0)/1000)}.${sw.length ? ` Rappel : ${sw.join(" ; ")}.` : ""}${n > 1 ? " L'aperçu montre le premier morceau." : ""}${REEL.music && !aenc0 ? " Ce navigateur ne sait pas encoder le son : vidéo sans musique." : ""}${pcm && aenc0.mux === "opus" ? " Son en Opus : si Instagram refuse le fichier, passez par le mode PC." : ""}`});
   if(S.dirHandle){ rSaveOuts().catch(e => { toast(`Enregistrement dans le dossier impossible : ${e.message}`); }); }
   toast(story ? "Story prête." : "Réel prêt.");
 }
@@ -4662,12 +4878,14 @@ async function rSaveOuts(){
 }
 function rGo(story){
   if(REEL.playing) rStop();
-  BACKEND.reel(story).catch(err => {
-    CMP.running = false;
-    const msg = err ? ((err.name && err.name !== "Error" ? `${err.name} : ` : "") + (err.message || String(err))) : "erreur inconnue";
+  const what = story ? "La story" : "Le réel", e2 = story ? "e" : "";
+  BACKEND.busy(true);
+  BACKEND.reel(story).then(() => { BACKEND.busy(false); }, err => {
+    BACKEND.busy(false); CMP.running = false;
+    const msg = errMsg(err);
     try { console.error(err); } catch(e){}
-    if($("cmp").open) jobError(`La création ${story ? "de la story" : "du réel"} a échoué (${msg}). Appli v${APP_VERSION}.`, jobClose);
-    else toast(`Création impossible : ${msg}`);
+    if($("cmp").open) jobError(`${what} n'a pas pu être fabriqué${e2} : ${msg}. Réessayez${BACKEND.pc ? "" : ", ou faites le calcul sur le PC de traitement"}. (Appli v${APP_VERSION})`, jobClose);
+    else toast(`${what} n'a pas pu être lancé${e2} : ${msg}.`);
   });
 }
 $("rGoReel").onclick = () => { rGo(false); };
