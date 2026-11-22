@@ -32,7 +32,7 @@ Le même `index.html` sert les deux modes. Ce qui diffère est isolé dans un ob
 
 ## 2. Carte de `index.html`
 
-Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par onglet dans `<main>`, trois `<dialog>`), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
+Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par onglet dans `<main>`, quatre `<dialog>` (fiche de marqueur `#sheet`, fiche à copier `#fallback`, aide `#help`, calcul `#cmp`)), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
 
 | Section | Rôle | Fonctions d'entrée |
 |---|---|---|
@@ -42,16 +42,17 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
 | playback | Lecture du clip de la piste active | `seek`, `togglePlay`, `setTrack` |
 | drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
-| markers | Création et édition des marqueurs (dialogue `#sheet`) | `addMarker`, `markStart`, `markEnd`, `openSheet` |
+| markers | Création et édition des marqueurs (dialogue `#sheet` : noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `renderInWin` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement des bords, raccourcis clavier, onglets | `setZoom`, `setTab`, `keydown` |
+| events | Transport, zoom et pincement, glissement des bords, raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`, `#reset`) | `setZoom`, `setTab`, `keydown`, `goHome` |
 | clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
-| mode PC | Appels HTTP, liste des interventions, ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
+| mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
+| accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
 | réel et story | Montage vertical 9:16 : plan, calques, aperçu, rendu navigateur, envoi au PC | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote` |
 
@@ -222,6 +223,8 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 - Réglages du PC : `config.json` (propre à chaque PC, ignoré par git) ; tout nouveau réglage va dans `config.exemple.json` avec sa valeur par défaut, et `server.py` le lit par `CFG.get`.
 - Les commentaires internes ne sont jamais incrustés dans une vidéo : elle doit rester publiable telle quelle.
 - Mobile d'abord (téléphone en portrait, 390 px), mise en page large à partir de 1100 px. Charte : Anton pour les titres, Montserrat pour le texte, couleurs de `:root`.
+- Échelle visuelle : texte de 12 px au minimum, champs de saisie à 16 px sur écran tactile ; titres Anton en 22, 28 ou 40 px ; rayons de 6, 10 ou 16 px (plus les pastilles rondes) ; cible tactile de 44 px (`--tap`) ; bord de contrôle `--ctl`, anneau de focus `--ring`. Un état sélectionné ne repose jamais sur le seul bleu pâle (bord à l'encre), ni la sensibilité sur la seule couleur (pastille jaune et texte).
+- Vocabulaire de l'interface : « intervention » (le dossier chargé), « passage » (début et fin), « repère » (un instant). Le message de sauvegarde de l'en-tête passe par `setSave(détail, erreur, court)`.
 - Jamais de sortie vidéo accumulée en mémoire : écriture par morceaux (OPFS ou Blob).
 - Livraison : pousser sur `main` publie le mode navigateur sur GitHub Pages ; sur le PC, `mettre-a-jour.ps1` fait `git pull` et redémarre la tâche planifiée.
 
