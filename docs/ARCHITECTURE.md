@@ -32,7 +32,7 @@ Le même `index.html` sert les deux modes. Ce qui diffère est isolé dans un ob
 
 ## 2. Carte de `index.html`
 
-Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme`), puis le HTML (une `<section>` par onglet, trois `<dialog>`), puis le script. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
+Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par onglet dans `<main>`, quatre `<dialog>` (fiche de marqueur `#sheet`, fiche à copier `#fallback`, aide `#help`, calcul `#cmp`)), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
 
 | Section | Rôle | Fonctions d'entrée |
 |---|---|---|
@@ -42,15 +42,17 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
 | playback | Lecture du clip de la piste active | `seek`, `togglePlay`, `setTrack` |
 | drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
-| markers | Création et édition des marqueurs (dialogue `#sheet`) | `addMarker`, `markStart`, `markEnd`, `openSheet` |
+| markers | Création et édition des marqueurs (dialogue `#sheet` : noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `renderInWin` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement des bords, clavier, onglets | `setZoom`, `setTab`, `keydown` |
+| events | Transport, zoom et pincement, glissement des bords, raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`, `#reset`) | `setZoom`, `setTab`, `keydown`, `goHome` |
+| clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
-| mode PC | Appels HTTP, liste des interventions, ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
+| mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
+| accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
 | réel et story | Montage vertical 9:16 : plan, calques, aperçu, rendu navigateur, envoi au PC | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote` |
 
@@ -60,6 +62,8 @@ Conventions du script :
 - Les fonctions sont déclarées (`function f(){}`), donc utilisables avant leur définition ; les constantes et l'état sont en `const` et `let`.
 - `$("id")` est le seul accès au DOM ; les identifiants HTML sont en camelCase (`rStage`, `cmpInfo`).
 - Les messages sont en français ; une alerte dans un texte est entre crochets (`[Fiche non enregistrée : ...]`) et stylée par la classe `miss`.
+- Couleurs : toujours une variable. `--line` pour les séparateurs décoratifs, `--ctl` pour le bord d'un contrôle (3:1), `--onblue` pour l'encre fixe sur bleu ou jaune, `--stage` et `--onstage` pour la scène vidéo ; les couleurs dessinées dans les vidéos produites restent en dur dans le script.
+- Clavier : tout nouveau raccourci passe par `keyTaken(e)` ; un champ fichier reste invisible (`tabindex="-1"`) et s'ouvre par un `label.btn`, rendu focalisable par le script.
 
 ## 3. Modèle de données
 
@@ -109,7 +113,7 @@ Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W gra
     photo, dur, x, zoom,         // photo : chemin relatif, durée, cadrage, zoom lent
     texte, tBox: {x, y, s, c, fond}, tDur,   // texte du passage, sa boîte, sa durée (0 = tout le passage)
     flous: [{id, s, keys: [{t, x, y}]}]}],   // zones de flou doux, en fraction de l'image source
- titre, titreDur, titreBox: {x, y, s, c},
+ titre, titreDur, titreBox: {x, y, s, c, haut},   // haut : y est le bord haut du titre (sinon son centre, réels plus anciens)
  elems: [{id, kind: "texte"|"fleche"|"cercle"|"cadre", a, d, x, y, s, rot, c, texte, fond}],  // temps du réel
  logo: {mode: "cartouche"|"logo"|"non", x, y, s},
  fin: {on, texte, sous},
@@ -124,6 +128,7 @@ Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de
 |---|---|---|
 | localStorage `esam-derush:<clé>` | `{markers, meta, offsets}` | à chaque `persist()` |
 | localStorage `esam-auteur` | auteur des commentaires | à la saisie |
+| localStorage `esam-theme` | thème choisi (`light` ou `dark`, absent : automatique) | au réglage (Plus d'options) |
 | `.derushage/etat.json` (mode PC) | `{markers, meta, offsets}` | `persist()`, 0,7 s après la dernière modification |
 | `ESAM_Derushage_<date>_<mission>.md` | fiche lisible + bloc `<!-- derushage-data {...} -->` | 1,5 s après la dernière modification (PC ou dossier ouvert) |
 
@@ -139,12 +144,13 @@ Reprendre une fiche remplace les marqueurs (pas de fusion) ; l'opération est an
 | `capture(tr, t)` | `captureLocal` : WebCodecs, puis téléchargement | `captureRemote` : `POST api/photo` (clip du PC), sinon `captureLocal` |
 | `compile()` | `runCompile` : WebCodecs + mp4-muxer | `runRemote` : cartons rendus en PNG, `POST api/video`, `pollJob` |
 | `reel(story)` | `runReelLocal` : `rRender` par morceaux de story | `runReelRemote` : calques PNG, `POST api/reel`, `pollJob` |
+| `busy(on)` | pendant un calcul : avertissement `beforeunload` et écran maintenu allumé (`navigator.wakeLock`), relâchés à la fin, à l'annulation ou en erreur | rien (le calcul continue sur le PC) |
 | `compileFailed(msg)` | erreur dans le dialogue | retour à la vue Setup et toast |
 | `reset()` | rien | retour à la liste des interventions |
 
 Le reste du code appelle `BACKEND.x()` sans tester le mode. `pcOpen()` (une intervention est ouverte sur le PC) sert aux quelques textes et chemins qui dépendent du mode (photos, musique).
 
-Dialogue de calcul : `jobRun(message, W, H)` ouvre la vue de progression et rend le canvas d'aperçu ; `jobProgress(fraction, texte)` ; `jobDone({info, url, saveLabel, onSave, onBack})` ou `jobError(message, onBack)` affichent le résultat. Les boutons « Enregistrer » et « Recommencer » exécutent les fonctions passées, ce qui évite tout drapeau global sur ce qui est affiché.
+Dialogue de calcul : `jobRun(message, W, H, titre)` ouvre la vue de progression (titre : « Vidéo compilée », « Réel » ou « Story ») et rend le canvas d'aperçu ; `jobProgress(fraction, texte)` ; `jobDone({info, url, files: [{name, href}], where, title, saveLabel, onSave, onBack})` ou `jobError(message, onBack)` affichent le résultat (en mode PC, `href` lit le fichier produit par `/files/`). Les messages d'erreur passent par `errMsg()` (jamais de nom d'exception à l'écran). Les boutons « Enregistrer » et « Recommencer » exécutent les fonctions passées, ce qui évite tout drapeau global sur ce qui est affiché.
 
 ## 5. API HTTP de `server.py`
 
@@ -217,6 +223,8 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 - Réglages du PC : `config.json` (propre à chaque PC, ignoré par git) ; tout nouveau réglage va dans `config.exemple.json` avec sa valeur par défaut, et `server.py` le lit par `CFG.get`.
 - Les commentaires internes ne sont jamais incrustés dans une vidéo : elle doit rester publiable telle quelle.
 - Mobile d'abord (téléphone en portrait, 390 px), mise en page large à partir de 1100 px. Charte : Anton pour les titres, Montserrat pour le texte, couleurs de `:root`.
+- Échelle visuelle : texte de 12 px au minimum, champs de saisie à 16 px sur écran tactile ; titres Anton en 22, 28 ou 40 px ; rayons de 6, 10 ou 16 px (plus les pastilles rondes) ; cible tactile de 44 px (`--tap`) ; bord de contrôle `--ctl`, anneau de focus `--ring`. Un état sélectionné ne repose jamais sur le seul bleu pâle (bord à l'encre), ni la sensibilité sur la seule couleur (pastille jaune et texte).
+- Vocabulaire de l'interface : « intervention » (le dossier chargé), « passage » (début et fin), « repère » (un instant). Le message de sauvegarde de l'en-tête passe par `setSave(détail, erreur, court)`.
 - Jamais de sortie vidéo accumulée en mémoire : écriture par morceaux (OPFS ou Blob).
 - Livraison : pousser sur `main` publie le mode navigateur sur GitHub Pages ; sur le PC, `mettre-a-jour.ps1` fait `git pull` et redémarre la tâche planifiée.
 
