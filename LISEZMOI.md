@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.16
-date_maj: 2026-11-22
+version: 0.17
+date_maj: 2026-11-23
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -94,6 +94,9 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 | `Photos/` | Photos pleine résolution |
 | `ESAM_Compilation_<date>_<mission>.mp4` | Vidéo compilée, avec un chapitre par passage |
 | `ESAM_Compilation_<date>_<mission>.commentaires-ESAM.srt` | Commentaires internes signés, en sous-titres à part (jamais incrustés dans la vidéo) |
+| `ESAM_Extraits_<date>_<mission>.mp4` | Extraits bruts (habillage « Aucun ») : les passages sans carton, sans heure et sans logo |
+| `ESAM_Extraits_<date>_<mission>_01_<passage>.mp4`... | Les mêmes extraits, en un fichier par passage |
+| `.derushage/etat-compil.json` | Marqueurs posés sur une vidéo compilée rouverte pour en extraire des morceaux (à part de ceux des rushs) |
 | `ESAM_Reel_<date>_<mission>.mp4` | Réel vertical 1080 x 1920 (onglet Réel) |
 | `ESAM_Story_<date>_<mission>_1sur2.mp4`... | Story découpée en morceaux de 60 s maximum |
 | `.derushage/musique.mp3` | Musique choisie pour le réel |
@@ -124,13 +127,34 @@ Dans l'onglet Sommaire, chaque passage a un champ « Commentaire interne ESAM »
 - Dans Google Drive : ouvrir la vidéo, menu des trois points, « Gérer les sous-titres », ajouter le fichier `.srt`. Seuls ceux qui regardent la vidéo dans le Drive les voient.
 - Le fichier MP4 lui-même ne contient pas les commentaires : il peut être publié tel quel.
 
+## Retoucher un passage : flous, flèches, cercles, vitesse
+
+Le bouton « Retoucher » d'un passage (onglet Sommaire, liste des passages de « Créer la vidéo compilée », réglages d'un passage dans l'onglet Réel) ouvre l'image du passage en grand. Les retouches appartiennent au passage : elles sont appliquées dans toutes les vidéos qui en sont tirées (vidéo compilée, extraits, réel, story) et enregistrées avec les marqueurs.
+
+- **Flou** (visage, plaque d'immatriculation, lieu) : « + Flou » pose une zone au centre de l'image. Glissez-la sur ce qu'il faut cacher et tirez son coin (rond bleu) pour régler sa hauteur et sa largeur. Forme ovale (visage) ou rectangle (plaque) ; rendu flou doux ou pixelisé ; bords fondus dans les deux cas.
+- **Suivi en mouvement** : « Suivre automatiquement » lance la lecture et la zone suit toute seule son sujet, image après image, jusqu'à la fin du passage. Si le sujet est masqué ou sort de l'image, le suivi s'arrête et le dit : replacez la zone et relancez, le suivi repart de cet instant. On peut aussi suivre à la main : pendant la lecture, gardez le doigt (ou la souris) sur la zone ; à l'arrêt, chaque déplacement pose un point de suivi à l'instant affiché. « Supprimer le point ici » et « Rendre fixe » corrigent une trajectoire. Relisez toujours le passage avant de publier.
+- **Flèche et cercle** : tracés « au crayon », comme dans l'appli photo. La pointe de la flèche vise son sujet, le cercle l'entoure ; ils se suivent comme un flou (automatiquement ou à la main). Couleur, taille, orientation, largeur du cercle, et moment d'apparition et de disparition (« Apparaît ici », « Disparaît ici »).
+- **Vitesse** : placez la lecture là où la vitesse doit changer, puis choisissez x0,25 ou x0,5 (ralenti), Normale, ou x2 à x8 (accéléré). Le choix vaut jusqu'au changement suivant ; fait au début du passage, il vaut pour tout le passage. Les tronçons modifiés sont hachurés en jaune sur la barre, et la durée du passage dans la vidéo est indiquée. Dans le réel, l'accéléré du réel multiplie ces vitesses.
+- Les flous et les formes sont posés sur l'image d'une caméra : si le passage est compilé avec une autre caméra, refaites-les sur celle-ci (« Caméra retouchée »).
+
+Un passage marqué sensible (visage, plaque) sans flou est rappelé en jaune avant de créer une vidéo ; le rappel n'empêche pas le calcul.
+
+## Extraire des morceaux d'une vidéo compilée
+
+Pour reprendre quelques moments sans reparcourir tous les rushs, repartez de la vidéo compilée :
+
+- **Mode PC** : dans la liste des interventions, « Préparer la vidéo compilée pour en extraire des morceaux » (une fois), puis « Extraire des morceaux de la vidéo compilée ». Les marqueurs posés sur la vidéo compilée sont enregistrés à part : ceux des rushs et la fiche de l'intervention ne changent pas.
+- **Mode navigateur** : « Choisir les vidéos », puis le fichier `ESAM_Compilation_...mp4`.
+
+Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans le Sommaire. L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
+
 ## Réel et story (onglet Réel)
 
 L'onglet Réel monte une vidéo verticale 1080 x 1920 pour Instagram et Facebook à partir des passages marqués.
 
 1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend le passage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire. « Ajouter des photos » propose les photos JPEG : en mode PC, celles du dossier de l'intervention et de son sous-dossier `Photos` ; en mode navigateur, celles choisies avec les vidéos, trouvées dans le dossier des rushs ou ajoutées par « Choisir des photos JPEG ». Une photo dure 2 à 8 s (4 s par défaut), avec un zoom lent qu'on peut couper, et se cadre comme un passage.
-2. **Passage** (cadrage) : touchez un passage, ou « Cadrer » dans le message qui suit un ajout. Sur téléphone, l'onglet se parcourt par trois volets : Montage, Passage, Habillage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
-   **Flous** : « + Flou (visage, plaque) » pose une zone floutée aux bords fondus (petite, moyenne ou grande) pour cacher un visage, une plaque ou un lieu. Choisissez « Flou 1 » (ou « Le cadre ») pour dire ce que le doigt ou la souris déplace. À l'arrêt, la zone est posée pour tout le passage ; pendant la lecture, gardez le doigt dessus et suivez : elle enregistre le mouvement (points clairs sur la barre). Les flous sont appliqués dans la vidéo finale, quel que soit le cadrage.
+2. **Passage** (cadrage) : touchez un passage, ou « Cadrer » dans le message qui suit un ajout. Sur téléphone, l'onglet se parcourt par trois volets : Montage, Passage, Habillage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse dans le réel (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
+   **Retouches** : « Flouter, annoter, changer la vitesse » ouvre les retouches du passage (voir plus haut) : flous qui suivent un visage ou une plaque, flèches et cercles qui suivent l'animal, ralentis et accélérés. Elles sont appliquées quel que soit le cadrage et valent aussi pour la vidéo compilée. Sur une photo, « + Flou (visage, plaque) » pose directement une zone floutée (petite, moyenne ou grande).
 3. **Habillage** : titre d'accroche (3, 5 ou 8 s, ou tout le réel), logo ESAM (cartouche avec le nom, logo seul cerclé de blanc, ou aucun), carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
 4. **Aperçu du réel** : lecture du montage complet en vertical, sur une version allégée des vidéos, avec textes et musique. La liste « Sur l'image », sous l'aperçu, donne tout ce qui est posé sur la vidéo (titre, logo, textes des passages, éléments ajoutés) : touchez-en un, dans la liste ou sur l'image, pour l'amener à l'écran et le sélectionner. Glissez-le pour le déplacer ; tirez le rond bleu, la molette ou le curseur « Taille » pour changer sa taille ; choisissez sa couleur (blanc, jaune, bleu, rouge, noir) et, pour un texte, avec ou sans bandeau. « Remettre à sa place » revient à la position d'origine. Les boutons « Placer, taille et couleur » (Habillage, texte d'un passage) y mènent aussi.
    **Textes libres et formes** : « + Texte », « + Flèche », « + Cercle », « + Cadre » ajoutent un élément au moment affiché dans l'aperçu. Réglez sa place, sa taille, sa couleur, son orientation (formes), son début (« Commencer à ») et sa durée (2 à 8 s ou jusqu'à la fin). Les éléments suivent le temps du réel : si vous changez le montage, revérifiez leur moment.
@@ -154,6 +178,8 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 - Les chapitres inscrits dans la vidéo sont lus par VLC, QuickTime et la plupart des lecteurs, mais pas par l'aperçu de Google Drive, dont le panneau « Chapitres » est généré par Gemini. Ils ne sont produits qu'en mode PC.
 
 - L'heure n'est pas incrustée sur la vidéo compilée par le PC (elle figure sur les cartons).
+- Le suivi automatique d'un flou ou d'une forme retrouve un motif d'une image à la suivante : il décroche si le sujet est masqué, change brusquement d'aspect ou sort de l'image, et une zone uniforme (neige, ciel) ne se suit pas. Il ne reconnaît pas les visages : c'est à vous de poser la zone et de relire le passage avant publication.
+- Un ralenti répète les images des rushs (30 images par seconde) : à x0,25 le mouvement est saccadé.
 - Le son n'est pas conservé dans la vidéo compilée.
 - La lecture à x16 dépend du débit montant de la connexion de la maison ; si l'image saccade, préférez x8 (appui long ou clic droit sur x16 pour choisir la vitesse).
 
@@ -161,6 +187,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.17 | 2026-11-23 | Retouches d'un passage (bouton « Retoucher ») : flous ovales ou rectangles, doux ou pixelisés, qui suivent un visage ou une plaque (suivi automatique ou au doigt) ; flèches et cercles « au crayon » qui suivent l'animal ; ralenti et accéléré à partir d'un instant. Elles valent pour la vidéo compilée, les extraits et le réel. Extraits bruts : habillage « Aucun » (ni carton, ni heure, ni logo), en une vidéo ou un fichier par passage, choisi d'office quand on repart d'une vidéo compilée ; en mode PC, la vidéo compilée d'une intervention se rouvre depuis la liste pour en extraire des morceaux. Les messages s'affichent aussi par-dessus un dialogue ouvert. |
 | 0.16 | 2026-11-22 | Lecteur : l'image ne reste plus figée sur une vignette après un glissement sur la règle ou sur le bord d'un passage (l'aperçu se referme toujours, et il occupe la même taille que la vidéo) ; après « Voir » un passage, un saut plus loin ne met plus la lecture en pause ; après une coupure de connexion, « Lire » reprend la vidéo. Pistes : « Écran » passe en première ligne (la caméra choisie par défaut pour la vidéo compilée et le réel ne change pas). |
 | 0.15 | 2026-11-22 | Ergonomie revue de bout en bout. Sécurité : supprimer un marqueur s'annule (le passage revient aussi dans le réel) ; un passage sensible est rappelé en jaune avant de créer un réel ou une vidéo ; avertissement si l'on ferme l'onglet pendant un calcul dans le navigateur. Téléphone : fiche de marqueur plus courte avec Enregistrer toujours visible, boutons et pistes qui ne bougent plus pendant la lecture, paysage utilisable, cibles de 44 px, plus de zoom automatique à la saisie. Réel : volets Montage, Passage, Habillage, « Cadrer » après un ajout, titre qui ne recouvre plus le cartouche ESAM, nom du fichier produit en fin de calcul. Sommaire remis d'aplomb et en deux colonnes sur PC ; retour à la liste des interventions par le logo ; aide dans l'appli (bouton Aide) ; filtre dans la liste des interventions. Clavier, focus et contrastes lisibles au soleil ; thème automatique, clair ou sombre (Plus d'options). Vocabulaire unifié : intervention, passage, repère. |
 | 0.14 | 2026-10-27 | Dossier de travail : « Ouvrir le dossier des rushs » importe toutes les vidéos et photos du dossier et de ses sous-dossiers (sauf `proxies`) et reprend la fiche qui s'y trouve ; sur ordinateur (Chrome, Edge), la fiche et les vidéos produites y sont enregistrées et le dernier dossier se rouvre d'un clic (« Reprendre ») ; sur téléphone, le dossier est importé avec les noms d'origine, mais le travail reste gardé dans le navigateur |

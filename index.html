@@ -570,6 +570,35 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   .rstage.v canvas{height:min(70vh,760px)}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
+/* ---------- retouches d'un passage (dialogue #fx) : image en haut, réglages défilants dessous ; deux colonnes sur PC ---------- */
+dialog.sheet.fx{max-width:1180px;height:96vh;height:96dvh;max-height:96vh;max-height:96dvh;overflow:hidden}
+.fxin{display:flex;flex-direction:column;height:100%;padding-bottom:0}
+.fxin .shhead h3{font-size:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fxin h3:focus{outline:none}
+.fxgrid{flex:1;min-height:0;display:flex;flex-direction:column}
+.fxmain{flex:none}
+.fxstage canvas{width:auto;max-width:100%;max-height:36vh;max-height:36dvh;cursor:crosshair}
+.fxside{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--line);padding:0 2px 8px}
+.fxside .grp{margin:12px 0}
+.fxside .rsel{margin-top:12px}
+.fxside .rsel b{font-size:16px}
+.fxside .hint{font-size:12px}
+.fxin .sheetbtns{flex:none;margin:0 -18px;padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.rbar .sp{position:absolute;top:auto;bottom:0;height:5px;background:repeating-linear-gradient(135deg,var(--yellow) 0 5px,var(--onblue) 5px 7px)}
+.rbar .kt{position:absolute;top:0;height:5px;width:2px;margin-left:-1px;background:var(--ink)}
+.rbar .sp.lent{background:repeating-linear-gradient(90deg,var(--yellow) 0 3px,var(--onblue) 3px 6px)}
+/* dans les retouches, le toast se pose au-dessus du bouton Terminé : il ne masque pas l'image que l'on règle */
+#fx .toast{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.cmplist li{display:flex;align-items:center}
+.cmplist li label{flex:1;min-width:0}
+.cmplist li .btn{flex:none;margin-right:8px}
+.iv .ivx{grid-column:1 / -1}
+@media (min-width:1100px){
+  .fxgrid{flex-direction:row;gap:24px}
+  .fxmain{flex:1;min-width:0}
+  .fxside{flex:none;width:400px;border-top:0}
+  .fxstage canvas{max-height:66vh;max-height:66dvh}
+}
 /* ---------- fondations : focus, contrastes, cibles tactiles, thème ----------
    Règles transversales regroupées ici. Celles qui visent un composant d'une autre partie de la feuille
    y sont ajoutées plutôt que dans la ligne du composant. Variables propres à ces règles :
@@ -958,6 +987,8 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <ul>
       <li>Tous les marqueurs dans l'ordre, avec la caméra retenue pour la vidéo compilée et le commentaire interne (jamais incrusté dans la vidéo).</li>
       <li>La chronologie RETEX (retour d'expérience) calcule les délais à partir des marqueurs nommés Décollage, Bonne piste, Confirmation, Secours arrivée, etc.</li>
+      <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant. Les retouches valent pour la vidéo compilée, les extraits et le réel.</li>
+      <li><b>Créer la vidéo compilée</b>, habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
     <h4>Réel</h4>
     <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), ajoutés depuis « Ajouter des passages », plus les photos de l'intervention.</li></ul>
@@ -967,16 +998,42 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
   </div>
 </dialog>
 
+<dialog class="sheet fx" id="fx" aria-labelledby="fxTitle">
+  <div class="sheetin fxin">
+    <div class="shhead">
+      <h3 id="fxTitle" tabindex="-1">Retouches</h3>
+      <button type="button" class="shx" id="fxClose" aria-label="Fermer les retouches"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="fxgrid">
+      <div class="fxmain">
+        <div class="rstage fxstage" id="fxStage">
+          <canvas id="fxCv" width="960" height="540" tabindex="0" aria-label="Image du passage"></canvas>
+          <div class="rempty" id="fxEmpty" hidden></div>
+        </div>
+        <div class="rtrans">
+          <button type="button" class="btn ghost rplay" id="fxPlay" aria-label="Lire"></button>
+          <div class="rtl"><div class="rbar" id="fxBar"></div><input type="range" id="fxSlider" min="0" max="1000" step="1" value="0" aria-label="Position dans le passage"></div>
+          <span class="rtime" id="fxTime">0:00</span>
+        </div>
+      </div>
+      <div class="fxside" id="fxPanel"></div>
+    </div>
+    <div class="sheetbtns"><button type="button" class="btn primary grow" id="fxDone">Terminé</button></div>
+  </div>
+</dialog>
+
 <dialog class="sheet" id="cmp" aria-labelledby="cmpTitle">
   <div class="sheetin">
     <h3 id="cmpTitle" tabindex="-1">Vidéo compilée</h3>
     <div id="cmpSetup">
-      <p style="margin:0 0 12px;font-size:14px">Les passages cochés sont enchaînés dans l'ordre chronologique, chacun précédé d'un carton sur fond noir (nom, heure de début et de fin, commentaire), à la résolution d'origine des rushs.</p>
+      <p style="margin:0 0 12px;font-size:14px" id="cmpLead"></p>
+      <div class="grp"><span class="lbl">Habillage</span><div class="chips" id="cmpHab"></div></div>
       <ul class="cmplist" id="cmpList"></ul>
       <div class="grp"><span class="lbl">Résolution</span><div id="cmpResInfo" style="font-size:14px"></div></div>
       <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
       <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
       <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
+      <div class="grp" id="cmpSepBox"><span class="lbl">Fichiers produits</span><div class="chips" id="cmpSep"></div></div>
       <div class="senswarn" id="cmpSensW" hidden></div>
       <p class="warn" id="cmpEst"></p>
       <div class="sheetbtns">
@@ -1012,7 +1069,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.16";
+const APP_VERSION = "0.17";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1027,6 +1084,10 @@ const NUMBERED = ["Décollage","Atterrissage","Fausse piste","Bonne piste"];
 const PRESET_MAIN = ["Décollage","Fausse piste","Bonne piste","Confirmation","Secours arrivée","Secours récup animal","Atterrissage"];
 const PRESET_MORE = [["Vol",["Vue zone intervention"]],["Recherche",["Vérification santé","Guidage secours"]],["Secours",["Secours préparation","Secours prépa animal","Secours retour animal","Secours retour","Retour animal"]]];
 const SPEEDS = [1,2,4,8,16];
+/* vidéos produites par l'outil : reprises comme source (pour en extraire des morceaux), elles n'ont pas d'heure réelle
+   et donnent d'office des extraits bruts, sans carton ni heure ni logo (cmpHab) */
+const PROD_RE = /^ESAM_(Compilation|Extraits|Reel|Story)/;
+function prodSource(){ return S.clips.length > 0 && S.clips.every(c => PROD_RE.test(c.name)); }
 
 const $ = id => document.getElementById(id);
 $("logoImg").src = document.querySelector(".top .logo").src;      // une seule copie du logo dans la page
@@ -1073,11 +1134,16 @@ function drawRot(ctx, src, rot, x, y, w, h){
   ctx.drawImage(src, -rw/2, -rh/2, rw, rh); ctx.restore();
 }
 let toastT = 0;
+/* un dialogue ouvert recouvre la page : le toast se range dans le dialogue du dessus, et revient quand il se ferme */
+const DIALOGS = ["fx","cmp","sheet","help","fallback"];
+function toastHost(){ const t = $("toast"), host = DIALOGS.map($).find(d => d && d.open) || document.body; if(t.parentNode !== host) host.appendChild(t); }
+DIALOGS.forEach(id => { $(id).addEventListener("close", toastHost); });
 /* toast(message, libellé, action) : 8 s quand il porte une action (Annuler), 2,6 s sinon.
    Sur téléphone, il se pose sur l'image dans Visionner (sous l'étiquette de piste et le bouton photo), ailleurs sous le nom
    de l'intervention quand celui-ci est à l'écran, sinon sous l'en-tête : ni le nom ni les pistes ne sont masqués. */
 function toast(msg, actLabel, actFn){
   const t = $("toast"); t.textContent = ""; t.appendChild(document.createTextNode(msg));
+  toastHost();
   if(actLabel){ const b = document.createElement("button"); b.type = "button"; b.textContent = actLabel; b.onclick = () => { t.hidden = true; actFn(); }; t.appendChild(b); }
   t.style.top = "";
   if(window.innerWidth < 1100 && !(window.innerHeight <= 500 && window.innerWidth > window.innerHeight)){
@@ -1103,9 +1169,14 @@ function persist(){
    des rushs (showDirectoryPicker). Une seule version de fiche par séance : S.verBumped. */
 let ficheT = 0, ficheBusy = false;
 /* nom d'un fichier produit : ESAM_<prefixe>_<date du vol>[_<intervention>]<suffixe> (même règle que server.py) */
-function outName(prefix, suffix){ return `ESAM_${prefix}_${isoDay(S.real ? new Date(S.base*1000) : new Date())}${S.meta.intervention ? `_${slug(S.meta.intervention)}` : ""}${suffix || ""}`; }
+function outName(prefix, suffix){
+  const pd = prodSource() ? /_(\d{4}-\d{2}-\d{2})/.exec(S.clips[0].name) : null;       // extraits d'une vidéo compilée : la date du vol est dans son nom
+  return `ESAM_${prefix}_${pd ? pd[1] : isoDay(S.real ? new Date(S.base*1000) : new Date())}${S.meta.intervention ? `_${slug(S.meta.intervention)}` : ""}${suffix || ""}`;
+}
+/* nom de l'intervention repris du nom d'une vidéo produite : ESAM_Compilation_2026-09-12_Chien_egare.mp4 donne « Chien egare » */
+function prodMission(name){ const m = /^ESAM_[A-Za-z]+_\d{4}-\d{2}-\d{2}_(.+?)(?:_vertical|_\d+sur\d+|_\d\d(?:_[A-Za-z0-9_]*)?)?\.[A-Za-z0-9]+$/.exec(name); return m ? clean(m[1].replace(/_/g, " ")) : ""; }
 function ficheName(){ return outName("Derushage", ".md"); }
-function autoTarget(){ return pcOpen() ? "pc" : (S.dirHandle ? "dir" : null); }
+function autoTarget(){ return pcOpen() ? (SRVS ? null : "pc") : (S.dirHandle ? "dir" : null); }      // pas de fiche pour des extraits : celle des rushs reste la seule
 function scheduleFiche(){
   if(ficheBusy || !autoTarget() || !S.clips.length) return;
   clearTimeout(ficheT); ficheT = setTimeout(() => { writeFiche(false); }, 1500);
@@ -1201,7 +1272,7 @@ async function addFiles(list){
     let md = null;
     try { md = await parseMedia(f); } catch(e){ md = null; }
     const dur = md && md.duration > 0 ? md.duration : await readDuration(url);
-    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", auto:!p, w:md ? md.dw : 0, h:md ? md.dh : 0, start:p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
+    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", auto:!p, w:md ? md.dw : 0, h:md ? md.dh : 0, start:PROD_RE.test(f.name) ? null : p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
   }
   prog.hidden = true;
   // la galerie Android (sélecteur de photos) remplace les noms par des numéros : les caméras DJI ne se lisent plus dans le nom
@@ -1209,6 +1280,10 @@ async function addFiles(list){
   const firstLoad = !S.key;
   rebuild();
   if(firstLoad && restore()){ rebuild(); toast(`${nMarq(S.markers.length)} ${S.markers.length > 1 ? "retrouvés" : "retrouvé"} pour cette intervention.`); }
+  if(prodSource()){
+    if(!S.meta.intervention) S.meta.intervention = prodMission(S.clips[0].name);
+    if(firstLoad && !S.markers.length) toast("Vidéo déjà montée : marquez les morceaux à garder, ils sortiront bruts, sans carton, sans heure et sans logo.");
+  }
   showApp();
   seek(S.t, false);
   checkCodecs().then(genThumbs);
@@ -1433,7 +1508,7 @@ function rebuild(){
       c.e = c.s + (c.dur || 0);
       if(c.ok){ cursor = c.e; end = Math.max(end, c.e); }
     });
-    return {lens:l, name:lensName(l), clips:clips};
+    return {lens:l, name:l === "?" && prodSource() ? "Vidéo montée" : lensName(l), clips:clips};
   });
   S.dur = Math.max(end, 1);
   let ai = S.tracks.findIndex(t => t.lens === activeLens);
@@ -1778,16 +1853,17 @@ function renderMission(){
   if(!S.clips.length) return;
   const d = new Date(S.base*1000), days = ["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
   const hm = x => clockAbs(x).slice(0, 5);      // heures sans les secondes : la ligne tient sur un téléphone
-  $("mMeta").textContent = `${S.real ? `${days[d.getDay()]} ${dayAbs(S.base)}, ${hm(S.base)} à ${hm(S.base+S.dur)} (${len(S.dur)})` : `${len(S.dur)} de rushs`}, ${S.tracks.length} piste${S.tracks.length > 1 ? "s" : ""}`;
+  $("mMeta").textContent = `${S.real ? `${days[d.getDay()]} ${dayAbs(S.base)}, ${hm(S.base)} à ${hm(S.base+S.dur)} (${len(S.dur)})` : `${len(S.dur)} de ${prodSource() ? "vidéo montée" : "rushs"}`}, ${S.tracks.length} piste${S.tracks.length > 1 ? "s" : ""}`;
 }
 function renderComp(){
   const el = $("mComp"); if(!el) return;
   const pl = S.clips.length ? buildPlan() : {items:[]};
   // toujours affichée (texte d'attente sans passage) : l'apparition du premier passage ne décale pas l'écran
   el.classList.toggle("none", !pl.items.length);
-  el.innerHTML = `<span class="mvl">Vidéo compilée</span><span class="mvs">Compilée</span> : ${pl.items.length ? `${len(pl.total)}, ${pl.items.length} passage${pl.items.length > 1 ? "s" : ""}${CMP.win ? `, marge ${CMP.win} s` : ""}` : "aucun passage"}`;
+  const hab = pl.hab !== false;
+  el.innerHTML = `<span class="mvl">${hab ? "Vidéo compilée" : "Extraits"}</span><span class="mvs">${hab ? "Compilée" : "Extraits"}</span> : ${pl.items.length ? `${len(pl.total)}, ${pl.items.length} passage${pl.items.length > 1 ? "s" : ""}${CMP.win ? `, marge ${CMP.win} s` : ""}` : "aucun passage"}`;
   const rc = $("rCount"); if(rc) rc.textContent = S.meta.reel && S.meta.reel.items ? S.meta.reel.items.length : 0;
-  const b = $("cmpOpen"); if(b) b.textContent = pl.items.length ? `Créer la vidéo compilée (${len(pl.total)})` : "Créer la vidéo compilée";
+  const b = $("cmpOpen"), what = hab ? "Créer la vidéo compilée" : "Créer les extraits"; if(b) b.textContent = pl.items.length ? `${what} (${len(pl.total)})` : what;
 }
 $("mName").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); });
 function renderHeader(){
@@ -1826,11 +1902,13 @@ function renderSummary(){
     if(isSens(m)) h += `<div class="sensbox">Sensibilité : ${esc(m.sens.join(", "))}</div>`;
     else h += '<div class="meta">Sensibilité : aucune</div>';
     if(m.note) h += `<div class="note">Texte du carton : ${esc(m.note)}</div>`;
+    const fxs = fxSummary(m);
+    if(fxs) h += `<div class="meta">Retouches : ${esc(fxs)}</div>`;
     h += `<label class="icom"><span>Commentaire interne ESAM (sous-titre, jamais publié)</span><textarea class="field" rows="2" data-com="${m.id}" placeholder="Ex. : flouter la plaque à 0:12, bon plan pour Instagram">${esc(m.comment || "")}</textarea></label>`;
     h += '<div class="cams">';
     const ec = effCam(m);
     if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button>`;
-    h += `<span class="aux"><button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></span></div></li>`;
+    h += `<span class="aux">${ec != null ? `<button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>` : ""}<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></span></div></li>`;
   });
   $("list").innerHTML = h;
   $("emptyList").hidden = list.length > 0;
@@ -2215,7 +2293,7 @@ async function walkDir(dir, pre, out, depth){
 }
 /* items : [{path relatif au dossier, file}] ; rend false si le dossier ne contient aucune vidéo */
 async function importFolder(items){
-  const vids = items.filter(x => /\.(mp4|mov|m4v)$/i.test(x.path) && !/^ESAM_(Compilation|Reel|Story)/.test(x.file.name));
+  const vids = items.filter(x => /\.(mp4|mov|m4v)$/i.test(x.path) && !PROD_RE.test(x.file.name));
   const fiche = items.filter(x => /^ESAM_Derushage_.*\.md$/.test(x.file.name)).sort((a, b) => b.file.lastModified - a.file.lastModified)[0];
   if(!vids.length){ toast("Aucune vidéo dans ce dossier."); return false; }
   phAdd(items.filter(x => /\.jpe?g$/i.test(x.path)).map(x => ({name:clean(x.path), file:x.file, t:x.file.lastModified/1000})));
@@ -2484,6 +2562,8 @@ $("list").addEventListener("click", e => {
   if(ed){
     const mk = S.markers.find(x => x.id === ed.dataset.edit); if(mk) openSheet(mk, false);
   }
+  const fxb = e.target.closest("[data-fx]");
+  if(fxb){ const mf = S.markers.find(x => x.id === fxb.dataset.fx); if(mf) fxOpen(mf); }
   const ph = e.target.closest("[data-photo]");
   if(ph){
     const mp = S.markers.find(x => x.id === ph.dataset.photo); if(!mp) return;
@@ -2742,10 +2822,182 @@ async function captureLocal(tr, t){
 }
 $("cap").onclick = () => { v.pause(); captureAt(track(), S.t); };
 
+/* ---------- retouches d'un passage (flous suivis, flèches et cercles, vitesse) ----------
+   Les retouches appartiennent au passage (marqueur) : m.fx = {flous, formes, vits}. Flous et formes sont posés sur l'image
+   source d'une caméra (cam) et suivent leur sujet par des points {t, x, y} (t en secondes de timeline, x et y en fraction de
+   l'image), lissés par rKeyAt. Toutes les vidéos tirées du passage les reçoivent : vidéo compilée, extraits, réel et story.
+   fxApply() les dessine (aperçus et rendu navigateur), fxPayload() les décrit au PC, fxSplit() découpe un passage aux
+   changements de vitesse. L'éditeur (dialogue #fx, fxOpen) et le suivi automatique (fxTrackStart) sont plus bas. */
+const FX_SPEEDS = [0.25, 0.5, 1, 2, 4, 8], FX_REF = 2160, FX_NONE = {flous:[], formes:[], vits:[]};
+/* les temps des retouches sont en secondes de timeline : fx.t0 garde l'heure absolue de l'origine (S.base) au moment où ils
+   ont été écrits. Si l'origine change (un fichier plus ancien est ajouté, fiche reprise sur d'autres fichiers), ils sont
+   recalés une fois : un flou ne doit jamais glisser dans le temps. */
+function fxNorm(f){
+  if(f.t0 == null){ f.t0 = S.base; return; }
+  const d = f.t0 - S.base; if(Math.abs(d) < 0.0005) return;
+  const sh = k => { k.t = Math.round((k.t + d)*1000)/1000; };
+  (f.flous || []).forEach(z => { (z.keys || []).forEach(sh); });
+  (f.formes || []).forEach(o => { (o.keys || []).forEach(sh); if(o.a != null) o.a += d; if(o.z != null) o.z += d; });
+  (f.vits || []).forEach(sh);
+  f.t0 = S.base;
+}
+function fxGet(m){ const f = m && m.fx; if(!f || typeof f !== "object") return FX_NONE; fxNorm(f); return {flous:f.flous || [], formes:f.formes || [], vits:f.vits || []}; }
+function fxMake(m){
+  if(!m.fx || typeof m.fx !== "object") m.fx = {};
+  ["flous","formes","vits"].forEach(k => { if(!Array.isArray(m.fx[k])) m.fx[k] = []; });
+  fxNorm(m.fx);
+  return m.fx;
+}
+function fxFlous(m, lens){ return fxGet(m).flous.filter(z => !z.cam || z.cam === lens); }
+function fxFormes(m, lens){ return fxGet(m).formes.filter(f => !f.cam || f.cam === lens); }
+/* plage du passage en secondes de timeline ; un repère vaut 3 s avant et après l'instant */
+function fxSpan(m){
+  const a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base, d = m.to != null ? 0 : 3;
+  return {a:Math.max(0, a - d), z:Math.min(S.dur, z + d)};
+}
+/* vitesse à l'instant t : celle du dernier changement posé avant t ; un changement posé au début du passage vaut aussi
+   pour la marge qui le précède */
+function fxVitAt(m, t){
+  const v = fxGet(m).vits; if(!v.length) return 1;
+  if(t < v[0].t) return v[0].t <= fxSpan(m).a + 0.3 ? v[0].v : 1;
+  let r = 1;
+  for(let i=0; i<v.length && v[i].t <= t + 1e-6; i++) r = v[i].v;
+  return r;
+}
+function fxVitSet(m, t, val){
+  const fx = fxMake(m), a = fxSpan(m).a;
+  t = t <= a + 0.3 ? a : Math.round(t*100)/100;
+  const all = fx.vits.filter(p => Math.abs(p.t - t) >= 0.3).concat([{t:t, v:val}]).sort((x, y) => x.t - y.t), out = [];
+  let prev = 1;
+  all.forEach(p => { if(p.v !== prev){ out.push(p); prev = p.v; } });       // un changement vers la vitesse déjà en cours ne change rien
+  fx.vits = out;
+}
+function fxVitLbl(v){ return v === 1 ? "Normale" : `${v < 1 ? "Ralenti" : "Accéléré"} x${String(v).replace(".", ",")}`; }
+/* découpe les morceaux d'un passage aux changements de vitesse ; chaque morceau reçoit sa vitesse (mult : accéléré du réel) */
+function fxSplit(m, pcs, mult){
+  const cuts = fxGet(m).vits.map(p => p.t), out = [];
+  pcs.forEach(p => {
+    const a = p.c.s + p.from, z = p.c.s + p.to, ts = [a].concat(cuts.filter(t => t > a + 0.1 && t < z - 0.1), [z]);
+    for(let i=0; i<ts.length - 1; i++) out.push({c:p.c, from:ts[i] - p.c.s, to:ts[i+1] - p.c.s, vit:(mult || 1)*(m ? fxVitAt(m, ts[i] + 0.01) : 1)});
+  });
+  return out;
+}
+/* durée à l'écran de la plage a..z du passage, vitesses comprises */
+function fxOutDur(m, a, z, mult){
+  const ts = [a].concat(fxGet(m).vits.map(p => p.t).filter(t => t > a && t < z), [z]);
+  let d = 0;
+  for(let i=0; i<ts.length - 1; i++) d += (ts[i+1] - ts[i])/((mult || 1)*(m ? fxVitAt(m, ts[i] + 0.01) : 1));
+  return d;
+}
+function fxSummary(m){
+  const f = fxGet(m), out = [], nfl = f.formes.filter(x => x.kind === "fleche").length, nce = f.formes.length - nfl;
+  if(f.flous.length) out.push(`${f.flous.length} flou${f.flous.length > 1 ? "s" : ""}`);
+  if(nfl) out.push(`${nfl} flèche${nfl > 1 ? "s" : ""}`);
+  if(nce) out.push(`${nce} cercle${nce > 1 ? "s" : ""}`);
+  if(f.vits.length) out.push("vitesse modifiée");
+  return out.join(", ");
+}
+function fxCount(m){ const f = fxGet(m); return f.flous.length + f.formes.length + (f.vits.length ? 1 : 0); }
+
+/* ----- flèche et cercle « au crayon » (comme dans esam-picture) : tracé tremblé, toujours le même pour une forme donnée ----- */
+function fxSeed(s){ s = String(s); let h = 2166136261; for(let i=0; i<s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function fxRng(seed){ let a = seed || 1; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0)/4294967296; }; }
+function fxPencil(ctx, pts, color, width, seed){
+  const rnd = fxRng(seed), a0 = ctx.globalAlpha, dark = String(color).toUpperCase() === "#171618";
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  // liseré sombre (clair sous un trait noir) : le tracé reste lisible sur la neige comme sur la forêt
+  ctx.globalAlpha = a0*0.5; ctx.strokeStyle = dark ? "#ffffff" : "#171618"; ctx.lineWidth = width*1.8;
+  ctx.beginPath(); pts.forEach((q, i) => { if(i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.stroke();
+  ctx.strokeStyle = color;
+  for(let pass=0; pass<2; pass++){
+    ctx.globalAlpha = a0*(pass ? 0.55 : 0.95); ctx.lineWidth = width*(pass ? 0.7 : 1);
+    ctx.beginPath();
+    pts.forEach((q, i) => { const j = width*0.35, x = q[0] + (rnd() - 0.5)*j + (pass ? width*0.3 : 0), y = q[1] + (rnd() - 0.5)*j + (pass ? width*0.25 : 0); if(i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+    ctx.stroke();
+  }
+  ctx.globalAlpha = a0;
+}
+/* boîte d'une forme autour de son point d'ancrage (la pointe de la flèche vise ce point, le cercle l'entoure), rotation
+   comprise : {ox, oy : centre de la boîte par rapport à l'ancrage, ex, ey : demi-côtés} ; u = pixels par unité (image de 1080 de haut) */
+function fxShapeBox(f, u){
+  const a = (f.rot || 0)*Math.PI/180, w = 10*u;
+  let cx = 0, hw, hh;
+  if(f.kind === "fleche"){ hw = 170*u + w*2; hh = 88*u + w*2; cx = -(34 + 170)*u; }
+  else { hh = 150*u*1.13 + w*2; hw = 150*u*(f.ar || 1.3)*1.13 + w*2; }
+  return {ox:cx*Math.cos(a), oy:cx*Math.sin(a), ex:Math.abs(hw*Math.cos(a)) + Math.abs(hh*Math.sin(a)), ey:Math.abs(hw*Math.sin(a)) + Math.abs(hh*Math.cos(a))};
+}
+function drawFxShape(ctx, f, x, y, u){
+  const seed = fxSeed(f.id), w = 10*u, col = f.c || "#F9DD10";
+  ctx.save(); ctx.translate(x, y); ctx.rotate((f.rot || 0)*Math.PI/180);
+  if(f.kind === "fleche"){
+    // tige légèrement courbe ; la pointe s'arrête un peu avant le point visé pour ne pas le couvrir
+    const L = 340*u, tip = -34*u, bend = (fxRng(seed + 7)() - 0.5)*50*u, pts = [], n = 24, hl = 105*u, ah = 0.58;
+    for(let i=0; i<=n; i++){ const t = i/n; pts.push([tip - L + t*L, bend*Math.sin(t*Math.PI)]); }
+    fxPencil(ctx, pts, col, w, seed);
+    fxPencil(ctx, [[tip - hl*Math.cos(ah), -hl*Math.sin(ah)], [tip, 0], [tip - hl*Math.cos(ah)*0.9, hl*Math.sin(ah)*0.9]], col, w*1.05, seed + 1);
+  } else {
+    // la boucle s'ouvre un peu, comme tracée à la main
+    const ry = 150*u, rx = ry*(f.ar || 1.3), rnd = fxRng(seed + 3), pts = [], n = 64, start = rnd()*Math.PI*2;
+    for(let i=0; i<=n; i++){ const t = i/n, a = start + t*Math.PI*2*1.12, g = 1 + (rnd() - 0.5)*0.06 + t*0.05; pts.push([Math.cos(a)*rx*g, Math.sin(a)*ry*g]); }
+    fxPencil(ctx, pts, col, w, seed);
+  }
+  ctx.restore();
+}
+function fxVisible(f, t){ return (f.a == null || t >= f.a - 0.001) && (f.z == null || t <= f.z + 0.001); }
+/* retouches du passage m dessinées sur un canevas à l'instant t (timeline) ; g = {x0, y0, k, sw, sh} : place et échelle
+   de l'image source (sw x sh) dans le canevas. Les flous d'abord, les formes par-dessus. */
+function fxApply(ctx, m, lens, t, g){
+  if(!m || !m.fx) return;
+  fxFlous(m, lens).forEach(z => { const r = rZone(z, t, g.sw, g.sh); softBlur(ctx, g.x0 + r.x*g.k, g.y0 + r.y*g.k, r.w*g.k, r.h*g.k, z.forme, z.mode); });
+  fxFormes(m, lens).forEach(f => {
+    if(fxVisible(f, t)) drawFxShape(ctx, f, g.x0 + rKeyAt(f.keys, t, "x", 0.5)*g.sw*g.k, g.y0 + rKeyAt(f.keys, t, "y", 0.5)*g.sh*g.k, g.sh*g.k/1080*(f.s || 1));
+  });
+}
+/* ----- description des retouches d'un morceau pour le PC ----- */
+/* points de suivi utiles au morceau a..z, en secondes depuis son début */
+function fxRel(keys, a, z, fields){
+  const k = keys || [];
+  let i0 = 0, i1 = k.length - 1;
+  for(let i=0; i<k.length; i++){ if(k[i].t <= a) i0 = i; }
+  for(let i=k.length - 1; i>=0; i--){ if(k[i].t >= z) i1 = i; }
+  return k.slice(i0, i1 + 1).map(q => { const o = {t:Math.round((q.t - a)*1000)/1000}; fields.forEach(n => { o[n] = q[n]; }); return o; });
+}
+/* dessin transparent d'une forme, fait pour une image source de « ref » pixels de haut ; ax, ay : place de l'ancrage dans le dessin */
+function fxSprite(f){
+  let ref = FX_REF, u, b, pad, w, h;
+  for(;;){
+    u = ref/1080*(f.s || 1); b = fxShapeBox(f, u); pad = Math.ceil(14*u);
+    w = Math.ceil(2*b.ex) + 2*pad; h = Math.ceil(2*b.ey) + 2*pad;
+    if(Math.max(w, h) <= 3000 || ref <= 540) break;
+    ref /= 2;
+  }
+  const cv = rCanvas(w, h), ax = b.ex + pad - b.ox, ay = b.ey + pad - b.oy;
+  drawFxShape(cv.getContext("2d"), f, ax, ay, u);
+  return {image:cv.toDataURL("image/png"), ax:Math.round(ax*10)/10, ay:Math.round(ay*10)/10, ref:ref};
+}
+/* retouches du morceau p (flous et formes de la caméra lens) ; sprites reçoit les dessins de formes, une fois chacun */
+function fxPayload(m, lens, p, sprites){
+  const a = p.c.s + p.from, z = p.c.s + p.to, o = {};
+  if(!m || !m.fx) return o;
+  const fl = fxFlous(m, lens), fo = fxFormes(m, lens).filter(f => (f.a == null || f.a < z) && (f.z == null || f.z > a));
+  if(fl.length) o.flous = fl.map(q => ({s:q.s || 0.2, ar:q.ar || 1, forme:q.forme || "ellipse", mode:q.mode || "doux", cles:fxRel(q.keys, a, z, ["x","y"])}));
+  if(fo.length) o.formes = fo.map(f => {
+    const sp = sprites[f.id] || (sprites[f.id] = fxSprite(f));
+    return {image:f.id, ref:sp.ref, ax:sp.ax, ay:sp.ay, cles:fxRel(f.keys, a, z, ["x","y"]),
+      debut:f.a != null ? Math.max(0, Math.round((f.a - a)*1000)/1000) : 0, fin:f.z != null ? Math.round((f.z - a)*1000)/1000 : null};
+  });
+  return o;
+}
+function fxSpritesOut(sprites){ const o = {}; Object.keys(sprites).forEach(k => { o[k] = sprites[k].image; }); return o; }
+
 /* ---------- compilation ----------
    buildPlan() : passages retenus (CMP.off), marge CMP.win, caméra effCam(). runCompile() : rendu navigateur par WebCodecs
    (cartons drawIntro/drawCard, images drawFrame) écrit par morceaux dans l'OPFS ou des Blob (jamais un seul ArrayBuffer). */
-let CMP = {off:{}, win:0, clock:true, fmt:"h", running:false, cancel:false, blob:null, ext:"webm", url:null, plan:null};
+let CMP = {off:{}, win:0, clock:true, fmt:"h", hab:null, sep:false, running:false, cancel:false, blob:null, outs:null, ext:"webm", url:null, plan:null};
+/* habillage : cartons, heure incrustée et logo. Choix de l'utilisateur (CMP.hab), sinon d'office : oui pour des rushs,
+   non quand la source est une vidéo déjà montée par l'outil (extraits bruts) */
+function cmpHab(){ return CMP.hab != null ? CMP.hab : !prodSource(); }
+function cmpTitle(hab){ return hab ? "Vidéo compilée" : "Extraits"; }
 function trackIdx(lens){ return S.tracks.findIndex(t => t.lens === lens); }
 function planFor(m){
   let a, z;
@@ -2767,19 +3019,20 @@ function planFor(m){
     const pcs = piecesOf(tr);
     if(pcs.length){
       const s0 = pcs[0].c.s + pcs[0].from, s1 = pcs[pcs.length-1].c.s + pcs[pcs.length-1].to;
-      return {m:m, tr:tr, pieces:pcs, absA:S.base+s0, absZ:S.base+s1,
-        len:pcs.reduce((t, p) => t + p.to - p.from, 0)};
+      const cut = fxSplit(m, pcs, 1);                     // un morceau par fichier et par vitesse
+      return {m:m, tr:tr, pieces:cut, absA:S.base+s0, absZ:S.base+s1,
+        len:cut.reduce((t, p) => t + (p.to - p.from)/p.vit, 0)};
     }
   }
   return null;
 }
 function cardSec(it){ return 3 + Math.min(3, ((it.m.note||"").length)/40); }
 function buildPlan(){
-  const items = [];
+  const items = [], hab = cmpHab();
   let skipped = 0;
   sorted().forEach(m => { if(CMP.off[m.id]) return; const it = planFor(m); if(it) items.push(it); else skipped++; });
-  const total = 3 + items.reduce((t, it) => t + cardSec(it) + it.len, 0);
-  return {items:items, skipped:skipped, total:total};
+  const total = hab ? 3 + items.reduce((t, it) => t + cardSec(it) + it.len, 0) : items.reduce((t, it) => t + it.len, 0);
+  return {items:items, skipped:skipped, total:total, hab:hab, sep:!hab && CMP.sep && items.length > 1};
 }
 /* sensibilité d'un marqueur en clair, pour les rappels avant diffusion : « Visage identifiable, animal blessé » */
 function sensTxt(m){ return m && isSens(m) ? m.sens.map((x, i) => i ? x.toLowerCase() : x).join(", ") : ""; }
@@ -2791,25 +3044,31 @@ function sensWarn(el, lines, end){
   el.innerHTML = t ? `<b>À vérifier avant de publier</b>${esc(t.charAt(0).toUpperCase() + t.slice(1))}.${end ? ` ${esc(end)}` : ""}` : "";
 }
 function renderCmpSetup(){
-  const list = sorted(), sens = [];
+  const list = sorted(), sens = [], hab = cmpHab();
+  jobTitle(cmpTitle(hab));
   $("cmpList").innerHTML = list.map((m, i) => {
-    const it = planFor(m);
-    if(it && !CMP.off[m.id] && isSens(m)) sens.push(`passage ${i+1} sensible (${sensTxt(m).toLowerCase()})`);
-    return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}` : '<span class="miss">[aucune image]</span>'}</small>${sensTag(sensTxt(m))}</span></label></li>`;
+    const it = planFor(m), fxs = it ? fxSummary(m) : "", nf = it ? fxFlous(m, it.tr.lens).length : 0, sn = sensTxt(m);
+    if(it && !CMP.off[m.id] && sn && !nf) sens.push(`passage ${i+1} sensible (${sn.toLowerCase()}) sans flou`);
+    return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}${fxs ? `, ${esc(fxs)}` : ""}` : '<span class="miss">[aucune image]</span>'}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? "s" : ""}`) : ""}</span></label>${it ? `<button type="button" class="btn small ghost" data-fx="${m.id}" aria-label="Retoucher le passage ${i+1}">Retoucher</button>` : ""}</li>`;
   }).join("") || '<li><label>Aucun marqueur.</label></li>';
-  sensWarn($("cmpSensW"), sens, "La vidéo compilée ne floute rien.");
+  sensWarn($("cmpSensW"), sens, "« Retoucher » pose un flou qui suit le visage ou la plaque.");
+  $("cmpLead").textContent = hab ? "Les passages cochés sont enchaînés dans l'ordre chronologique, chacun précédé d'un carton sur fond noir (nom, heure de début et de fin, commentaire), à la résolution d'origine des rushs."
+    : "Les passages cochés sortent bruts, à la résolution d'origine : ni carton, ni heure incrustée, ni logo. Seules leurs retouches (flous, flèches, cercles, vitesse) sont appliquées.";
+  chipRow($("cmpHab"), ["Cartons, heure et logo","Aucun : extraits bruts"], (t, i) => hab === !i);
+  chipRow($("cmpSep"), ["Une seule vidéo","Un fichier par passage"], (t, i) => !!CMP.sep === !!i);
+  $("cmpSepBox").hidden = hab;
   const od = outDims(buildPlan().items);
   $("cmpResInfo").textContent = od ? `${od.W} x ${od.H}${CMP.fmt === "v" ? " (hauteur d'origine, image recadrée au centre)" : " (celle des rushs d'origine)"}` : "-";
   chipRow($("cmpWin"), ["Aucune","5 s","10 s"], (t, i) => CMP.win === [0,5,10][i]);
   chipRow($("cmpClock"), ["Oui","Non"], (t, i) => CMP.clock === !i);
   chipRow($("cmpFmt"), ["Horizontal 16:9","Vertical 9:16 (réseaux sociaux)"], (t, i) => CMP.fmt === (i ? "v" : "h"));
-  const pl = buildPlan();
-  $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), vidéo d'environ ${len(pl.total)}. Le calcul se fait en arrière-plan, sa durée dépend de la puissance de l'ordinateur.` : "Aucun passage à compiler.";
+  const pl = buildPlan(), what = pl.sep ? `${pl.items.length} fichiers, ${len(pl.total)} au total` : `vidéo d'environ ${len(pl.total)}`;
+  $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait en arrière-plan, sa durée dépend de la puissance de l'ordinateur.` : "Aucun passage à compiler.";
   $("cmpGo").disabled = !pl.items.length;
-  $("cmpClock").parentNode.hidden = BACKEND.pc;        // le PC n'incruste pas l'heure (elle figure sur les cartons)
+  $("cmpClock").parentNode.hidden = BACKEND.pc || !hab;        // le PC n'incruste pas l'heure (elle figure sur les cartons)
   if(BACKEND.pc){
-    $("cmpResInfo").textContent = `Celle des rushs d'origine (jusqu'à la 4K)${CMP.fmt === "v" ? ", image recadrée au centre" : ""}`;
-    $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), vidéo d'environ ${len(pl.total)}. Le calcul se fait sur le PC : vous pourrez fermer l'appli, la vidéo arrivera dans le dossier de l'intervention.` : "Aucun passage à compiler.";
+    $("cmpResInfo").textContent = `Celle des ${prodSource() ? "vidéos" : "rushs"} d'origine (jusqu'à la 4K)${CMP.fmt === "v" ? ", image recadrée au centre" : ""}`;
+    $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait sur le PC : vous pourrez fermer l'appli, ${pl.sep ? "les fichiers arriveront" : "la vidéo arrivera"} dans le dossier de l'intervention.` : "Aucun passage à compiler.";
   }
 }
 function srtTime(x){ x = Math.max(0, x); const ms3 = Math.round(x*1000), h = Math.floor(ms3/3600000), m = Math.floor(ms3%3600000/60000), s = Math.floor(ms3%60000/1000), r = ms3%1000;
@@ -2892,20 +3151,30 @@ $("cmp").addEventListener("cancel", e => { if(CMP.running) e.preventDefault(); }
 $("cmp").addEventListener("close", () => { JOB.onSave = JOB.onBack = null; $("cmpResult").onerror = null; $("cmpResult").removeAttribute("src"); });
 
 /* ----- compilation : réglages, résultat ----- */
-function cmpDoneOpts(){ return {info:CMP.info, url:CMP.url, onSave:saveCompiled, onBack:cmpRestart, title:"Vidéo compilée",
-  files:[{name:cmpName()}].concat(CMP.srt ? [{name:srtName()}] : [])}; }
-function cmpForget(){ if(CMP.url) URL.revokeObjectURL(CMP.url); CMP.url = null; CMP.blob = null; CMP.srt = null; CMP.info = ""; }
+function cmpDoneOpts(){
+  const outs = CMP.outs || [];
+  return {info:CMP.info, url:CMP.url, onSave:saveCompiled, onBack:cmpRestart, title:cmpTitle(CMP.lastHab !== false),
+    saveLabel:outs.length > 1 ? `Enregistrer les ${outs.length} vidéos` : "Enregistrer la vidéo", where:outs.length > 1 ? `${outs.length} fichiers` : "",
+    files:outs.map(o => ({name:o.name})).concat(CMP.srt ? [{name:srtName()}] : [])};
+}
+function cmpForget(){ if(CMP.url) URL.revokeObjectURL(CMP.url); CMP.url = null; CMP.blob = null; CMP.outs = null; CMP.srt = null; CMP.info = ""; }
 function cmpRestart(){ cmpForget(); jobView("Setup"); renderCmpSetup(); }
 $("cmpOpen").onclick = () => {
   if(!S.markers.length){ toast("Ajoutez d'abord des marqueurs."); return; }
   if(!BACKEND.pc && (typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined")){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
-  v.pause(); jobTitle("Vidéo compilée");
+  v.pause();
   if(CMP.blob) jobDone(cmpDoneOpts()); else { jobView("Setup"); renderCmpSetup(); jobOpen(); }
 };
 $("cmpList").addEventListener("change", e => { const c = e.target; if(c.dataset.id){ CMP.off[c.dataset.id] = !c.checked; renderCmpSetup(); renderComp(); } });
+$("cmpList").addEventListener("click", e => {
+  const b = e.target.closest("[data-fx]"); if(!b) return;
+  const m = S.markers.find(x => x.id === b.dataset.fx); if(m) fxOpen(m, null, () => { if($("cmp").open && !$("cmpSetup").hidden) renderCmpSetup(); });
+});
 $("cmpWin").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.win = [0,5,10][+b.dataset.k]; renderCmpSetup(); renderComp(); });
 $("cmpFmt").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.fmt = +b.dataset.k ? "v" : "h"; renderCmpSetup(); });
 $("cmpClock").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.clock = !+b.dataset.k; renderCmpSetup(); });
+$("cmpHab").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.hab = !+b.dataset.k; renderCmpSetup(); renderComp(); });
+$("cmpSep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.sep = !!+b.dataset.k; renderCmpSetup(); });
 $("cmpGo").onclick = () => {
   BACKEND.busy(true);
   BACKEND.compile().then(() => { BACKEND.busy(false); }, err => {
@@ -2982,11 +3251,14 @@ function drawCard(ctx, W, H, it, i, n){
   drawLogo(ctx, W - u*0.09, H - u*0.09, u*0.05);
   ctx.fillStyle = "#A8C8FB";ctx.fillRect(0, H-u*0.012, W, u*0.012);
 }
-function drawFrame(ctx, W, H, frame, it, abs, rot){
+/* image d'un passage : l'image source mise au format, ses retouches, puis l'habillage (heure et logo) s'il est demandé */
+function drawFrame(ctx, W, H, frame, it, abs, rot, hab){
   rot = rot || 0;
   ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
   const vw = rot % 180 ? frame.displayHeight : frame.displayWidth, vh = rot % 180 ? frame.displayWidth : frame.displayHeight, k = CMP.fmt === "v" ? Math.max(W/vw, H/vh) : Math.min(W/vw, H/vh), dw = vw*k, dh = vh*k, u = unitOf(W, H);
   drawRot(ctx, frame, rot, (W-dw)/2, (H-dh)/2, dw, dh);
+  fxApply(ctx, it.m, it.tr.lens, abs - S.base, {x0:(W-dw)/2, y0:(H-dh)/2, k:k, sw:vw, sh:vh});
+  if(hab === false) return;
   if(CMP.clock){
     const txt = clockAbs(abs);
     ctx.font = `600 ${u*0.03}px ${MONT}`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
@@ -3078,7 +3350,7 @@ function blobTarget(){
 }
 async function runCompile(){
   const pl = buildPlan();if(!pl.items.length) return;
-  const od = outDims(pl.items), W = od.W, H = od.H;
+  const od = outDims(pl.items), W = od.W, H = od.H, hab = pl.hab, sep = pl.sep;
   let br = 0;
   pl.items.forEach(it => { it.pieces.forEach(p => { br = Math.max(br, p.c.media.bitrate || 0); }); });
   br = clamp(Math.round(br || W*H*30*0.12), 6000000, 100000000);
@@ -3090,14 +3362,25 @@ async function runCompile(){
   const octx = ocv.getContext("2d");
   const pcv = $("cmpCanvas");pcv.width = 640;pcv.height = Math.round(640*H/W);const pctx = pcv.getContext("2d");
   pcv.style.aspectRatio = `${W} / ${H}`;pcv.style.width = W < H ? "auto" : "100%";pcv.style.height = W < H ? "48vh" : "auto";pcv.style.margin = "0 auto";
-  const tgt = await makeTarget();CMP.store = tgt.kind;
-  const muxer = new Mp4Muxer.Muxer({target:tgt.target, video:{codec:enc0.mux, width:W, height:H}, fastStart:false, firstTimestampBehavior:"offset"});
-  let encErr = null;
-  const enc = new VideoEncoder({output:function(chunk, meta){ muxer.addVideoChunk(chunk, meta); }, error:function(e){ encErr = e; }});
-  enc.configure(enc0.cfg);
+  CMP.lastHab = hab; CMP.lastFmt = CMP.fmt;
+  // une sortie = un fichier : toute la vidéo, ou un fichier par passage (extraits séparés)
+  let encErr = null, out = null;
+  const outs = [];
+  async function openOut(){
+    const tgt = sep ? blobTarget() : await makeTarget(); CMP.store = tgt.kind;
+    const muxer = new Mp4Muxer.Muxer({target:tgt.target, video:{codec:enc0.mux, width:W, height:H}, fastStart:false, firstTimestampBehavior:"offset"});
+    const enc = new VideoEncoder({output:function(chunk, meta){ muxer.addVideoChunk(chunk, meta); }, error:function(e){ encErr = e; }});
+    enc.configure(enc0.cfg);
+    out = {tgt:tgt, muxer:muxer, enc:enc, t:0, sinceKey:-1};
+  }
+  async function closeOut(name){
+    await out.enc.flush(); out.enc.close(); out.muxer.finalize();
+    const file = await out.tgt.finish();
+    outs.push({name:name, blob:file}); out = null;
+  }
+  async function abortOut(){ if(!out) return; try { out.enc.close(); } catch(e){} await out.tgt.abort(); out = null; }
+  jobTitle(cmpTitle(hab));
   CMP.running = true;CMP.cancel = false;$("cmpRun").querySelector(".warn").textContent = LOCAL_RUN_MSG;jobView("Run");
-  let outT = 0;
-  let sinceKey = -1;
   let doneSec = 0;
   const t0 = performance.now();
   let lastUi = 0;
@@ -3108,13 +3391,13 @@ async function runCompile(){
     jobProgress(frac, `${lbl} (${Math.round(frac*100)} %${sp > 0.05 ? `, reste environ ${len((pl.total-doneSec)/sp)}` : ""})`);
     pctx.drawImage(ocv, 0, 0, pcv.width, pcv.height);
   }
-  function encodeFrame(fr){ const key = sinceKey < 0 || sinceKey >= 60; enc.encode(fr, {keyFrame:key}); sinceKey = key ? 0 : sinceKey + 1; }
+  function encodeFrame(fr){ const key = out.sinceKey < 0 || out.sinceKey >= 60; out.enc.encode(fr, {keyFrame:key}); out.sinceKey = key ? 0 : out.sinceKey + 1; }
   async function still(drawFn, sec){
     drawFn(); const n = Math.round(sec*30);
     for(let k=0;k<n && !CMP.cancel && !encErr;k++){
-      await waitQ(enc, 4);
-      const fr = new VideoFrame(ocv, {timestamp:Math.round(outT), duration:33333});
-      encodeFrame(fr); fr.close(); outT += 1e6/30; doneSec += 1/30; ui();
+      await waitQ(out.enc, 4);
+      const fr = new VideoFrame(ocv, {timestamp:Math.round(out.t), duration:33333});
+      encodeFrame(fr); fr.close(); out.t += 1e6/30; doneSec += 1/30; ui();
     }
   }
   const spans = [];
@@ -3124,17 +3407,21 @@ async function runCompile(){
     const sm = md.samples;
     const fromU = p.from*1e6;
     const toU = p.to*1e6;
+    const vit = p.vit || 1;
     let i0 = 0;
     let err = null;
+    let kept = 0;
     for(let i=0;i<sm.length;i++){ if(sm[i].cts/ts*1e6 > fromU) break; if(sm[i].key) i0 = i; }
     const dec = new VideoDecoder({
       output: function(f){
         const tU = f.timestamp;
         if(CMP.cancel || encErr || tU < fromU - 2000 || tU >= toU){ f.close(); return; }
-        drawFrame(octx, W, H, f, it, S.base + p.c.s + tU/1e6, md.rot);
-        const d = f.duration || 33333; f.close();
-        const nf = new VideoFrame(ocv, {timestamp:Math.round(outT), duration:d});
-        encodeFrame(nf); nf.close(); outT += d; doneSec += d/1e6; ui();
+        // accéléré : une image par trentième de seconde de sortie, les autres sont sautées ; ralenti : chaque image dure plus longtemps
+        if(vit > 1 && (tU - fromU)/vit < kept*33333 - 1000){ f.close(); return; }
+        drawFrame(octx, W, H, f, it, S.base + p.c.s + tU/1e6, md.rot, hab);
+        const d = vit > 1 ? 33333 : Math.round((f.duration || 33333)/vit); f.close();
+        const nf = new VideoFrame(ocv, {timestamp:Math.round(out.t), duration:d});
+        encodeFrame(nf); nf.close(); out.t += d; doneSec += d/1e6; kept++; ui();
       },
       error: function(e){ err = e; }
     });
@@ -3142,7 +3429,7 @@ async function runCompile(){
     for(let j=i0;j<sm.length && !CMP.cancel && !err && !encErr;j++){
       const x = sm[j];
       if(x.dts/ts*1e6 > toU + 1e6) break;
-      await waitQ(dec, 4); await waitQ(enc, 4);
+      await waitQ(dec, 4); await waitQ(out.enc, 4);
       const data = await p.c.reader.read(x, 8*1024*1024);
       dec.decode(new EncodedVideoChunk({type: x.key ? "key" : "delta", timestamp:Math.round(x.cts/ts*1e6), duration:Math.round(x.dur/ts*1e6), data:data}));
     }
@@ -3151,46 +3438,51 @@ async function runCompile(){
     if(err) throw new Error(`lecture impossible de ${p.c.name}`);
   }
   try {
-    lbl = "Ouverture";
-    await still(() => { drawIntro(octx, W, H, pl); }, 3);
+    if(!sep) await openOut();
+    if(hab){ lbl = "Ouverture"; await still(() => { drawIntro(octx, W, H, pl); }, 3); }
     for(let i=0;i<pl.items.length && !CMP.cancel;i++){
       const it = pl.items[i]; lbl = `Passage ${i+1} sur ${pl.items.length} : ${label(it.m)}`;
-      await still(() => { drawCard(octx, W, H, it, i, pl.items.length); }, cardSec(it));
-      const spA = outT/1e6;
+      if(sep) await openOut();
+      if(hab) await still(() => { drawCard(octx, W, H, it, i, pl.items.length); }, cardSec(it));
+      const spA = out.t/1e6;
       for(let j=0;j<it.pieces.length && !CMP.cancel;j++) await piece(it, it.pieces[j]);
-      spans.push({it:it, i:i, a:spA, b:outT/1e6});
+      spans.push({it:it, i:i, a:spA, b:out.t/1e6});
       if(encErr) throw encErr;
+      // même nom que le PC : <base>_<numéro>_<nom du passage>
+      if(sep && !CMP.cancel){ const sl = slug(label(it.m)); await closeOut(`${cmpName().replace(/\.mp4$/, "")}_${pad(i+1)}${sl ? `_${sl}` : ""}.mp4`); }
     }
-    lbl = "Finalisation";
-    await still(() => { octx.fillStyle = "#000"; octx.fillRect(0,0,W,H); }, 0.5);
-    ui(true);
-    if(CMP.cancel){ try { enc.close(); } catch(e){} await tgt.abort(); CMP.running = false; CMP.cancel = false; jobView("Setup"); renderCmpSetup(); toast("Calcul annulé."); return; }
-    await enc.flush(); enc.close(); muxer.finalize();
-    const file = await tgt.finish();
+    if(CMP.cancel){ await abortOut(); CMP.running = false; CMP.cancel = false; jobView("Setup"); renderCmpSetup(); toast("Calcul annulé."); return; }
+    if(!sep){
+      lbl = "Finalisation";
+      if(hab) await still(() => { octx.fillStyle = "#000"; octx.fillRect(0,0,W,H); }, 0.5);
+      ui(true);
+      await closeOut(cmpName());
+    }
+    if(encErr) throw encErr;
     CMP.running = false;
-    CMP.blob = file; CMP.ext = "mp4"; CMP.lastFmt = CMP.fmt; CMP.srt = buildSrt(spans);
+    CMP.outs = outs; CMP.blob = outs[0].blob; CMP.ext = "mp4"; CMP.srt = sep ? null : buildSrt(spans);
     if(CMP.url) URL.revokeObjectURL(CMP.url);
-    CMP.url = URL.createObjectURL(file);
-    CMP.info = `Vidéo de ${len(pl.total)}, ${W} x ${H}, ${enc0.label}, ${(file.size/1048576).toFixed(0)} Mo, calculée ${enDuree((performance.now()-t0)/1000)}.${pl.skipped ? ` ${pl.skipped} marqueur(s) sans image ignoré(s).` : ""}${CMP.srt ? ` ${CMP.srt.count} commentaire(s) interne(s) dans un fichier de sous-titres à part.` : ""}`;
+    CMP.url = URL.createObjectURL(outs[0].blob);
+    const size = outs.reduce((t, o) => t + o.blob.size, 0);
+    CMP.info = `${sep ? `${outs.length} extraits, ${len(pl.total)} au total` : `${hab ? "Vidéo" : "Extraits"} de ${len(pl.total)}`}, ${W} x ${H}, ${enc0.label}, ${(size/1048576).toFixed(0)} Mo, ${sep ? "calculés" : hab ? "calculée" : "calculés"} ${enDuree((performance.now()-t0)/1000)}.${pl.skipped ? ` ${pl.skipped} marqueur(s) sans image ignoré(s).` : ""}${CMP.srt ? ` ${CMP.srt.count} commentaire(s) interne(s) dans un fichier de sous-titres à part.` : ""}${sep ? " L'aperçu montre le premier extrait." : ""}`;
     jobDone(cmpDoneOpts());
     if(S.dirHandle){ saveToDir().catch(e => { toast(`Enregistrement dans le dossier impossible : ${e.message}`); }); }
-    toast("Vidéo compilée prête.");
+    toast(hab ? "Vidéo compilée prête." : "Extraits prêts.");
   } catch(e){
-    try { enc.close(); } catch(x){}
-    await tgt.abort();
+    await abortOut();
     throw e;
   }
 }
-function cmpName(){ return outName("Compilation", `${CMP.lastFmt === "v" ? "_vertical" : ""}.mp4`); }
+function cmpName(){ return outName(CMP.lastHab === false ? "Extraits" : "Compilation", `${CMP.lastFmt === "v" ? "_vertical" : ""}.mp4`); }
 function srtName(){ return `${cmpName().replace(/\.mp4$/, "")}.commentaires-ESAM.srt`; }
 async function saveToDir(){
-  const dir = S.dirHandle, name = cmpName();
+  const dir = S.dirHandle, outs = CMP.outs || [];
   if(dir.requestPermission && (await dir.queryPermission({mode:"readwrite"})) !== "granted" && (await dir.requestPermission({mode:"readwrite"})) !== "granted") throw new Error("autorisation refusée");
-  const w = await (await dir.getFileHandle(name, {create:true})).createWritable(); await w.write(CMP.blob); await w.close();
+  for(let i=0;i<outs.length;i++){ const w = await (await dir.getFileHandle(outs[i].name, {create:true})).createWritable(); await w.write(outs[i].blob); await w.close(); }
   if(CMP.srt){ const w2 = await (await dir.getFileHandle(srtName(), {create:true})).createWritable(); await w2.write(CMP.srt.text); await w2.close(); }
-  CMP.info += ` Enregistrée dans le dossier des rushs${CMP.srt ? ", avec ses sous-titres" : ""}.`;
+  CMP.info += ` ${outs.length > 1 ? "Enregistrés" : "Enregistrée"} dans le dossier des rushs${CMP.srt ? ", avec ses sous-titres" : ""}.`;
   $("cmpInfo").textContent = CMP.info;
-  toast("Vidéo enregistrée dans le dossier des rushs.");
+  toast(outs.length > 1 ? `${outs.length} vidéos enregistrées dans le dossier des rushs.` : "Vidéo enregistrée dans le dossier des rushs.");
 }
 async function saveFile(name, data){
   if(dl){
@@ -3202,9 +3494,11 @@ async function saveFile(name, data){
   return true;
 }
 async function saveCompiled(){
-  if(!CMP.blob) return;
+  const outs = CMP.outs || [];
+  if(!outs.length) return;
   if(S.dirHandle){ try { await saveToDir(); return; } catch(e){ toast("Dossier inaccessible, téléchargement à la place."); } }
-  if(await saveFile(cmpName(), CMP.blob)) toast("Vidéo enregistrée.");
+  for(let i=0;i<outs.length;i++){ if(!(await saveFile(outs[i].name, outs[i].blob))) return; }
+  toast(outs.length > 1 ? "Vidéos enregistrées." : "Vidéo enregistrée.");
   if(CMP.srt){ setTimeout(() => { saveFile(srtName(), new Blob([CMP.srt.text], {type:"text/plain"})); }, 800); }
 }
 
@@ -3213,6 +3507,8 @@ async function saveCompiled(){
    (proxies, planches de vignettes, etat.json). pollJob() suit un calcul. Les routes sont décrites dans docs/ARCHITECTURE.md. */
 let SRV = null;          // réponse de api/status quand le programme du PC répond, sinon null
 let SRVD = null;         // nom du dossier de l'intervention ouverte sur le PC, sinon null
+let SRVS = "";           // source ouverte : "" pour les rushs, "compil" pour les vidéos compilées de l'intervention (extraits)
+function srcQ(){ return SRVS ? `&src=${SRVS}` : ""; }
 let listT = 0, saveT = 0, jobT = 0;
 function pcOpen(){ return !!SRVD; }
 async function api(path, body){
@@ -3273,12 +3569,15 @@ function renderIvList(){
     let acts = "";
     if(!run && todo > 0) acts += `<button class="btn small${iv.proxies ? ' ghost' : ' primary'}" data-prep="${esc(iv.nom)}">Préparer</button>`;
     if(iv.proxies > 0) acts += `<button class="btn small primary" data-open="${esc(iv.nom)}">Ouvrir</button>`;
+    // vidéos compilées de l'intervention : on peut les rouvrir pour en extraire des morceaux, sans repasser par les rushs
+    const cready = iv.compil > 0 && iv.compil_proxies >= iv.compil;
+    const cx = iv.compil > 0 && !(run && job.source === "compil") ? `<div class="ivx"><button class="btn small ghost" data-openc="${esc(iv.nom)}" data-ready="${cready ? 1 : 0}">${cready ? "Extraire des morceaux de la vidéo compilée" : "Préparer la vidéo compilée pour en extraire des morceaux"}</button></div>` : "";
     const vline = !vj ? "" : vrun ? `<div class="prog"><div class="bar"><i style="width:${Math.round(vj.avance*100)}%"></i></div><small>Vidéo compilée : ${esc(vj.libelle)} (${Math.round(vj.avance*100)} %)</small></div>`
       : (vj.etat === "erreur" || vj.etat === "interrompu") ? `<div class="prog miss" style="font-size:13px">[Vidéo compilée en échec : ${esc(vj.erreur || "")}]</div>`
-      : vj.etat === "termine" && vj.resultat ? `<div class="prog ok">Dernière vidéo : ${esc(vj.resultat.fichier)}</div>` : "";
+      : vj.etat === "termine" && vj.resultat ? `<div class="prog ok">Dernière vidéo : ${esc(vj.resultat.fichier || `${(vj.resultat.fichiers || []).length} extraits`)}</div>` : "";
     const prog = run ? `<div class="prog"><div class="bar"><i style="width:${Math.round(job.avance*100)}%"></i></div><small>${esc(job.libelle)} (${Math.round(job.avance*100)} %)</small></div>`
       : (job && job.etat === "erreur" ? `<div class="prog miss" style="font-size:13px">[Préparation en erreur : ${esc(job.erreur || "")}]</div>` : "");
-    return `<div class="iv"><div class="nm">${esc(iv.nom)}</div><div class="mt">${esc(meta)}</div><div class="acts">${acts}</div>${prog}${vline}</div>`;
+    return `<div class="iv"><div class="nm">${esc(iv.nom)}</div><div class="mt">${esc(meta)}</div><div class="acts">${acts}</div>${cx}${prog}${vline}</div>`;
   }).join("");
   $("ivList").innerHTML = rows || (q ? `<p class="hint">Aucune intervention ne correspond à « ${esc(fl.value.trim())} ».</p>` : '<p class="hint">Aucun dossier d\'intervention dans le dossier des rushs.</p>');
   return active;
@@ -3288,22 +3587,26 @@ $("ivList").addEventListener("click", e => {
   const pr = e.target.closest("[data-prep]"), op = e.target.closest("[data-open]");
   if(pr){ api("api/proxies", {d:pr.dataset.prep}).then(() => { toast("Préparation lancée sur le PC."); refreshList(); }, err => { toast(`Impossible : ${err.message}`); }); }
   if(op){ openRemote(op.dataset.open).catch(err => { toast(`Ouverture impossible : ${err.message}`); }); }
+  const oc = e.target.closest("[data-openc]");
+  if(oc && oc.dataset.ready === "1"){ openRemote(oc.dataset.openc, "compil").catch(err => { toast(`Ouverture impossible : ${err.message}`); }); }
+  else if(oc){ api("api/proxies", {d:oc.dataset.openc, src:"compil"}).then(() => { toast("Préparation de la vidéo compilée lancée sur le PC."); refreshList(); }, err => { toast(`Impossible : ${err.message}`); }); }
 });
 function clearFlight(){
   v.pause(); v.removeAttribute("src");
   S.clips.forEach(c => { if(!c.remote) URL.revokeObjectURL(c.url); (c.thumbs || []).forEach(t => { try { if(t.bmp) t.bmp.close(); } catch(e){} }); });
   S.clips = []; S.tracks = []; S.markers = []; S.meta = {intervention:"",version:0,log:[]}; S.offsets = {}; S.key = null; S.t = 0; S.cur = null; S.zoom = 1;
   S.verBumped = false; clearTimeout(ficheT); setSave("");
+  CMP.hab = null; CMP.sep = false; CMP.off = {};             // habillage d'office selon la nouvelle source
   if(typeof PH !== "undefined"){ PH.list.forEach(p => { if(p.thumb && p.thumb !== "x") URL.revokeObjectURL(p.thumb); }); PH.list = []; PH.img = {}; PH.ready = {}; PH.baked = {}; }
 }
-async function openRemote(name){
-  const man = await api(`api/manifest?d=${enc(name)}`);
-  if(!man.clips.length){ toast("Cette intervention n'est pas encore préparée : touchez Préparer."); return; }
-  clearFlight(); SRVD = name; clearTimeout(listT);
+async function openRemote(name, src){
+  const man = await api(`api/manifest?d=${enc(name)}${src ? `&src=${src}` : ""}`);
+  if(!man.clips.length){ toast(src ? "La vidéo compilée n'est pas encore préparée." : "Cette intervention n'est pas encore préparée : touchez Préparer."); return; }
+  clearFlight(); SRVD = name; SRVS = src || ""; clearTimeout(listT);
   S.clips = man.clips.map(m => {
     const p = parseName(m.nom);
     return {id:uid(), remote:true, name:m.nom, size:Math.round(m.dur*1000), url:m.proxy, lens:p ? p.lens : "?", auto:!p, w:m.w || 0, h:m.h || 0,
-      start:p ? p.start : (m.cree || null), dur:m.dur, ok:m.dur > 0, media:null, thumbs:[], thumbsDone:true, sheet:m.thumbs};
+      start:PROD_RE.test(m.nom) ? null : p ? p.start : (m.cree || null), dur:m.dur, ok:m.dur > 0, media:null, thumbs:[], thumbsDone:true, sheet:m.thumbs};
   });
   rebuild();
   phAdd((man.photos || []).map(p => ({
@@ -3311,7 +3614,7 @@ async function openRemote(name){
     t:p.heure
   })));
   let st = {};
-  try { st = await api(`api/etat?d=${enc(name)}`); } catch(e){}
+  try { st = await api(`api/etat?d=${enc(name)}${srcQ()}`); } catch(e){}
   if(st && Array.isArray(st.markers)){
     S.markers = st.markers; S.meta = Object.assign({intervention:"",version:0,log:[]}, st.meta || {}); S.offsets = st.offsets || {};
   } else restore();
@@ -3319,8 +3622,10 @@ async function openRemote(name){
   if(!S.meta.intervention) S.meta.intervention = clean(name.replace(/^\d{4}-\d{2}-\d{2}[ _]*/, ""));
   S.verBumped = false;
   showApp(); seek(0, false);
-  setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement automatique");
-  if(S.markers.length) toast(`${nMarq(S.markers.length)} ${S.markers.length > 1 ? "retrouvés" : "retrouvé"} pour cette intervention.`);
+  if(SRVS) setSave("Vidéo compilée ouverte pour en extraire des morceaux : vos marqueurs sont enregistrés sur le PC à chaque modification, à part de ceux des rushs", false, "Enregistrement automatique");
+  else setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement automatique");
+  if(S.markers.length) toast(`${nMarq(S.markers.length)} ${S.markers.length > 1 ? "retrouvés" : "retrouvé"} pour cette ${SRVS ? "vidéo" : "intervention"}.`);
+  else if(SRVS) toast("Marquez les morceaux à garder : ils sortiront bruts, sans carton, sans heure et sans logo.");
   loadSheets();
 }
 function loadImg(url){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => { res(i); }; i.onerror = rej; i.src = url; }); }
@@ -3353,24 +3658,26 @@ function captureRemote(c, local){
 }
 async function runRemote(){
   const pl = buildPlan(); if(!pl.items.length) return;
-  const V = CMP.fmt === "v", W = V ? 1080 : 1920, H = V ? 1920 : 1080;
+  const V = CMP.fmt === "v", W = V ? 1080 : 1920, H = V ? 1920 : 1080, hab = pl.hab;
   try { await Promise.all([document.fonts.load("40px Anton"), document.fonts.load("600 40px Montserrat"), document.fonts.load("400 40px Montserrat"), document.fonts.load("700 40px Montserrat")]); } catch(e){}
   const cv = rCanvas(W, H), ctx = cv.getContext("2d");
-  drawIntro(ctx, W, H, pl); const intro = cv.toDataURL("image/png");
-  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", W, H, "Vidéo compilée");
+  let intro = null, logo = null;
+  if(hab){ drawIntro(ctx, W, H, pl); intro = cv.toDataURL("image/png"); }
+  else { ctx.fillStyle = "#171618"; ctx.fillRect(0, 0, W, H); }
+  const pcv = jobRun(`Le calcul se fait sur le PC. Vous pouvez fermer l'appli : ${pl.sep ? "les fichiers arriveront" : "la vidéo arrivera"} dans le dossier de l'intervention.`, W, H, cmpTitle(hab));
   pcv.getContext("2d").drawImage(cv, 0, 0, pcv.width, pcv.height);
-  const lg = document.createElement("canvas"); lg.width = lg.height = 256; drawLogo(lg.getContext("2d"), 128, 128, 126);
-  const logo = lg.toDataURL("image/png");
+  if(hab){ const lg = document.createElement("canvas"); lg.width = lg.height = 256; drawLogo(lg.getContext("2d"), 128, 128, 126); logo = lg.toDataURL("image/png"); }
+  const sprites = {};
   const items = pl.items.map((it, i) => {
-    drawCard(ctx, W, H, it, i, pl.items.length);
-    return {image:cv.toDataURL("image/png"), duree:cardSec(it), titre:`${i+1}. ${label(it.m)} (${clockAbs(it.absA)})`, nom_passage:label(it.m), commentaire:clean(it.m.comment || ""), morceaux:it.pieces.map(p => ({
-      fichier:p.c.name,
-      debut:p.from,
-      fin:p.to
-    }))};
+    // un morceau par fichier et par vitesse, avec les retouches du passage (flous et formes suivis)
+    const o = {titre:`${i+1}. ${label(it.m)} (${clockAbs(it.absA)})`, nom_passage:label(it.m), commentaire:clean(it.m.comment || ""),
+      morceaux:it.pieces.map(p => Object.assign({fichier:p.c.name, debut:p.from, fin:p.to, vitesse:p.vit}, fxPayload(it.m, it.tr.lens, p, sprites)))};
+    if(hab){ drawCard(ctx, W, H, it, i, pl.items.length); o.image = cv.toDataURL("image/png"); o.duree = cardSec(it); }
+    return o;
   });
-  const name = outName("Compilation", `${V ? "_vertical" : ""}.mp4`);
-  const job = await api("api/video", {d:SRVD, format:CMP.fmt, nom:name, titre:`ESAM - ${clean(S.meta.intervention || SRVD)}`, auteur:getAuteur(), logo:logo, ouverture:{image:intro, duree:3}, passages:items});
+  CMP.lastHab = hab; CMP.lastFmt = CMP.fmt;
+  const job = await api("api/video", {d:SRVD, format:CMP.fmt, nom:cmpName(), titre:`ESAM - ${clean(S.meta.intervention || SRVD)}`, auteur:getAuteur(), habillage:hab, separes:pl.sep,
+    logo:logo, ouverture:intro ? {image:intro, duree:3} : null, sprites:fxSpritesOut(sprites), passages:items});
   CMP.job = job.id; CMP.running = true;
   jobProgress(0, "Envoyé au PC");
   pollJob();
@@ -3390,6 +3697,13 @@ async function pollJob(){
   if(j.etat === "termine"){
     CMP.running = false; CMP.job = null;
     const r = j.resultat || {};
+    if(r.extraits){
+      const fx2 = r.fichiers.map(fileOf);
+      jobDone({onBack:back, url:fx2[0] && fx2[0].href, files:fx2, title:"Extraits", where:`${fx2.length} extraits dans le dossier de l'intervention`,
+        info:`${r.largeur} x ${r.hauteur}, ${len(r.duree)} au total, ${r.taille_mo} Mo, calculés ${enDuree(el)}. Ils apparaîtront dans le Drive dès la fin de la synchronisation. L'aperçu montre le premier extrait.`});
+      toast("Extraits prêts.");
+      return;
+    }
     if(r.fichiers){
       const many = r.fichiers.length > 1, fs = r.fichiers.map(fileOf), sw = rSensLines();
       jobDone({onBack:back, url:fs[0] && fs[0].href, files:fs, where:many ? `${r.fichiers.length} vidéos dans le dossier de l'intervention` : "Dans le dossier de l'intervention",
@@ -3398,8 +3712,8 @@ async function pollJob(){
       return;
     }
     const fs2 = [fileOf(r.fichier)].concat(r.fichier_commentaires ? [fileOf(r.fichier_commentaires)] : [], r.fichier_chapitres ? [fileOf(r.fichier_chapitres)] : []);
-    jobDone({onBack:back, url:fs2[0].href, files:fs2, where:"Dans le dossier de l'intervention", info:`${r.largeur} x ${r.hauteur}, ${len(r.duree)}, ${r.taille_mo} Mo, calculée ${enDuree(el)}.${r.chapitres ? ` ${r.chapitres} chapitres inscrits dans la vidéo.` : ""}${r.fichier_commentaires ? ` ${r.commentaires} commentaire(s) interne(s) dans le fichier de sous-titres, à part de la vidéo.` : ""} Elle apparaîtra dans le Drive dès la fin de la synchronisation.`});
-    toast("Vidéo compilée prête.");
+    jobDone({onBack:back, url:fs2[0].href, files:fs2, title:cmpTitle(r.habillage !== false), where:"Dans le dossier de l'intervention", info:`${r.largeur} x ${r.hauteur}, ${len(r.duree)}, ${r.taille_mo} Mo, calculée ${enDuree(el)}.${r.chapitres ? ` ${r.chapitres} chapitres inscrits dans la vidéo.` : ""}${r.fichier_commentaires ? ` ${r.commentaires} commentaire(s) interne(s) dans le fichier de sous-titres, à part de la vidéo.` : ""} Elle apparaîtra dans le Drive dès la fin de la synchronisation.`});
+    toast(r.habillage === false ? "Extraits prêts." : "Vidéo compilée prête.");
     return;
   }
   if(j.etat === "annule"){ CMP.running = false; CMP.job = null; back(); toast("Calcul annulé."); return; }
@@ -3452,7 +3766,7 @@ let PC = {
     clearTimeout(saveT);
     const d = SRVD;
     saveT = setTimeout(() => {
-      api("api/etat", {d:d, etat:{markers:S.markers, meta:S.meta, offsets:S.offsets}})
+      api("api/etat", {d:d, src:SRVS, etat:{markers:S.markers, meta:S.meta, offsets:S.offsets}})
         .then(() => { if(SAVE.etat){ SAVE.etat = null; renderSave(); } })
         .catch(() => {
           if(SRVD !== d) return;
@@ -3469,7 +3783,7 @@ let PC = {
   reel:runReelRemote,
   busy:function(){},                      // le calcul tourne sur le PC : l'appli peut être fermée
   compileFailed:function(msg){ jobView("Setup"); toast(`Le PC n'a pas pu lancer le calcul : ${msg}. Réessayez dans un instant.`); },
-  reset:function(){ SRVD = null; refreshList(); }
+  reset:function(){ SRVD = null; SRVS = ""; refreshList(); }
 };
 let BACKEND = LOCAL;
 /* ---------- réel et story (vertical 9:16) ----------
@@ -3508,12 +3822,20 @@ function reelData(){
   if(!r.logo || typeof r.logo !== "object" || RLOGOS.indexOf(r.logo.mode) < 0) r.logo = Object.assign({mode:"cartouche"}, RBOX.cartouche);
   if(!Array.isArray(r.elems)) r.elems = [];
   r.items = r.items.filter(it => it.photo || S.markers.some(m => m.id === it.id));
+  // réels d'avant la v0.17 : les flous d'un passage vidéo étaient rangés dans le réel ; ils rejoignent les retouches du
+  // passage (m.fx), partagées avec la vidéo compilée. Ceux d'une photo restent sur la photo.
+  r.items.forEach(it => {
+    if(it.photo || !it.flous) return;
+    const m = rMarker(it), tr = rTrack(it);
+    if(m && it.flous.length){ const fx = fxMake(m); it.flous.forEach(z => { fx.flous.push(Object.assign({cam:tr ? tr.lens : it.cam, forme:"ellipse", mode:"doux", ar:1}, z)); }); }
+    delete it.flous;
+  });
   return r;
 }
 function rMarker(it){ return it.photo ? null : S.markers.find(m => m.id === it.id); }
 function rLabel(it){ return it.photo ? `Photo ${phShort(it.photo)}` : label(rMarker(it)); }
 function rTBox(it){ if(!it.tBox || typeof it.tBox !== "object") it.tBox = Object.assign({}, RBOX.texte); return it.tBox; }
-function rItemDur(it){ return it.photo ? (it.dur || 4) : (it.z - it.a)/(it.vit || 1); }
+function rItemDur(it){ return it.photo ? (it.dur || 4) : fxOutDur(rMarker(it), it.a, it.z, it.vit || 1); }      // vitesses du passage et accéléré du réel
 function rItem(id){ return reelData().items.find(it => it.id === id); }
 function rNew(m){
   let a = m.at - S.base, z = (m.to != null ? m.to : m.at) - S.base;
@@ -3548,12 +3870,12 @@ function reelPlan(decode){
       segs.push({it:it, photo:ph, pieces:[], out0:pos, dur:rItemDur(it)});
       pos += rItemDur(it); return;
     }
-    const tr = rTrack(it), pcs = tr ? rPieces(it, tr, decode) : [];
+    const tr = rTrack(it), m = rMarker(it), pcs = tr ? fxSplit(m, rPieces(it, tr, decode), it.vit || 1) : [];
     if(!pcs.length){ skipped++; return; }
-    let acc = 0;
-    pcs.forEach(p => { p.src0 = acc; acc += p.to - p.from; });
-    const d = acc / (it.vit || 1);
-    segs.push({it:it, m:rMarker(it), tr:tr, pieces:pcs, out0:pos, dur:d});
+    // chaque morceau a sa vitesse (celles du passage, multipliées par l'accéléré du réel) : o0 = sa place dans le passage monté, od = sa durée à l'écran
+    let d = 0;
+    pcs.forEach(p => { p.o0 = d; p.od = (p.to - p.from)/p.vit; d += p.od; });
+    segs.push({it:it, m:m, tr:tr, pieces:pcs, out0:pos, dur:d});
     pos += d;
   });
   const fin = r.fin.on ? RFIN : 0;
@@ -3582,8 +3904,8 @@ function rKeyAt(k, t, f, def){
   }
   return def;
 }
-function rKeyPut(list, t, o){
-  list = (list || []).filter(k => Math.abs(k.t - t) >= 0.4);
+function rKeyPut(list, t, o, gap){
+  list = (list || []).filter(k => Math.abs(k.t - t) >= (gap || 0.4));
   const k = {t:Math.round(t*100)/100}; Object.keys(o).forEach(f => { k[f] = Math.round(clamp(o[f], 0, 1)*1000)/1000; });
   list.push(k); list.sort((a, b) => a.t - b.t);
   return list;
@@ -3597,25 +3919,35 @@ function rCrop(sw, sh, x){
   return {sx:(sw - cw)*clamp(x, 0, 1), sy:(sh - ch)/2, cw:cw, ch:ch, free:sw - cw};
 }
 
-/* zones de flou (mosaïque) : carré de côté s x hauteur de l'image, centre suivi par des points {t, x, y} en fraction de l'image source */
-const RBLUR = 0.1;
-
-const RFEATHER = 0.4;
+/* zones de flou : hauteur s x hauteur de l'image, largeur = hauteur x ar, centre suivi par des points {t, x, y} en fraction
+   de l'image source (miroir de zone_box et des clip() de blur_chain dans server.py) */
+const RBLUR = 0.1, RFEATHER = 0.4, RFEATHER2 = 0.15, RPIX = 8;
 const RFSIZES = [0.12, 0.2, 0.32];
-let rTmpC = null;
+let rTmpC = null, rTmpS = null;
 let rFilterOk = null;
 function rZone(z, t, sw, sh){
-  const zs = Math.max(4, z.s*sh);
-  return {x:clamp(rKeyAt(z.keys, t, "x", 0.5)*sw - zs/2, 0, Math.max(0, sw - zs)), y:clamp(rKeyAt(z.keys, t, "y", 0.5)*sh - zs/2, 0, Math.max(0, sh - zs)), w:zs, h:zs};
+  const h = clamp((z.s || 0.2)*sh, 4, sh), w = clamp(h*(z.ar || 1), 4, sw);
+  return {x:clamp(rKeyAt(z.keys, t, "x", 0.5)*sw - w/2, 0, sw - w), y:clamp(rKeyAt(z.keys, t, "y", 0.5)*sh - h/2, 0, sh - h), w:w, h:h};
 }
-/* flou doux : flou gaussien (écart type RBLUR x taille de la zone) dans une ellipse aux bords fondus sur RFEATHER du rayon ; même rendu que blur_chain du PC */
-function softBlur(ctx, x, y, w, h){
+/* flou d'une zone du canevas, aux bords fondus (même rendu que blur_chain et blur_mask du PC) :
+   forme "ellipse" (visage) ou "rect" (plaque) ; mode "doux" (flou gaussien, écart type RBLUR x petit côté) ou "pixel"
+   (mosaïque de RPIX carreaux sur le petit côté). Fondu : RFEATHER du rayon pour l'ovale doux, RFEATHER2 sinon. */
+function softBlur(ctx, x, y, w, h, forme, mode){
   w = Math.max(2, Math.round(w)); h = Math.max(2, Math.round(h)); x = Math.round(x); y = Math.round(y);
+  if(x >= ctx.canvas.width || y >= ctx.canvas.height || x + w <= 0 || y + h <= 0) return;      // zone hors de l'image (hors du cadre 9:16)
   if(!rTmpC || rTmpC.width < w || rTmpC.height < h){ rTmpC = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : rCanvas(w, h); }
-  const tc = rTmpC.getContext("2d"), sig = Math.max(1, w*RBLUR), m = Math.ceil(sig*2);
+  const tc = rTmpC.getContext("2d"), md = Math.min(w, h), sig = Math.max(1, md*RBLUR), m = Math.ceil(sig*2);
   if(rFilterOk === null){ tc.filter = "blur(2px)"; rFilterOk = tc.filter === "blur(2px)"; tc.filter = "none"; }
   tc.save(); tc.globalCompositeOperation = "copy"; tc.clearRect(0, 0, rTmpC.width, rTmpC.height);
-  if(rFilterOk){
+  if(mode === "pixel"){
+    // mosaïque : la zone réduite à quelques carreaux, puis agrandie sans lissage
+    const b = Math.max(2, Math.round(md/RPIX)), nw = Math.max(1, Math.round(w/b)), nh = Math.max(1, Math.round(h/b));
+    if(!rTmpS || rTmpS.width < nw || rTmpS.height < nh){ rTmpS = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(Math.max(64, nw), Math.max(64, nh)) : rCanvas(Math.max(64, nw), Math.max(64, nh)); }
+    const sc = rTmpS.getContext("2d");
+    sc.globalCompositeOperation = "copy"; sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high";
+    sc.drawImage(ctx.canvas, x, y, w, h, 0, 0, nw, nh);
+    tc.imageSmoothingEnabled = false; tc.drawImage(rTmpS, 0, 0, nw, nh, 0, 0, w, h); tc.imageSmoothingEnabled = true;
+  } else if(rFilterOk){
     tc.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);          // fond net : évite un bord sombre près des bords de l'image
     tc.globalCompositeOperation = "source-over"; tc.filter = `blur(${sig.toFixed(1)}px)`;
     tc.drawImage(ctx.canvas, x - m, y - m, w + 2*m, h + 2*m, -m, -m, w + 2*m, h + 2*m);
@@ -3630,19 +3962,31 @@ function softBlur(ctx, x, y, w, h){
     tc.drawImage(rTmpC, 0, 0, n, nh, 0, 0, w, h);
   }
   tc.globalCompositeOperation = "destination-in";
-  tc.translate(w/2, h/2); tc.scale(1, h/w);
-  const g = tc.createRadialGradient(0, 0, w/2*(1 - RFEATHER), 0, 0, w/2);
-  g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
-  tc.fillStyle = g; tc.fillRect(-w/2, -w/2, w, w);
+  if(forme === "rect"){
+    // rectangle : fondu de RFEATHER2 x demi petit côté sur chaque bord (produit de deux rampes)
+    const R = Math.max(1, RFEATHER2*md/2), qx = Math.min(0.5, R/w), qy = Math.min(0.5, R/h);
+    let g = tc.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(qx, "rgba(0,0,0,1)"); g.addColorStop(1 - qx, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    tc.fillStyle = g; tc.fillRect(0, 0, w, h);
+    g = tc.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(qy, "rgba(0,0,0,1)"); g.addColorStop(1 - qy, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    tc.fillStyle = g; tc.fillRect(0, 0, w, h);
+  } else {
+    const F = mode === "pixel" ? RFEATHER2 : RFEATHER;
+    tc.translate(w/2, h/2); tc.scale(1, h/w);
+    const g = tc.createRadialGradient(0, 0, w/2*(1 - F), 0, 0, w/2);
+    g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    tc.fillStyle = g; tc.fillRect(-w/2, -w/2, w, w);
+  }
   tc.restore();
   ctx.drawImage(rTmpC, 0, 0, w, h, x, y, w, h);
 }
 /* source (vidéo) dessinée dans le cadre 9:16, flous compris ; t = instant de la timeline */
-function drawCropped(ctx, W, H, src, sw, sh, rot, x, it, t){
+function drawCropped(ctx, W, H, src, sw, sh, rot, x, sg, t){
   const cr = rCrop(sw, sh, x), k = H / cr.ch;
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
   drawRot(ctx, src, rot || 0, -cr.sx*k, -cr.sy*k, sw*k, sh*k);
-  ((it && it.flous) || []).forEach(z => { const r = rZone(z, t, sw, sh); softBlur(ctx, (r.x - cr.sx)*k, (r.y - cr.sy)*k, r.w*k, r.h*k); });
+  fxApply(ctx, sg.m, sg.tr.lens, t, {x0:-cr.sx*k, y0:-cr.sy*k, k:k, sw:sw, sh:sh});      // retouches du passage : flous et formes suivis
 }
 /* photo avec ses flous appliqués une fois pour toutes (gardée tant que les flous ne changent pas) */
 function phBaked(im, it){
@@ -3652,7 +3996,7 @@ function phBaked(im, it){
   if(c && c.sig === sig && c.im === im) return c.cv;
   const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, cv = rCanvas(iw, ih), cx = cv.getContext("2d");
   cx.drawImage(im, 0, 0);
-  fl.forEach(z => { const r = rZone(z, 0, iw, ih); softBlur(cx, r.x, r.y, r.w, r.h); });
+  fl.forEach(z => { const r = rZone(z, 0, iw, ih); softBlur(cx, r.x, r.y, r.w, r.h, z.forme, z.mode); });
   PH.baked[it.id] = {sig:sig, im:im, cv:cv};
   return cv;
 }
@@ -3883,7 +4227,8 @@ function phThumbSrc(p){ return p.file ? (p.thumb && p.thumb !== "x" ? p.thumb : 
 
 /* ----- lecture : cadrage d'un passage ou aperçu du réel ----- */
 function rLoad(url, local, play, rate){
-  rv.playbackRate = rate || 1;
+  rate = clamp(rate || 1, 0.1, 16);            // au-delà, l'aperçu plafonne ; la vidéo produite garde la vraie vitesse
+  rv.playbackRate = rate;
   if(rv.getAttribute("data-u") !== url){
     rv.setAttribute("data-u", url); rv.src = url;
     rv.onloadedmetadata = () => { rv.onloadedmetadata = null; rv.currentTime = local; rv.playbackRate = rate || 1; if(play) rv.play().catch(() => {}); };
@@ -3914,11 +4259,11 @@ function rFindOut(pl, o){
     const sg = pl.segs[i];
     if(o < sg.out0 + sg.dur - 1e-4){
       if(sg.photo) return {photo:true, seg:sg};
-      const src = Math.max(0, o - sg.out0) * sg.it.vit;
+      const so = Math.max(0, o - sg.out0);
       for(let j=0;j<sg.pieces.length;j++){
-        const p = sg.pieces[j], ln = p.to - p.from;
-        if(src < p.src0 + ln - 1e-4 || j === sg.pieces.length - 1){
-          return {seg:sg, p:p, local:p.from + Math.min(ln, src - p.src0), pOut0:sg.out0 + p.src0/sg.it.vit, pOut1:sg.out0 + (p.src0 + ln)/sg.it.vit};
+        const p = sg.pieces[j];
+        if(so < p.o0 + p.od - 1e-4 || j === sg.pieces.length - 1){
+          return {seg:sg, p:p, local:p.from + Math.min(p.to - p.from, Math.max(0, so - p.o0)*p.vit), pOut0:sg.out0 + p.o0, pOut1:sg.out0 + p.o0 + p.od};
         }
       }
     }
@@ -3935,7 +4280,7 @@ function rSeekApercu(o, play){
     REEL.cur = {fin:!!f.fin, photo:f.photo, seg:f.seg, o0:REEL.o, w0:performance.now()}; rv.pause();
     if(f.photo && !phReady(f.seg.photo)) phImage(f.seg.photo).then(() => { if(!REEL.playing) rDraw(); }, e => { toast(e.message); });
   }
-  else { REEL.cur = f; rLoad(f.p.c.url, f.local, play, f.seg.it.vit); }
+  else { REEL.cur = f; rLoad(f.p.c.url, f.local, play, f.p.vit); }
   rMusicSync(true);
   rDraw();
 }
@@ -3999,7 +4344,7 @@ function rLoop(){
         if(cur.photo && REEL.o >= cur.seg.out0 + cur.seg.dur){ rSeekApercu(cur.seg.out0 + cur.seg.dur + 0.002, true); }
         else if(REEL.o >= pl.total){ REEL.o = pl.total; rStop(); rDraw(); rTime(); return; }
       } else if(rv.readyState >= 2){
-        REEL.o = cur.pOut0 + (rv.currentTime - cur.p.from)/cur.seg.it.vit;
+        REEL.o = cur.pOut0 + (rv.currentTime - cur.p.from)/cur.p.vit;
         if(rv.currentTime >= cur.p.to - 0.04 || rv.ended){ rSeekApercu(cur.pOut1 + 0.002, true); }
       }
       rMusicSync(false);
@@ -4021,7 +4366,7 @@ function rDraw(){
     if(!cur){
       const f = rFindOut(pl, REEL.o);
       if(f && (f.fin || f.photo)) cur = {fin:!!f.fin, photo:f.photo, seg:f.seg};
-      else if(f){ REEL.cur = cur = f; rLoad(f.p.c.url, f.local, false, f.seg.it.vit); }
+      else if(f){ REEL.cur = cur = f; rLoad(f.p.c.url, f.local, false, f.p.vit); }
     }
     if(cur && cur.fin){ drawFin(rctx, W, H, pl.r); return; }
     if(cur && cur.photo){
@@ -4030,7 +4375,7 @@ function rDraw(){
       else { rctx.fillStyle = "#000"; rctx.fillRect(0, 0, W, H); phImage(cur.seg.photo).then(() => { if(!REEL.playing) rDraw(); }, () => {}); }
     } else if(cur && rv.readyState >= 2 && rv.videoWidth){
       const tl = cur.p.c.s + rv.currentTime;
-      drawCropped(rctx, W, H, rv, rv.videoWidth, rv.videoHeight, 0, rX(cur.seg.it, tl), cur.seg.it, tl);
+      drawCropped(rctx, W, H, rv, rv.videoWidth, rv.videoHeight, 0, rX(cur.seg.it, tl), cur.seg, tl);
     } else return;
     REEL.boxes = drawLayers(rctx, W, H, rLayers(pl), REEL.o);
     const sb = REEL.lsel && REEL.boxes.find(b => b.key === REEL.lsel);
@@ -4052,9 +4397,10 @@ function rDraw(){
   const sel = rZoneSel(it);
   const t = REEL.t;
   function frame(sw, sh, x){
-    // cadre 9:16 et zones de flou sur l'image entière ; sw, sh = taille de l'image dessinée
+    // cadre 9:16 sur l'image entière, avec les flous d'une photo ou les retouches d'un passage ; sw, sh = taille de l'image dessinée
     const cr = rCrop(sw, sh, x);
-    (it.flous || []).forEach(z => { const r = rZone(z, it.photo ? 0 : t, sw, sh); softBlur(rctx, r.x, r.y, r.w, r.h); });
+    (it.flous || []).forEach(z => { const r = rZone(z, it.photo ? 0 : t, sw, sh); softBlur(rctx, r.x, r.y, r.w, r.h, z.forme, z.mode); });
+    if(!it.photo && REEL.cur && REEL.cur.clip) fxApply(rctx, rMarker(it), REEL.cur.clip.lens, t, {x0:0, y0:0, k:1, sw:sw, sh:sh});
     rctx.fillStyle = "rgba(0,0,0,.55)";
     rctx.fillRect(0, 0, cr.sx, sh); rctx.fillRect(cr.sx + cr.cw, 0, sw - cr.sx - cr.cw, sh);
     const inside = it.photo || (t >= it.a - 0.02 && t <= it.z + 0.02);
@@ -4149,9 +4495,11 @@ function reelLeave(){ if(REEL.playing) rStop(); REEL.drag = null; REEL.ldrag = n
 /* passages sensibles (visage, plaque...) du montage : rappel visible, non bloquant ; nf = nombre de flous posés */
 function rSensItems(){
   const out = [];
-  reelData().items.forEach((x, i) => { const m = x.photo ? null : rMarker(x); if(m && isSens(m)) out.push({i:i, it:x, m:m, nf:(x.flous || []).length}); });
+  reelData().items.forEach((x, i) => { const m = x.photo ? null : rMarker(x); if(m && isSens(m)) out.push({i:i, it:x, m:m, nf:rNbFlous(x)}); });
   return out;
 }
+/* flous posés sur un élément du montage : ceux de la photo, ou ceux des retouches du passage pour la caméra du réel */
+function rNbFlous(x){ if(x.photo) return (x.flous || []).length; const tr = rTrack(x); return tr ? fxFlous(rMarker(x), tr.lens).length : 0; }
 function rSensLines(){ return rSensItems().filter(o => !o.nf).map(o => `passage ${o.i + 1} sensible (${sensTxt(o.m).toLowerCase()}) sans flou`); }
 function rScrollTo(el){
   const smooth = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -4177,7 +4525,7 @@ function renderReel(){
   chipRow($("rMode"), ["Cadrage","Aperçu du réel"], (t, i) => (REEL.mode === "apercu") === !!i);
   // montage
   $("rList").innerHTML = r.items.map((x, i) => {
-    const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, nf = (x.flous || []).length, m = x.photo ? null : rMarker(x), sn = sensTxt(m);
+    const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, m = x.photo ? null : rMarker(x), nf = rNbFlous(x), sn = sensTxt(m);
     const src = x.photo ? (ph ? `Photo${x.zoom === false ? '' : ', zoom lent'}` : '<span class="miss">[photo à choisir à nouveau]</span>') : (tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>');
     return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button><button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button></li>`;
   }).join("");
@@ -4239,6 +4587,11 @@ function rTargetCtl(it){
   const fl = it.flous || [], z = rZoneSel(it);
   return `<div class="rtarget"><span class="lbl">Déplacer sur l'image</span><div class="chips"><button type="button" class="chip" data-rfsel="" aria-pressed="${!z}">Le cadre</button>${fl.map((f, i) => `<button type="button" class="chip" data-rfsel="${f.id}" aria-pressed="${f === z}">Flou ${i + 1}</button>`).join("")}<button type="button" class="chip" data-rfadd="1">+ Flou (visage, plaque)</button></div></div>`;
 }
+/* passage vidéo : ses retouches (flous suivis, flèches, cercles, vitesse) se règlent dans le dialogue des retouches */
+function rFxCtl(m){
+  const sm = fxSummary(m);
+  return `<div class="rtarget"><span class="lbl">Retouches du passage</span><p class="hint" style="margin:0 0 8px">${sm ? `${esc(sm.charAt(0).toUpperCase() + sm.slice(1))}.` : "Flou qui suit un visage ou une plaque, flèche ou cercle qui suit l'animal, ralenti ou accéléré."} Elles valent aussi pour la vidéo compilée.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small${sm ? " ghost" : ""}" data-rfx="1">${sm ? "Modifier les retouches" : "Flouter, annoter, changer la vitesse"}</button></div></div>`;
+}
 /* réglages du flou choisi */
 function rFlouCtl(it){
   const fl = it.flous || [], z = rZoneSel(it);
@@ -4258,9 +4611,9 @@ function renderReelEdit(){
     box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(rLabel(it))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${len(rItemDur(it))} dans le réel</span></div>${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
     return;
   }
-  const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = (it.flous || []).length;
+  const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = rNbFlous(it);
   const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len((it.z - it.a)/(it.vit||1))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rTargetCtl(it)}<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div></div>${rTextCtl(it)}`;
+  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -4449,6 +4802,12 @@ $("rEdit").addEventListener("click", e => {
   }
   const it = rSelItem(); if(!it) return;
   if(b.dataset.rplace){ rPlace(b.dataset.rplace); return; }
+  if(b.dataset.rfx){
+    const m = rMarker(it), tr = rTrack(it); if(!m || !tr) return;
+    if(REEL.playing) rStop();
+    fxOpen(m, tr.lens, () => { REEL.cur = null; rSave(); renderReel(); if(REEL.mode === "apercu") rSeekApercu(REEL.o, false); else rSeekCadrage(REEL.t, false); });
+    return;
+  }
   if(b.dataset.rfsel != null){ REEL.fsel = b.dataset.rfsel || null; renderReelEdit(); rBar(); rDraw(); return; }
   if(b.dataset.rfadd){
     const t = it.photo ? 0 : REEL.t, prev = rZoneSel(it);
@@ -4662,7 +5021,7 @@ async function runReelRemote(story){
   const r = pl.r;
   if(r.musique && !r.musique.fichier){ toast("La musique n'est pas encore sur le PC : choisissez-la à nouveau ou retirez-la."); return; }
   await rFonts();
-  const cv = rCanvas(RW, RH), ctx = cv.getContext("2d"), segs = [];
+  const cv = rCanvas(RW, RH), ctx = cv.getContext("2d"), segs = [], sprites = {};
   function rel(keys, a, f){ return (keys || []).map(k => { const o = {t:Math.round((k.t - a)*1000)/1000}; f.forEach(n => { o[n] = k[n]; }); return o; }); }
   for(let i=0;i<pl.segs.length;i++){
     const sg = pl.segs[i];
@@ -4672,14 +5031,9 @@ async function runReelRemote(story){
       segs.push({type:"photo", image:cv.toDataURL("image/jpeg", 0.92), duree:sg.dur, zoom:sg.it.zoom !== false, nom:rLabel(sg.it)});
       continue;
     }
-    segs.push({type:"video", vitesse:sg.it.vit || 1, nom:label(sg.m), morceaux:sg.pieces.map(p => {
-      const a = p.c.s + p.from;
-      return {fichier:p.c.name, debut:p.from, fin:p.to, cles:rel(sg.it.keys, a, ["x"]),
-        flous:(sg.it.flous || []).map(z => ({
-          s:z.s,
-          cles:rel(z.keys, a, ["x","y"])
-        }))};
-    })});
+    // un morceau par fichier et par vitesse ; cadrage du réel et retouches du passage (flous et formes suivis)
+    segs.push({type:"video", nom:label(sg.m), morceaux:sg.pieces.map(p => Object.assign({fichier:p.c.name, debut:p.from, fin:p.to, vitesse:p.vit,
+      cles:rel(sg.it.keys, p.c.s + p.from, ["x"])}, fxPayload(sg.m, sg.tr.lens, p, sprites)))});
   }
   const L = rLayers(pl),
         calques = L.map(l => {
@@ -4694,7 +5048,7 @@ async function runReelRemote(story){
   drawLayers(ctx, RW, RH, L, Math.min(1, pl.clips/2));
   pcv.getContext("2d").drawImage(cv, 0, 0, pcv.width, pcv.height);
   const job = await api("api/reel", {d:SRVD, mode:story ? "story" : "reel", nom:rBaseName(story), titre_video:`ESAM - ${clean(S.meta.intervention || SRVD)}`,
-    segments:segs, calques:calques, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
+    segments:segs, sprites:fxSpritesOut(sprites), calques:calques, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
   CMP.job = job.id; CMP.running = true;
   jobProgress(0, "Envoyé au PC");
   pollJob();
@@ -4819,7 +5173,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
   }
   try {
     for(let si=0; si<pl.segs.length && !CMP.cancel; si++){
-      const sg = pl.segs[si], vit = sg.it.vit || 1, sEnd = sg.out0 + sg.dur;
+      const sg = pl.segs[si], sEnd = sg.out0 + sg.dur;
       if(sEnd <= A || sg.out0 >= B) continue;
       const lbl = `${(sg.photo ? "Photo " : "Passage ")+(si+1)} sur ${pl.segs.length} : ${rLabel(sg.it)}`;
       bctx.fillStyle = "#000"; bctx.fillRect(0, 0, W, H);
@@ -4829,7 +5183,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
         continue;
       }
       for(let pi=0; pi<sg.pieces.length && !CMP.cancel; pi++){
-        const p = sg.pieces[pi], pOut0 = sg.out0 + p.src0/vit, pOut1 = pOut0 + (p.to - p.from)/vit;
+        const p = sg.pieces[pi], vit = p.vit, pOut0 = sg.out0 + p.o0, pOut1 = pOut0 + p.od;
         if(pOut1 <= A || pOut0 >= B) continue;
         const from = p.from + Math.max(0, A - pOut0)*vit, to = Math.min(p.to, p.from + (B - pOut0)*vit);
         const queue = [];
@@ -4837,7 +5191,7 @@ async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
           const tl = f.timestamp/1e6, o = pOut0 + (tl - p.from)/vit, dOut = (f.duration || 33333)/1e6/vit;
           if(o + dOut <= nextOut + 1e-6 || nextOut >= B - 1e-6){ f.close(); return null; }
           const md = p.c.media, rot = md.rot || 0, vw = rot % 180 ? f.displayHeight : f.displayWidth, vh = rot % 180 ? f.displayWidth : f.displayHeight;
-          drawCropped(bctx, W, H, f, vw, vh, rot, rX(sg.it, p.c.s + tl), sg.it, p.c.s + tl);
+          drawCropped(bctx, W, H, f, vw, vh, rot, rX(sg.it, p.c.s + tl), sg, p.c.s + tl);
           f.close();
           return o + dOut;
         }, async until => {
@@ -4926,6 +5280,479 @@ async function rSaveAll(){
   toast(REEL.out.length > 1 ? "Vidéos enregistrées." : "Vidéo enregistrée.");
 }
 
+/* ---------- éditeur de retouches (dialogue #fx) ----------
+   fxOpen(m, lens, onClose) ouvre le passage m sur la caméra lens. L'image est dessinée dans #fxCv avec ses flous et ses
+   formes ; on choisit un élément, on le glisse (en pause : un point de suivi à cet instant ; pendant la lecture : il suit
+   le doigt), on tire son coin pour la taille. fxTrackStart() le fait suivre tout seul. Les vitesses se posent à l'instant
+   affiché. Tout est enregistré dans m.fx au fil de l'eau (fxSave). */
+const FX = {m:null, lens:null, t:0, cur:null, playing:false, stopAt:0, sel:null, drag:null, raf:0, trk:null, onClose:null, saveT:0};
+const fv = document.createElement("video");fv.muted = true;fv.playsInline = true;fv.preload = "auto";fv.setAttribute("playsinline", "");
+const fcv = $("fxCv"), fctx = fcv.getContext("2d");
+function fxTrack(){ const i = trackIdx(FX.lens); return i >= 0 ? S.tracks[i] : null; }
+/* a, z : le passage ; lo, hi : ce que l'on peut parcourir (10 s de marge de chaque côté, comme dans le réel) */
+function fxRange(){ const sp = fxSpan(FX.m); return {a:sp.a, z:sp.z, lo:Math.max(0, sp.a - 10), hi:Math.min(S.dur, sp.z + 10)}; }
+/* fin utile de la lecture et du suivi : le passage, sa marge de compilation et sa plage dans le réel */
+function fxEnd(){
+  const rg = fxRange(), r = S.meta.reel, it = r && Array.isArray(r.items) ? r.items.find(q => q.id === FX.m.id) : null;
+  return Math.min(rg.hi, Math.max(rg.z + CMP.win, it && it.z ? it.z : 0));
+}
+function fxObjs(){ return fxFlous(FX.m, FX.lens).map(o => ({k:"flou", o:o})).concat(fxFormes(FX.m, FX.lens).map(o => ({k:"forme", o:o}))); }
+function fxSel(){ return FX.sel ? fxObjs().find(x => x.o.id === FX.sel) || null : null; }
+function fxName(x){
+  const same = fxObjs().filter(y => y.k === x.k && (x.k === "flou" || y.o.kind === x.o.kind)).map(y => y.o);
+  return `${x.k === "flou" ? "Flou" : x.o.kind === "fleche" ? "Flèche" : "Cercle"} ${same.indexOf(x.o) + 1}`;
+}
+/* instant relatif au début du passage : « 0:12 », ou « -0:03 » dans la marge qui le précède */
+function fxRelT(t){ const a = fxRange().a; return (t < a - 0.5 ? "-" : "") + ms(Math.abs(t - a)); }
+function fxSave(){ clearTimeout(FX.saveT); FX.saveT = setTimeout(() => { persist(); renderComp(); }, 300); }
+function fxRefresh(){ fxPanel(); fxBar(); fxDraw(); fxTime(); }
+function fxOpen(m, lens, onClose){
+  lens = lens || effCam(m);
+  if(lens == null || trackIdx(lens) < 0){ toast("Aucune image pour ce passage : rien à retoucher."); return; }
+  v.pause(); if(REEL.playing) rStop();
+  FX.m = m; FX.lens = lens; FX.sel = null; FX.drag = null; FX.trk = null; FX.cur = null; FX.playing = false; FX.onClose = onClose || null;
+  $("fxTitle").textContent = `Retouches : ${label(m)}`;
+  const d = $("fx"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", ""); }
+  fxPanel(); fxSeek(fxRange().a, false); fxBar(); fxTime(); fxPlayBtn();
+  try { $("fxTitle").focus({preventScroll:true}); } catch(e){}
+}
+function fxClose(){ const d = $("fx"); if(d.open) d.close(); }
+$("fx").addEventListener("close", () => {
+  fxStop(); fv.pause(); clearTimeout(FX.saveT);
+  const cb = FX.onClose, had = !!FX.m;
+  FX.onClose = null; FX.m = null; FX.drag = null;
+  if(had){ persist(); renderComp(); renderSummary(); }
+  if(cb) cb();
+});
+$("fxClose").onclick = fxClose;
+$("fxDone").onclick = fxClose;
+
+/* ----- lecture ----- */
+function fxLoad(url, local, play){
+  if(fv.getAttribute("data-u") !== url){
+    fv.setAttribute("data-u", url); fv.src = url;
+    fv.onloadedmetadata = () => { fv.onloadedmetadata = null; fv.currentTime = local; if(play) fv.play().catch(() => {}); };
+  } else {
+    if(Math.abs(fv.currentTime - local) > 0.03) fv.currentTime = local;
+    if(play) fv.play().catch(() => {});
+  }
+}
+fv.addEventListener("seeked", () => { if(FX.m && !FX.playing) fxDraw(); });
+fv.addEventListener("loadeddata", () => { if(FX.m && !FX.playing) fxDraw(); });
+function fxSeek(t, play){
+  const rg = fxRange(); t = clamp(t, rg.lo, rg.hi); FX.t = t;
+  const c = clipAt(fxTrack(), t);
+  FX.cur = c || null;
+  if(c) fxLoad(c.url, t - c.s, play); else { fv.pause(); fxDraw(); }
+}
+function fxPlayBtn(){ const b = $("fxPlay"), on = FX.playing; b.innerHTML = on ? ICON_PAUSE : ICON_PLAY; b.setAttribute("aria-label", FX.trk ? "Arrêter le suivi" : on ? "Pause" : "Lire"); }
+function fxPlay(){
+  if(FX.playing){ fxStop(); return; }
+  const rg = fxRange(), end = fxEnd();
+  let t = FX.t; if(t >= rg.hi - 0.15 || (t >= end - 0.15 && t <= end + 0.05)) t = rg.a;      // en bout de passage : reprise au début
+  FX.stopAt = t < end - 0.1 ? end : rg.hi;
+  FX.playing = true; fxSeek(t, true); fxPlayBtn(); fxLoop();
+}
+function fxStop(){
+  if(FX.trk){ fxTrackStop(); return; }
+  const was = FX.playing;
+  FX.playing = false; fv.pause(); fv.playbackRate = 1; cancelAnimationFrame(FX.raf); fxPlayBtn();
+  if(was && FX.m){ fxPanel(); fxBar(); fxDraw(); fxTime(); }
+}
+/* pendant la lecture, l'élément tenu sous le doigt enregistre sa trajectoire */
+function fxFollow(){ const d = FX.drag, x = fxSel(); if(d && d.pos && !d.resize && x) x.o.keys = rKeyPut(x.o.keys, FX.t, d.pos, 0.25); }
+function fxLoop(){
+  cancelAnimationFrame(FX.raf);
+  (function step(){
+    if(!FX.playing || !FX.m) return;
+    const c = FX.cur;
+    if(!c){ fxStop(); return; }
+    if(fv.readyState >= 2){
+      FX.t = c.s + fv.currentTime;
+      if(FX.trk){ if(!fv.requestVideoFrameCallback || performance.now() - FX.trk.at > 600) fxTrackFrame(); }
+      else {
+        const want = clamp(fxVitAt(FX.m, FX.t), 0.1, 16);          // la lecture montre les ralentis et les accélérés
+        if(Math.abs(fv.playbackRate - want) > 0.01) fv.playbackRate = want;
+        fxFollow();
+      }
+      if(FX.t >= FX.stopAt - 0.02 || fv.ended){
+        const n = nextClip(fxTrack(), c.e - 0.01);
+        if(FX.t >= FX.stopAt - 0.02 || !n || n.s >= FX.stopAt){
+          FX.t = Math.min(FX.t, FX.stopAt);
+          if(FX.trk) fxTrackStop("fin"); else fxStop();
+          return;
+        }
+        fxSeek(n.s, true);
+        if(FX.trk && fv.requestVideoFrameCallback) fxTrackWatch();
+      }
+    }
+    fxDraw(); fxTime();
+    FX.raf = requestAnimationFrame(step);
+  })();
+}
+$("fxPlay").onclick = fxPlay;
+$("fxSlider").addEventListener("input", function(){
+  if(FX.trk) fxTrackStop();
+  const rg = fxRange(); fxSeek(rg.lo + this.value/1000*(rg.hi - rg.lo), FX.playing); fxTime();
+});
+$("fxSlider").addEventListener("change", () => { fxPanel(); fxBar(); });
+
+/* ----- dessin ----- */
+function fxGeom(){ const sw = fv.videoWidth || 1920, sh = fv.videoHeight || 1080; return {x0:0, y0:0, k:fcv.width/sw, sw:sw, sh:sh}; }
+/* position d'un élément à l'instant affiché ; pendant un suivi, celle que le suivi vient de trouver */
+function fxPos(o){ return FX.trk && FX.trk.o === o ? FX.trk.pos : {x:rKeyAt(o.keys, FX.t, "x", 0.5), y:rKeyAt(o.keys, FX.t, "y", 0.5)}; }
+/* boîte d'un élément dans le canevas */
+function fxBoxOf(x, g){
+  const p = fxPos(x.o);
+  if(x.k === "flou"){
+    const h = clamp((x.o.s || 0.2)*g.sh, 4, g.sh), w = clamp(h*(x.o.ar || 1), 4, g.sw);
+    return {x:clamp(p.x*g.sw - w/2, 0, g.sw - w)*g.k, y:clamp(p.y*g.sh - h/2, 0, g.sh - h)*g.k, w:w*g.k, h:h*g.k};
+  }
+  const b = fxShapeBox(x.o, g.sh*g.k/1080*(x.o.s || 1));
+  return {x:p.x*g.sw*g.k + b.ox - b.ex, y:p.y*g.sh*g.k + b.oy - b.ey, w:2*b.ex, h:2*b.ey};
+}
+function fxDraw(){
+  if(!FX.m) return;
+  const vw = fv.videoWidth || 1920, vh = fv.videoHeight || 1080, CW = 960, CH = Math.round(960*vh/vw);
+  if(fcv.width !== CW || fcv.height !== CH){ fcv.width = CW; fcv.height = CH; }
+  fctx.fillStyle = "#000"; fctx.fillRect(0, 0, CW, CH);
+  const c = FX.cur, em = $("fxEmpty");
+  em.hidden = !!c;
+  if(!c){ em.textContent = "Pas d'image à cet instant sur cette caméra."; return; }
+  if(fv.readyState >= 2) fctx.drawImage(fv, 0, 0, CW, CH);
+  const g = fxGeom(), t = FX.t, sel = fxSel(), objs = fxObjs(), rg = fxRange();
+  objs.forEach(x => { if(x.k === "flou"){ const b = fxBoxOf(x, g); softBlur(fctx, b.x, b.y, b.w, b.h, x.o.forme, x.o.mode); } });
+  objs.forEach(x => {
+    if(x.k !== "forme") return;
+    const p = fxPos(x.o);
+    fctx.save(); if(!fxVisible(x.o, t)) fctx.globalAlpha = 0.3;          // hors de sa plage d'affichage : estompée, pour pouvoir la régler
+    drawFxShape(fctx, x.o, p.x*g.sw*g.k, p.y*g.sh*g.k, g.sh*g.k/1080*(x.o.s || 1));
+    fctx.restore();
+  });
+  objs.forEach(x => {
+    const on = !!sel && sel.o === x.o;
+    if(x.k !== "flou" && !on) return;
+    const b = fxBoxOf(x, g);
+    fctx.save();
+    // sélection en bleu de la charte, doublée de noir pour rester lisible sur toute image
+    if(on){ fctx.lineWidth = 7; fctx.strokeStyle = "rgba(23,22,24,.85)"; fctx.strokeRect(b.x, b.y, b.w, b.h); }
+    fctx.lineWidth = on ? 4 : 2; fctx.strokeStyle = on ? "#A8C8FB" : "#fff"; if(!on) fctx.setLineDash([8, 6]);
+    fctx.strokeRect(b.x, b.y, b.w, b.h); fctx.setLineDash([]);
+    if(x.k === "flou"){
+      const nm = fxName(x);
+      fctx.font = `700 18px ${MONT}`; fctx.textAlign = "left"; fctx.textBaseline = "top";
+      const lw = fctx.measureText(nm).width, ly = b.y > 28 ? b.y - 26 : b.y + 2;
+      fctx.fillStyle = "rgba(23,22,24,.75)"; fctx.fillRect(b.x, ly, lw + 8, 24);
+      fctx.fillStyle = on ? "#A8C8FB" : "#fff"; fctx.fillText(nm, b.x + 4, ly + 3);
+    }
+    if(on && !FX.trk){ fctx.fillStyle = "#A8C8FB"; fctx.strokeStyle = "#171618"; fctx.lineWidth = 3; fctx.beginPath(); fctx.arc(b.x + b.w, b.y + b.h, 13, 0, Math.PI*2); fctx.fill(); fctx.stroke(); }
+    fctx.restore();
+  });
+  if(t < rg.a - 0.05 || t > rg.z + 0.05){
+    fctx.fillStyle = "rgba(0,0,0,.5)"; fctx.fillRect(0, CH - 40, CW, 40);
+    fctx.fillStyle = "#fff"; fctx.font = `600 19px ${MONT}`; fctx.textAlign = "center"; fctx.textBaseline = "middle";
+    fctx.fillText(t < rg.a ? "Avant le passage (marge)" : "Après le passage (marge)", CW/2, CH - 20);
+  }
+}
+function fxTime(){
+  if(!FX.m) return;
+  const rg = fxRange(), sl = $("fxSlider");
+  $("fxTime").textContent = `${clockAbs(S.base + FX.t)}\n${fxRelT(FX.t)} / ${ms(rg.z - rg.a)}`;
+  if(document.activeElement !== sl) sl.value = Math.round((FX.t - rg.lo)/Math.max(0.1, rg.hi - rg.lo)*1000);
+  if(FX.playing) return;
+  // vitesse en cours à l'instant affiché
+  const el = $("fxVitT"); if(el) el.textContent = fxRelT(FX.t);
+  const cur = fxVitAt(FX.m, FX.t);
+  $("fxPanel").querySelectorAll("[data-fxvit]").forEach(b => { if(b.dataset.fxvit !== "clear") b.setAttribute("aria-pressed", +b.dataset.fxvit === cur); });
+}
+function fxBar(){
+  if(!FX.m) return;
+  const rg = fxRange(), L = Math.max(0.1, rg.hi - rg.lo), x = fxSel(), pc = t => (t - rg.lo)/L*100;
+  let h = `<i class="in" style="left:${pc(rg.a)}%;width:${pc(rg.z) - pc(rg.a)}%"></i>`;
+  const ts = [rg.lo].concat(fxGet(FX.m).vits.map(p => p.t).filter(t => t > rg.lo && t < rg.hi), [rg.hi]);
+  for(let i=0; i<ts.length - 1; i++){ const sv = fxVitAt(FX.m, ts[i] + 0.01); if(sv !== 1) h += `<i class="sp${sv < 1 ? " lent" : ""}" style="left:${pc(ts[i])}%;width:${pc(ts[i+1]) - pc(ts[i])}%"></i>`; }
+  if(x) (x.o.keys || []).forEach(k => { if(k.t >= rg.lo && k.t <= rg.hi) h += `<i class="kt" style="left:${pc(k.t)}%"></i>`; });
+  $("fxBar").innerHTML = h;
+}
+
+/* ----- réglages ----- */
+function fxTrackCtl(o, quoi){
+  const on = !!FX.trk && FX.trk.o === o, nk = (o.keys || []).length, near = (o.keys || []).some(k => Math.abs(k.t - FX.t) < 0.3);
+  return `<p class="hint" style="margin:6px 0 8px">Posez ${quoi} sur son sujet, puis lancez le suivi : la lecture avance et ${quoi === "le flou" ? "il" : "elle"} suit tout seul. Vous pouvez aussi suivre du doigt pendant la lecture. ${nk > 1 ? `${nk} points de suivi.` : "Fixe pour l'instant."}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small${on ? "" : " primary"}" data-fxtrack="1">${on ? "Arrêter le suivi" : "Suivre automatiquement"}</button><button type="button" class="btn small ghost" data-fxkey="del"${near && nk > 1 ? "" : " disabled"}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-fxkey="fix"${nk > 1 ? "" : " disabled"}>Rendre fixe</button></div>`;
+}
+function fxFlouCtl(x){
+  const o = x.o, sz = Math.round((o.s || 0.2)*100), ar = Math.round((o.ar || 1)*100);
+  return `<div class="rsel"><b>${fxName(x)}</b></div>${fxTrackCtl(o, "le flou")}<div class="grp"><span class="lbl">Forme</span><div class="chips"><button type="button" class="chip" data-fxforme="ellipse" aria-pressed="${o.forme !== "rect"}">Ovale (visage)</button><button type="button" class="chip" data-fxforme="rect" aria-pressed="${o.forme === "rect"}">Rectangle (plaque)</button></div></div><div class="grp"><span class="lbl">Rendu</span><div class="chips"><button type="button" class="chip" data-fxmode="doux" aria-pressed="${o.mode !== "pixel"}">Flou doux</button><button type="button" class="chip" data-fxmode="pixel" aria-pressed="${o.mode === "pixel"}">Pixelisé</button></div></div><div class="grp"><label class="lbl" for="fxSize">Hauteur : <span id="fxSizeV">${sz} %</span> de l'image</label><input type="range" class="rrange" id="fxSize" min="3" max="90" step="1" value="${sz}"></div><div class="grp"><label class="lbl" for="fxAr">Largeur : <span id="fxArV">${ar} %</span> de la hauteur</label><input type="range" class="rrange" id="fxAr" min="30" max="400" step="5" value="${ar}"></div><div class="rbtns"><button type="button" class="btn small ghost" data-fxdel="1">Supprimer ce flou</button><button type="button" class="btn small ghost" data-fxunsel="1">Terminé</button></div>`;
+}
+function fxFormeCtl(x){
+  const o = x.o, sz = Math.round((o.s || 1)*100), cur = (o.c || "#F9DD10").toUpperCase(), fl = o.kind === "fleche";
+  const vis = o.a == null && o.z == null ? "tout le passage" : `${o.a != null ? `à partir de ${fxRelT(o.a)}` : "depuis le début"}${o.z != null ? `, jusqu'à ${fxRelT(o.z)}` : ""}`;
+  let h = `<div class="rsel"><b>${fxName(x)}</b></div>${fxTrackCtl(o, fl ? "la pointe de la flèche" : "le cercle")}`;
+  h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-fxcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}"><i style="background:${c[1]}"></i>${c[0]}</button>`).join("")}</div></div>`;
+  h += `<div class="grp"><label class="lbl" for="fxSize">Taille : <span id="fxSizeV">${sz} %</span></label><input type="range" class="rrange" id="fxSize" min="30" max="300" step="5" value="${sz}"></div>`;
+  h += `<div class="grp"><label class="lbl" for="fxRot">Orientation : <span id="fxRotV">${o.rot || 0}°</span></label><input type="range" class="rrange" id="fxRot" min="-180" max="180" step="5" value="${o.rot || 0}"></div>`;
+  if(!fl){ const ar = Math.round((o.ar || 1.3)*100); h += `<div class="grp"><label class="lbl" for="fxAr">Largeur : <span id="fxArV">${ar} %</span> de la hauteur</label><input type="range" class="rrange" id="fxAr" min="50" max="300" step="5" value="${ar}"></div>`; }
+  h += `<div class="grp"><span class="lbl">Affichée : ${esc(vis)}</span><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-fxvis="a">Apparaît ici</button><button type="button" class="btn small ghost" data-fxvis="z">Disparaît ici</button><button type="button" class="btn small ghost" data-fxvis="all"${o.a == null && o.z == null ? " disabled" : ""}>Tout le passage</button></div></div>`;
+  h += `<div class="rbtns"><button type="button" class="btn small ghost" data-fxdel="1">Supprimer ${fl ? "cette flèche" : "ce cercle"}</button><button type="button" class="btn small ghost" data-fxunsel="1">Terminé</button></div>`;
+  return h;
+}
+function fxVitCtl(){
+  const m = FX.m, rg = fxRange(), cur = fxVitAt(m, FX.t), vs = fxGet(m).vits;
+  const lst = vs.map(p => `${fxRelT(p.t)} ${fxVitLbl(p.v).toLowerCase()}`).join(" ; ");
+  return `<div class="grp fxvit"><span class="lbl">Vitesse à partir de <span id="fxVitT">${fxRelT(FX.t)}</span></span><div class="chips">${FX_SPEEDS.map(s => `<button type="button" class="chip" data-fxvit="${s}" aria-pressed="${cur === s}">${s === 1 ? "Normale" : `x${String(s).replace(".", ",")}`}</button>`).join("")}</div><p class="hint">${vs.length ? `Changements : ${esc(lst)}. Ce passage dure ${len(fxOutDur(m, rg.a, rg.z))} dans la vidéo, au lieu de ${len(rg.z - rg.a)}.` : "Placez la lecture là où la vitesse doit changer, puis choisissez : ralenti (x0,25 et x0,5) ou accéléré (x2 à x8). Au début du passage, le choix vaut pour tout le passage."}</p>${vs.length ? '<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-fxvit="clear">Vitesse normale partout</button></div>' : ""}</div>`;
+}
+function fxPanel(){
+  const m = FX.m; if(!m) return;
+  const objs = fxObjs(), x = fxSel(), rg = fxRange(), cams = S.tracks.filter(tr => tr.clips.some(c => c.ok && c.s < rg.z && c.e > rg.a));
+  let h = `<div class="grp"><span class="lbl">Sur l'image</span><div class="chips">${objs.map(y => `<button type="button" class="chip" data-fxsel="${y.o.id}" aria-pressed="${!!x && x.o === y.o}">${fxName(y)}</button>`).join("")}<button type="button" class="chip" data-fxadd="flou">+ Flou</button><button type="button" class="chip" data-fxadd="fleche">+ Flèche</button><button type="button" class="chip" data-fxadd="cercle">+ Cercle</button></div>${objs.length ? "" : '<p class="hint">Un flou cache un visage ou une plaque, une flèche ou un cercle montre l\'animal. Chaque élément suit son sujet pendant le passage, dans la vidéo compilée, les extraits et le réel.</p>'}</div>`;
+  if(cams.length > 1) h += `<div class="grp"><span class="lbl">Caméra retouchée</span><div class="chips">${cams.map(tr => `<button type="button" class="chip" data-fxcam="${esc(tr.lens)}" aria-pressed="${tr.lens === FX.lens}">${esc(tr.name)}</button>`).join("")}</div></div>`;
+  if(x) h += x.k === "flou" ? fxFlouCtl(x) : fxFormeCtl(x);
+  h += fxVitCtl();
+  $("fxPanel").innerHTML = h;
+  fcv.setAttribute("aria-label", `Image du passage. ${x ? `Flèches : déplacer ${fxName(x).toLowerCase()}, plus et moins : sa taille.` : "Choisissez un élément pour le déplacer."}`);
+}
+$("fxPanel").addEventListener("click", e => {
+  const b = e.target.closest("button"), m = FX.m; if(!b || !m) return;
+  const d = b.dataset, x = fxSel();
+  if(d.fxtrack){ if(FX.trk) fxTrackStop(); else fxTrackStart(); return; }
+  if(FX.trk) fxTrackStop();
+  if(d.fxsel){ FX.sel = FX.sel === d.fxsel ? null : d.fxsel; fxRefresh(); return; }
+  if(d.fxunsel){ FX.sel = null; fxRefresh(); return; }
+  if(d.fxcam){ if(FX.playing) fxStop(); FX.lens = d.fxcam; FX.sel = null; fxSeek(FX.t, false); fxRefresh(); return; }
+  if(d.fxadd){
+    if(FX.playing) fxStop();
+    const fx = fxMake(m), o = {id:uid(), cam:FX.lens, keys:[{t:Math.round(FX.t*100)/100, x:0.5, y:0.5}]};
+    if(d.fxadd === "flou"){
+      const prev = fxFlous(m, FX.lens).pop();                      // un nouveau flou reprend la forme et la taille du précédent
+      Object.assign(o, {forme:prev ? prev.forme : "ellipse", mode:prev ? prev.mode : "doux", s:prev ? prev.s : 0.2, ar:prev ? prev.ar : 1});
+      fx.flous.push(o);
+    } else {
+      Object.assign(o, {kind:d.fxadd, s:1, rot:d.fxadd === "fleche" ? 45 : 0, c:"#F9DD10"}); if(o.kind === "cercle") o.ar = 1.3;
+      fx.formes.push(o);
+    }
+    FX.sel = o.id; fxSave(); fxRefresh(); return;
+  }
+  if(d.fxvit){
+    if(d.fxvit === "clear") fxMake(m).vits = []; else fxVitSet(m, FX.t, +d.fxvit);
+    if(FX.playing) fxStop();
+    fxSave(); fxRefresh(); return;
+  }
+  if(!x) return;
+  const o = x.o;
+  if(d.fxforme) o.forme = d.fxforme;
+  else if(d.fxmode) o.mode = d.fxmode;
+  else if(d.fxcol) o.c = d.fxcol;
+  else if(d.fxkey === "del"){ const rest = o.keys.filter(k => Math.abs(k.t - FX.t) >= 0.3); if(rest.length) o.keys = rest; }
+  else if(d.fxkey === "fix"){ const p = fxPos(o); o.keys = [{t:Math.round(FX.t*100)/100, x:Math.round(p.x*1000)/1000, y:Math.round(p.y*1000)/1000}]; }
+  else if(d.fxvis){
+    const t = Math.round(FX.t*100)/100;
+    if(d.fxvis === "all"){ delete o.a; delete o.z; }
+    else if(d.fxvis === "a"){ o.a = t; if(o.z != null && o.z <= t + 0.2) delete o.z; }
+    else { o.z = t; if(o.a != null && o.a >= t - 0.2) delete o.a; }
+  }
+  else if(d.fxdel){
+    const fx = fxMake(m), list = x.k === "flou" ? fx.flous : fx.formes, i = list.indexOf(o), nm = fxName(x);
+    list.splice(i, 1); FX.sel = null;
+    toast(`${nm} supprimé${x.k === "forme" && o.kind === "fleche" ? "e" : ""}.`, "Annuler", () => { list.splice(i, 0, o); fxSave(); if(FX.m === m) fxRefresh(); });
+  }
+  else return;
+  fxSave(); fxRefresh();
+});
+$("fxPanel").addEventListener("input", e => {
+  const x = fxSel(), id = e.target.id, val = +e.target.value; if(!x) return;
+  if(id === "fxSize"){ x.o.s = val/100; $("fxSizeV").textContent = `${val} %`; }
+  else if(id === "fxAr"){ x.o.ar = val/100; $("fxArV").textContent = `${val} %`; }
+  else if(id === "fxRot"){ x.o.rot = val; $("fxRotV").textContent = `${val}°`; }
+  else return;
+  fxSave(); if(!FX.playing) fxDraw();
+});
+
+/* ----- glisser sur l'image ----- */
+function fxPt(e){ const rc = fcv.getBoundingClientRect(); return {x:(e.clientX - rc.left)/rc.width, y:(e.clientY - rc.top)/rc.height, rc:rc}; }
+fcv.addEventListener("pointerdown", e => {
+  if(!FX.m || !FX.cur || FX.trk) return;
+  const p = fxPt(e), g = fxGeom(), cx = p.x*fcv.width, cy = p.y*fcv.height, hs = 26*fcv.width/p.rc.width, objs = fxObjs(), sel = fxSel();
+  const inBox = x => { const b = fxBoxOf(x, g); return cx >= b.x - 8 && cx <= b.x + b.w + 8 && cy >= b.y - 8 && cy <= b.y + b.h + 8; };
+  let hit = null, resize = false, jump = false;
+  if(sel){
+    // un élément choisi garde la main sur toute l'image, même sous un autre : son coin règle sa taille, il se glisse par
+    // sa boîte, et ailleurs il vient sous le doigt. On change d'élément par la liste « Sur l'image ».
+    const b = fxBoxOf(sel, g); hit = sel;
+    if(Math.hypot(cx - (b.x + b.w), cy - (b.y + b.h)) < hs) resize = true; else if(!inBox(sel)) jump = true;
+  } else { for(let i=objs.length - 1; i>=0; i--){ if(inBox(objs[i])){ hit = objs[i]; break; } } }
+  if(!hit) return;
+  e.preventDefault(); try { fcv.setPointerCapture(e.pointerId); } catch(x){}
+  const pos = fxPos(hit.o), b0 = fxBoxOf(hit, g);
+  if(FX.sel !== hit.o.id){ FX.sel = hit.o.id; fxPanel(); fxBar(); }
+  FX.drag = {resize:resize, p0:p, x0:jump ? p.x : pos.x, y0:jump ? p.y : pos.y, s0:hit.o.s || 1,
+    mx:b0.x + b0.w/2, my:b0.y + b0.h/2, d0:Math.max(10, Math.hypot(cx - (b0.x + b0.w/2), cy - (b0.y + b0.h/2))), pos:jump ? {x:p.x, y:p.y} : null, moved:jump};
+  if(jump && !FX.playing) hit.o.keys = rKeyPut(hit.o.keys, FX.t, FX.drag.pos, 0.3);
+  fxDraw();
+});
+fcv.addEventListener("pointermove", e => {
+  const d = FX.drag, x = fxSel(); if(!d || !x) return;
+  const p = fxPt(e), g = fxGeom(), o = x.o;
+  if(d.resize){
+    if(x.k === "flou"){
+      // le coin tiré donne la hauteur et la largeur de la zone autour de son centre
+      const c = fxPos(o), h = Math.abs(p.y - c.y)*2, w = Math.abs(p.x - c.x)*2*g.sw/g.sh;
+      o.s = Math.round(clamp(h, 0.03, 0.9)*1000)/1000; o.ar = Math.round(clamp(w/o.s, 0.3, 4)*100)/100;
+    } else o.s = Math.round(clamp(d.s0*Math.hypot(p.x*fcv.width - d.mx, p.y*fcv.height - d.my)/d.d0, 0.3, 3)*100)/100;
+  } else {
+    d.pos = {x:clamp(d.x0 + p.x - d.p0.x, 0, 1), y:clamp(d.y0 + p.y - d.p0.y, 0, 1)};
+    if(!FX.playing) o.keys = rKeyPut(o.keys, FX.t, d.pos, 0.3);       // en pause : un point de suivi à cet instant
+  }
+  d.moved = true;
+  if(!FX.playing) fxDraw();
+});
+function fxDragEnd(){
+  const d = FX.drag; if(!d) return;
+  FX.drag = null;
+  if(d.moved){ fxSave(); if(!FX.playing){ fxPanel(); fxBar(); } }
+}
+fcv.addEventListener("pointerup", fxDragEnd);
+fcv.addEventListener("pointercancel", fxDragEnd);
+/* clavier : sur l'image, les flèches déplacent l'élément choisi ; ailleurs, lecture et déplacement dans le passage */
+$("fx").addEventListener("keydown", e => {
+  if(!FX.m || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tg = e.target, tag = tg.tagName, dir = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]}[e.key];
+  if(tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  const x = fxSel();
+  if(tg === fcv && x && !FX.trk && (dir || e.key === "+" || e.key === "=" || e.key === "-")){
+    e.preventDefault();
+    const o = x.o;
+    if(dir){ const p = fxPos(o), st = e.shiftKey ? 0.05 : 0.01; o.keys = rKeyPut(o.keys, FX.t, {x:clamp(p.x + dir[0]*st, 0, 1), y:clamp(p.y + dir[1]*st, 0, 1)}, 0.3); }
+    else { const f = e.key === "-" ? 1/1.06 : 1.06; o.s = x.k === "flou" ? clamp((o.s || 0.2)*f, 0.03, 0.9) : clamp((o.s || 1)*f, 0.3, 3); }
+    fxSave(); fxDraw(); fxBar(); return;
+  }
+  if(e.key === " " && tag !== "BUTTON"){ e.preventDefault(); fxPlay(); }
+  else if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+    e.preventDefault(); if(FX.trk) fxTrackStop();
+    fxSeek(FX.t + (e.key === "ArrowLeft" ? -1 : 1)*(e.shiftKey ? 5 : 1), FX.playing); fxTime();
+    clearTimeout(FX.keyT); FX.keyT = setTimeout(() => { if(FX.m && !FX.playing){ fxPanel(); fxBar(); } }, 300);
+  }
+});
+
+/* ----- suivi automatique : la zone est retrouvée d'une image à la suivante (comparaison de motifs en niveaux de gris) ----- */
+let fxA = null;                 // canevas d'analyse, 640 px de large au plus
+function fxGray(x0, y0, w, h){
+  const d = fxA.ctx.getImageData(x0, y0, w, h).data, g = new Float32Array(w*h);
+  for(let i=0, j=0; i<g.length; i++, j+=4) g[i] = 0.299*d[j] + 0.587*d[j+1] + 0.114*d[j+2];
+  return g;
+}
+/* taille du motif suivi, en pixels de l'image source : la zone de flou, l'intérieur du cercle, ou ce que vise la flèche */
+function fxTrackSize(x, vw, vh){
+  if(x.k === "flou"){ const h = clamp((x.o.s || 0.2)*vh, 4, vh); return {w:clamp(h*(x.o.ar || 1), 4, vw), h:h}; }
+  const u = vh/1080*(x.o.s || 1);
+  return x.o.kind === "cercle" ? {w:250*u*(x.o.ar || 1.3), h:250*u} : {w:0.1*vh, h:0.1*vh};
+}
+/* motif pris tous les st pixels à partir du coin (x0, y0) du canevas d'analyse : niveaux de gris, moyenne et contraste moyen */
+function fxTrackSample(k, x0, y0){
+  x0 = clamp(x0, 0, k.AW - k.tw); y0 = clamp(y0, 0, k.AH - k.th);
+  const g = fxGray(x0, y0, k.tw, k.th), n = k.cols*k.rows, T = new Float32Array(n);
+  let s = 0, c = 0;
+  for(let r=0; r<k.rows; r++) for(let q=0; q<k.cols; q++){ const val = g[r*k.st*k.tw + q*k.st]; T[r*k.cols + q] = val; s += val; }
+  for(let i=0; i<n; i++) c += Math.abs(T[i] - s/n);
+  return {g:T, mean:s/n, c:c/n};
+}
+function fxTrackWatch(){ const k = FX.trk; if(!k || !fv.requestVideoFrameCallback) return; if(k.cb && fv.cancelVideoFrameCallback) fv.cancelVideoFrameCallback(k.cb); k.cb = fv.requestVideoFrameCallback(fxTrackFrame); }
+function fxTrackStart(){
+  const x = fxSel(), c = FX.cur;
+  if(!x || !c || !fv.videoWidth || fv.readyState < 2){ toast("Image pas encore chargée : réessayez dans un instant."); return; }
+  if(FX.playing) fxStop();
+  const vw = fv.videoWidth, vh = fv.videoHeight, AW = Math.min(640, vw), AH = Math.max(8, Math.round(AW*vh/vw)), ka = AW/vw;
+  if(!fxA){ const cv = rCanvas(AW, AH); fxA = {cv:cv, ctx:cv.getContext("2d", {willReadFrequently:true})}; }
+  if(fxA.cv.width !== AW || fxA.cv.height !== AH){ fxA.cv.width = AW; fxA.cv.height = AH; }
+  const sz = fxTrackSize(x, vw, vh), tw = clamp(Math.round(sz.w*ka), 8, AW - 2), th = clamp(Math.round(sz.h*ka), 8, AH - 2);
+  const st = Math.max(1, Math.ceil(Math.max(tw, th)/28)), pos = {x:rKeyAt(x.o.keys, FX.t, "x", 0.5), y:rKeyAt(x.o.keys, FX.t, "y", 0.5)};
+  const k = {o:x.o, AW:AW, AH:AH, tw:tw, th:th, st:st, cols:Math.max(2, Math.floor((tw - 1)/st) + 1), rows:Math.max(2, Math.floor((th - 1)/st) + 1), pos:pos,
+    R:clamp(Math.round(Math.max(tw, th)*0.5), 10, 36), lost:0, t0:FX.t, last:FX.t, good:FX.t, seen:-1, cb:0, at:performance.now()};
+  fxA.ctx.drawImage(fv, 0, 0, AW, AH);
+  k.T = fxTrackSample(k, Math.round(pos.x*AW - tw/2), Math.round(pos.y*AH - th/2));
+  if(k.T.c < 2.5){ toast("Cette zone est trop uniforme pour un suivi automatique : suivez-la du doigt pendant la lecture."); return; }
+  const rg = fxRange(), end = fxEnd();
+  if(FX.t >= rg.hi - 0.3){ toast("Fin de la plage : revenez en arrière pour lancer le suivi."); return; }
+  // le suivi repart d'ici : les points posés après cet instant sont remplacés
+  k.o.keys = rKeyPut((k.o.keys || []).filter(q => q.t <= FX.t), FX.t, pos, 0.05);
+  FX.trk = k; FX.stopAt = FX.t < end - 0.3 ? end : rg.hi; FX.playing = true;
+  fv.playbackRate = 1; fxSeek(FX.t, true); fxPlayBtn(); fxPanel(); fxTrackWatch(); fxLoop();
+}
+function fxTrackFrame(now, meta){
+  const k = FX.trk, c = FX.cur; if(!k || !c || !FX.playing) return;
+  if(fv.requestVideoFrameCallback) k.cb = fv.requestVideoFrameCallback(fxTrackFrame);
+  const mt = meta && meta.mediaTime != null ? meta.mediaTime : fv.currentTime;
+  if(mt === k.seen || fv.readyState < 2) return;
+  k.seen = mt; k.at = performance.now();
+  const t = c.s + mt, AW = k.AW, AH = k.AH, tw = k.tw, th = k.th, R = k.R, st = k.st, cols = k.cols, rows = k.rows, n = cols*rows, T = k.T.g, tm = k.T.mean;
+  fxA.ctx.drawImage(fv, 0, 0, AW, AH);
+  // fenêtre de recherche autour de la position précédente (coin haut gauche du motif)
+  const px = clamp(Math.round(k.pos.x*AW - tw/2), 0, AW - tw), py = clamp(Math.round(k.pos.y*AH - th/2), 0, AH - th);
+  const rx0 = Math.max(0, px - R), ry0 = Math.max(0, py - R), mx = Math.min(AW - tw, px + R) - rx0, my = Math.min(AH - th, py + R) - ry0;
+  const rw = mx + tw, G = fxGray(rx0, ry0, rw, my + th), cx0 = px - rx0, cy0 = py - ry0;
+  // écart moyen entre le motif et l'image à ce décalage, moyennes retirées : insensible aux variations d'exposition
+  function score(ox, oy){
+    let s = 0, d = 0;
+    for(let r=0; r<rows; r++){ const row = (oy + r*st)*rw + ox; for(let q=0; q<cols; q++) s += G[row + q*st]; }
+    const off = tm - s/n;
+    for(let r=0; r<rows; r++){ const row = (oy + r*st)*rw + ox, tr = r*cols; for(let q=0; q<cols; q++) d += Math.abs(G[row + q*st] + off - T[tr + q]); }
+    return d/n;
+  }
+  let best = Infinity, bx = cx0, by = cy0;
+  for(let oy=cy0 % 2; oy<=my; oy+=2) for(let ox=cx0 % 2; ox<=mx; ox+=2){
+    const s = score(ox, oy) + 0.03*Math.hypot(ox - cx0, oy - cy0);          // à écart égal, la position la plus proche
+    if(s < best){ best = s; bx = ox; by = oy; }
+  }
+  const fx0 = bx, fy0 = by;
+  for(let oy=Math.max(0, fy0 - 1); oy<=Math.min(my, fy0 + 1); oy++) for(let ox=Math.max(0, fx0 - 1); ox<=Math.min(mx, fx0 + 1); ox++){
+    const s = score(ox, oy) + 0.03*Math.hypot(ox - cx0, oy - cy0);
+    if(s < best){ best = s; bx = ox; by = oy; }
+  }
+  if(score(bx, by) > 0.8*k.T.c + 6){
+    // motif introuvable (sujet masqué, sorti de l'image) : on patiente quelques images avant d'abandonner
+    if(++k.lost >= 10){ fxTrackStop("perdu"); return; }
+  } else {
+    k.lost = 0; k.good = t;
+    k.pos = {x:(rx0 + bx + tw/2)/AW, y:(ry0 + by + th/2)/AH};
+    // le motif s'adapte doucement : le sujet tourne, s'éloigne, change d'éclairage
+    let s = 0, cc = 0;
+    for(let r=0; r<rows; r++){ const row = (by + r*st)*rw + bx, tr = r*cols; for(let q=0; q<cols; q++){ const nv = T[tr + q]*0.92 + G[row + q*st]*0.08; T[tr + q] = nv; s += nv; } }
+    for(let i=0; i<n; i++) cc += Math.abs(T[i] - s/n);
+    k.T.mean = s/n; k.T.c = Math.max(k.T.c*0.7, cc/n);
+    if(t - k.last >= 0.2){ k.o.keys = rKeyPut(k.o.keys, t, k.pos, 0.05); k.last = t; }
+  }
+}
+/* fin du suivi : dernier point, puis allègement des points (on ne garde que ceux qui changent la trajectoire) */
+function fxTrackStop(why){
+  const k = FX.trk; if(!k) return;
+  FX.trk = null;
+  if(k.cb && fv.cancelVideoFrameCallback) fv.cancelVideoFrameCallback(k.cb);
+  if(k.good > k.last + 0.02) k.o.keys = rKeyPut(k.o.keys, k.good, k.pos, 0.05);
+  const before = k.o.keys.filter(q => q.t < k.t0 - 0.001), run = fxSimplify(k.o.keys.filter(q => q.t >= k.t0 - 0.001), 0.004);
+  k.o.keys = before.concat(run);
+  const m = FX.m;
+  fxStop(); fxSave();
+  if(!m) return;
+  if(why === "perdu"){ fxSeek(k.good, false); fxTime(); toast(`Suivi perdu à ${fxRelT(k.good)} : replacez l'élément sur son sujet et relancez le suivi.`); }
+  else toast(`${why === "fin" ? "Suivi terminé" : "Suivi arrêté"} : ${run.length} point${run.length > 1 ? "s" : ""} de suivi. Relisez le passage pour vérifier.`);
+}
+/* garde les points qui comptent : un point est retiré si le lissage entre ses voisins retombe à moins de tol de lui */
+function fxSimplify(keys, tol){
+  if(keys.length < 3) return keys;
+  const keep = keys.map(() => false), stack = [[0, keys.length - 1]];
+  keep[0] = keep[keys.length - 1] = true;
+  while(stack.length){
+    const seg = stack.pop(), i = seg[0], j = seg[1], A = keys[i], B = keys[j];
+    let worst = 0, wi = -1;
+    for(let q=i+1; q<j; q++){
+      let s = (keys[q].t - A.t)/Math.max(0.001, B.t - A.t); s = s*s*(3 - 2*s);
+      const e = Math.hypot(A.x + (B.x - A.x)*s - keys[q].x, A.y + (B.y - A.y)*s - keys[q].y);
+      if(e > worst){ worst = e; wi = q; }
+    }
+    if(worst > tol){ keep[wi] = true; stack.push([i, wi], [wi, j]); }
+  }
+  return keys.filter((q, i) => keep[i]);
+}
+
 function renderVersion(){
   const b = $("ver"), pc = !!SRV, sv = SRV && SRV.version;
   b.textContent = `v${APP_VERSION}${pc ? " PC" : ""}`;
@@ -4952,11 +5779,13 @@ srvInit().then(() => {
 });
 
 renderQuick();
-/* crochet pour tests/test_unitaire.py : storyCuts sur un plan simulé (durées des segments et du carton de fin) */
+/* crochets pour les tests : storyCuts sur un plan simulé (durées des segments et du carton de fin), lissage des points
+   de suivi (miroir de key_expr), état des marqueurs et de l'éditeur de retouches */
 window.ESAM_TEST = {storyCuts:(durs, fin) => {
   let pos = 0; const segs = durs.map(d => { const sg = {out0:pos, dur:d}; pos += d; return sg; });
   return storyCuts({segs:segs, clips:pos, fin:fin, total:pos + fin});
-}};
+}, keyAt:(keys, t, f) => rKeyAt(keys, t, f, 0.5),
+  etat:() => ({base:S.base, markers:JSON.parse(JSON.stringify(S.markers)), fx:{ouvert:!!FX.m, t:FX.t, lecture:FX.playing, suivi:!!FX.trk, choix:FX.sel}})};
 if(window.claude && typeof window.claude.use === "function"){
   window.claude.use("downloads").then(x => { dl = x; }, () => { dl = null; });
 }

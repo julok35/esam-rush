@@ -13,7 +13,7 @@ from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.16"
+VERSION = "0.17"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -122,6 +122,27 @@ def detect_encoders():
     ENC["gpu"] = nv264
     log("Encodage :", "carte NVIDIA (NVENC)" if nv264 else "processeur (logiciel)")
 
+FC_OPT = [None]
+def detect_filter_file():
+    """Option ffmpeg qui lit un filtre dans un fichier (son nom a changé avec ffmpeg 7) : un passage aux retouches suivies
+    donne un filtre trop long pour une ligne de commande Windows (32 767 caractères)."""
+    tmp = Path(tempfile.mkdtemp(prefix="esam_fc_"))
+    try:
+        f = tmp / "f.txt"; f.write_text("[0:v]null[v]", encoding="utf-8")
+        for opt in ("-/filter_complex", "-filter_complex_script"):
+            r = subprocess.run([FFMPEG, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=black:s=64x64:d=0.1",
+                                opt, str(f), "-map", "[v]", "-f", "null", "-"], capture_output=True, creationflags=NOWIN)
+            if r.returncode == 0: FC_OPT[0] = opt; break
+    except OSError: pass
+    finally: shutil.rmtree(tmp, ignore_errors=True)
+    if not FC_OPT[0]: log("ATTENTION : ce ffmpeg ne lit pas de filtre dans un fichier, les longs suivis peuvent échouer")
+
+def fc_args(work, k, graph):
+    """Arguments du filtre complexe : en ligne s'il est court, sinon dans un fichier du dossier de travail."""
+    if len(graph) < 4000 or not FC_OPT[0]: return ["-filter_complex", graph]
+    f = work / ("filtre%03d.txt" % k); f.write_text(graph, encoding="utf-8")
+    return [FC_OPT[0], str(f)]
+
 # ---------------------------------------------------------------- dossiers
 def folder(name):
     """Dossier d'intervention à partir de son nom, en refusant tout chemin (séparateurs, point initial, '..')."""
@@ -132,9 +153,21 @@ def folder(name):
     if not p.is_dir(): raise ValueError("dossier introuvable : " + name)
     return p
 
-def videos(d):
-    """Rushs du dossier : fichiers vidéo hors productions ESAM (compilation, réel, story) et fichiers cachés."""
-    return sorted(f for f in d.iterdir() if f.is_file() and f.suffix.lower() in VIDEO_EXT and not f.name.startswith(("ESAM_Compilation", "ESAM_Reel", "ESAM_Story", ".")))
+PROD = ("ESAM_Compilation", "ESAM_Extraits", "ESAM_Reel", "ESAM_Story")     # vidéos produites par l'outil : jamais des rushs
+COMPIL = ("ESAM_Compilation", "ESAM_Extraits")                             # celles dont on peut tirer des extraits (source « compil »)
+
+def is_source(name, src=None):
+    """Vrai si le fichier fait partie de la source demandée : les rushs (par défaut) ou les vidéos compilées (src = "compil")."""
+    if Path(name).suffix.lower() not in VIDEO_EXT or name.startswith("."): return False
+    return name.startswith(COMPIL) if src == "compil" else not name.startswith(PROD)
+
+def videos(d, src=None):
+    """Vidéos de la source : rushs du dossier (hors productions ESAM et fichiers cachés), ou vidéos compilées si src = "compil"."""
+    return sorted(f for f in d.iterdir() if f.is_file() and is_source(f.name, src))
+
+def etat_file(d, src=None):
+    """Fichier d'état du dérushage : un par source, pour ne pas mêler les marqueurs des rushs et ceux d'une vidéo compilée."""
+    return d / WORK_DIR / ("etat-compil.json" if src == "compil" else "etat.json")
 
 def proxy_of(f): return f.parent / PROXY_DIR / (f.stem + ".mp4")
 
@@ -205,21 +238,23 @@ def list_interventions():
         if not d.is_dir() or d.name.startswith((".", "_")): continue
         try:
             names = [x.name for x in d.iterdir()]
-            vids = [n for n in names if Path(n).suffix.lower() in VIDEO_EXT and not n.startswith(("ESAM_Compilation", "ESAM_Reel", "ESAM_Story", "."))]
-            done = sum(1 for n in vids if (d / PROXY_DIR / (Path(n).stem + ".json")).exists())
-            out.append({"nom": d.name, "videos": len(vids), "proxies": done,
+            vids = [n for n in names if is_source(n)]
+            comp = [n for n in names if is_source(n, "compil")]
+            ready = lambda n: (d / PROXY_DIR / (Path(n).stem + ".json")).exists()
+            out.append({"nom": d.name, "videos": len(vids), "proxies": sum(1 for n in vids if ready(n)),
                         "fiche": any(n.startswith("ESAM_Derushage") for n in names),
                         "compilation": any(n.startswith("ESAM_Compilation") for n in names),
+                        "compil": len(comp), "compil_proxies": sum(1 for n in comp if ready(n)),
                         "maj": d.stat().st_mtime})
         except OSError as e:
             log("Lecture impossible", d, e)
     out.sort(key=lambda x: -x["maj"])
     return out
 
-def manifest(d):
+def manifest(d, src=None):
     """Ce que l'appli charge à l'ouverture : métadonnées de chaque proxy (avec les URL des planches) et photos."""
     clips = []
-    for f in videos(d):
+    for f in videos(d, src):
         meta_p = d / PROXY_DIR / (f.stem + ".json")
         if not meta_p.exists(): continue
         m = json.loads(meta_p.read_text(encoding="utf-8"))
@@ -227,7 +262,7 @@ def manifest(d):
         m["proxy"] = rel(f.stem + ".mp4")
         m["thumbs"]["sheets"] = [rel(s) for s in m["thumbs"]["sheets"]]
         clips.append(m)
-    return {"dossier": d.name, "clips": clips, "photos": photos(d)}
+    return {"dossier": d.name, "source": "compil" if src == "compil" else "rushs", "clips": clips, "photos": photos(d)}
 
 # ---------------------------------------------------------------- travaux
 JOBS, JLOCK, QUEUE = [], threading.Lock(), []
@@ -238,6 +273,7 @@ def new_job(kind, d, payload=None):
     """Crée un calcul (proxies, video ou reel), le met en file et le persiste ; 30 calculs gardés dans l'historique."""
     job = {"id": "%x" % int(time.time() * 1000), "type": kind, "dossier": d.name, "etat": "attente",
            "avance": 0.0, "libelle": "En attente", "erreur": None, "resultat": None, "debut": time.time(), "_payload": payload}
+    if kind == "proxies": job["source"] = "compil" if (payload or {}).get("src") == "compil" else "rushs"
     with QCOND:
         JOBS.append(job); del JOBS[:-30]
         QUEUE.append(job); QCOND.notify()
@@ -299,7 +335,7 @@ def worker():
 def do_proxies(job):
     """Calcul « proxies » : pour chaque rush sans .json, proxy 540p et planches de vignettes 10 x 10 en une passe ffmpeg, puis métadonnées."""
     d = folder(job["dossier"]); pdir = d / PROXY_DIR; pdir.mkdir(exist_ok=True)
-    todo = [f for f in videos(d) if not (pdir / (f.stem + ".json")).exists()]
+    todo = [f for f in videos(d, (job.get("_payload") or {}).get("src")) if not (pdir / (f.stem + ".json")).exists()]
     infos = [(f, probe(f)) for f in todo]
     total = sum(i["dur"] for _, i in infos if i) or 1
     acc = 0.0
@@ -327,10 +363,34 @@ def do_proxies(job):
     job["libelle"] = "Proxies prêts"
     job["resultat"] = {"fichiers": len(infos)}
 
+def speed_of(pc, default=1.0):
+    """Vitesse d'un morceau, de 0,1 à 16 : 1 = normale, moins = ralenti, plus = accéléré."""
+    try: v = float(pc.get("vitesse") or default)
+    except (TypeError, ValueError): v = float(default)
+    return min(16.0, max(0.1, v))
+
+def to_drive(src, d, name):
+    """Copie un fichier produit dans le dossier de l'intervention (Drive) : par un fichier partiel, vérifié, puis renommé."""
+    part = d / (name + ".partiel")
+    try:
+        shutil.copyfile(str(src), str(part))      # contenu seul : le disque Drive refuse parfois les attributs
+        if part.stat().st_size != src.stat().st_size: raise RuntimeError("copie incomplète")
+        os.replace(str(part), str(d / name))
+    except Exception as e:
+        try: part.unlink()
+        except OSError: pass
+        keep = WORK_ROOT / name
+        shutil.copyfile(str(src), str(keep))
+        raise RuntimeError("copie dans le Drive impossible (%s). La vidéo est gardée sur le PC : %s" % (e, keep))
+
 def do_video(job):
-    """Calcul « video » : cartons (PNG envoyés par l'appli) et extraits à la résolution d'origine, concaténés avec chapitres, logo et sous-titres internes à part."""
+    """Calcul « video » : extraits à la résolution d'origine, avec leurs retouches (flous, formes, vitesse), concaténés avec chapitres.
+    Avec l'habillage : cartons (PNG envoyés par l'appli) et logo ; sans : extraits bruts, en une vidéo ou un fichier par passage.
+    Les commentaires internes vont dans un fichier de sous-titres à part."""
     d = folder(job["dossier"]); pl = job["_payload"]
     fmt = pl.get("format", "h")
+    hab = pl.get("habillage", True) is not False
+    apart = bool(pl.get("separes")) and not hab
     items = pl["passages"]
     srcs = {}
     for it in items:
@@ -340,6 +400,8 @@ def do_video(job):
                 f = d / name
                 if not f.is_file() or f.parent != d: raise ValueError("rush introuvable : " + name)
                 srcs[name] = probe(f)
+                if not srcs[name]: raise ValueError("rush illisible : " + name)
+    if not srcs: raise ValueError("aucun passage")
     W = max(i["w"] for i in srcs.values()); H = max(i["h"] for i in srcs.values())
     H += H % 2
     if fmt == "v": W = int(round(H * 9 / 16))
@@ -350,92 +412,118 @@ def do_video(job):
         vclip = "scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:black" % (W, H, W, H)
     vcard = "scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:black" % (W, H, W, H)
     tail = ",fps=30,setsar=1,format=yuv420p"
-    segs = [("carte", pl["ouverture"]["image"], float(pl["ouverture"]["duree"]), None, "Ouverture", None)]
+    segs = []
+    if hab and pl.get("ouverture"):
+        segs.append({"carte": pl["ouverture"]["image"], "dur": float(pl["ouverture"]["duree"]), "chap": "Ouverture", "idx": None})
     for n, it in enumerate(items):
-        segs.append(("carte", it["image"], float(it["duree"]), None, clean(it.get("titre") or "Passage %d" % (n + 1)), None))
+        chap = clean(it.get("titre") or "Passage %d" % (n + 1))
+        if hab and it.get("image"):
+            segs.append({"carte": it["image"], "dur": float(it["duree"]), "chap": chap, "idx": None}); chap = None
         for pc in it["morceaux"]:
-            segs.append(("clip", pc["fichier"], float(pc["fin"]) - float(pc["debut"]), float(pc["debut"]), None, n))
-    total = sum(s[2] for s in segs) or 1
+            vit = speed_of(pc)
+            segs.append({"pc": pc, "vit": vit, "dur": max(0.05, float(pc["fin"]) - float(pc["debut"])) / vit, "chap": chap, "idx": n}); chap = None
+    total = sum(s["dur"] for s in segs) or 1
     WORK_ROOT.mkdir(parents=True, exist_ok=True)
     need = total * (W * H / (3840 * 2160)) * 8e6 * 2.5      # estimation large : segments + assemblage
     free = shutil.disk_usage(WORK_ROOT).free
-    log("Vidéo %s : %dx%d, %d segments, %.0f s, %.1f Go libres dans %s" % (pl.get("nom"), W, H, len(segs), total, free / 1e9, WORK_ROOT))
+    log("Vidéo %s : %dx%d, %d segments, %.0f s, habillage : %s, %.1f Go libres dans %s" % (pl.get("nom"), W, H, len(segs), total, "oui" if hab else "non", free / 1e9, WORK_ROOT))
     if free < need:
         raise RuntimeError("Espace disque insuffisant dans %s : %.1f Go libres, environ %.1f Go nécessaires" % (WORK_ROOT, free / 1e9, need / 1e9))
     work = Path(tempfile.mkdtemp(prefix="esam_video_", dir=str(WORK_ROOT)))
     try:
         files, acc, chapters, pos, spans = [], 0.0, [], 0.0, {}
+        sprites = load_sprites(pl, work)
         logo = None
-        if pl.get("logo"):
+        if hab and pl.get("logo"):
             logo = work / "logo.png"
             logo.write_bytes(base64.b64decode(pl["logo"].split(",", 1)[-1]))
         m = min(W, H); LH = int(round(m * 0.09)) // 2 * 2; MG = int(round(m * 0.03))
-        for k, (kind, src, dur, start, chap, idx) in enumerate(segs):
-            out = work / ("s%03d.mp4" % k)
-            if kind == "carte":
+        for k, sg in enumerate(segs):
+            out = work / ("s%03d.mp4" % k); dur = sg["dur"]
+            if "carte" in sg:
                 png = work / ("c%03d.png" % k)
-                png.write_bytes(base64.b64decode(src.split(",", 1)[-1]))
+                png.write_bytes(base64.b64decode(sg["carte"].split(",", 1)[-1]))
                 job["libelle"] = "Carton %d" % (k + 1)
                 cmd = [FFMPEG, "-loop", "1", "-framerate", "30", "-i", str(png), "-t", "%.3f" % dur, "-vf", vcard + tail]
             else:
+                pc = sg["pc"]; src = pc["fichier"]; info = srcs[src]; vit = sg["vit"]
                 job["libelle"] = "Extrait %d sur %d : %s" % (k + 1, len(segs), src)
-                cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % start, "-t", "%.3f" % dur, "-i", str(d / src)]
+                # retouches : flous sur l'image source, puis mise au format, puis formes (nettes à la taille de sortie), puis vitesse
+                bargs, graph = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
+                nin = 1 + len(bargs) // 4
+                kk = (max if fmt == "v" else min)(W / info["w"], H / info["h"])
+                ox, oy = (W - info["w"] * kk) / 2, (H - info["h"] * kk) / 2
+                sargs, sfc = shape_chain(pc.get("formes"), sprites, nin,
+                                         lambda e: "(%s)*%.2f+(%.2f)" % (e, info["w"] * kk, ox), lambda e: "(%s)*%.2f+(%.2f)" % (e, info["h"] * kk, oy), info["h"] * kk)
+                nin += len(sargs) // 2
+                graph += vclip + ",setsar=1" + sfc + (",setpts=(PTS-STARTPTS)/%g" % vit if abs(vit - 1) > 0.001 else "") + ",fps=30,format=yuv420p"
+                largs = []
                 if logo:      # petit logo ESAM en bas à droite de toutes les images
-                    cmd += ["-i", str(logo), "-filter_complex",
-                            "[0:v]%s%s[b];[1:v]scale=%d:%d,format=rgba,colorchannelmixer=aa=0.9[l];[b][l]overlay=W-w-%d:H-h-%d:eof_action=repeat,format=yuv420p"
-                            % (vclip, tail, LH, LH, MG, MG)]
-                else:
-                    cmd += ["-vf", vclip + tail]
+                    largs = ["-i", str(logo)]
+                    graph += ("[b];[%d:v]scale=%d:%d,format=rgba,colorchannelmixer=aa=0.9[l];[b][l]overlay=W-w-%d:H-h-%d:eof_action=repeat,format=yuv420p"
+                              % (nin, LH, LH, MG, MG))
+                cmd = ([FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / src)]
+                       + bargs + sargs + largs + fc_args(work, k, graph) + ["-t", "%.3f" % dur])
             cmd += ENC["final"] + ["-g", "60", "-an", "-r", "30", str(out)]
             base = acc
             run(cmd, dur, lambda x: job.__setitem__("avance", 0.97 * (base + x * dur) / total), job)
             if not out.exists() or out.stat().st_size < 1000:
-                raise RuntimeError("segment %d vide (%s)" % (k + 1, src if kind == "clip" else "carton"))
+                raise RuntimeError("segment %d vide (%s)" % (k + 1, sg["pc"]["fichier"] if "pc" in sg else "carton"))
             real = (probe(out) or {}).get("dur") or dur       # durée réelle, pour des chapitres exacts
-            if chap: chapters.append([pos, chap])
-            if idx is not None:
-                sp = spans.setdefault(idx, [pos, pos]); sp[1] = pos + real
+            if sg["chap"]: chapters.append([pos, sg["chap"]])
+            if sg["idx"] is not None:
+                sp = spans.setdefault(sg["idx"], [pos, pos]); sp[1] = pos + real
             pos += real
-            files.append(out); acc += dur
-        job["libelle"] = "Assemblage"
-        lst = work / "liste.txt"
-        lst.write_text("".join("file '%s'\n" % f.as_posix() for f in files), encoding="utf-8")
+            files.append((out, sg["idx"])); acc += dur
         name = clean(pl.get("nom") or "ESAM_Compilation.mp4")
         name = re.sub(r'[\\/:*?"<>|]', "_", name)
         if not name.lower().endswith(".mp4"): name += ".mp4"
+        title = clean(pl.get("titre") or name[:-4])
+        def concat(parts, dest, extra):
+            lst = work / (dest.stem + ".txt")
+            lst.write_text("".join("file '%s'\n" % f.as_posix() for f in parts), encoding="utf-8")
+            run([FFMPEG, "-f", "concat", "-safe", "0", "-i", str(lst)] + extra + ["-movflags", "+faststart", str(dest)], None, None, job)
+            info = probe(dest)
+            if not info or info["dur"] < 0.2: raise RuntimeError("la vidéo assemblée est illisible")
+            return info
+        if apart:
+            # un fichier par passage : chaque extrait garde le nom de son passage
+            job["libelle"] = "Assemblage"
+            names, size = [], 0
+            for n, it in enumerate(items):
+                parts = [f for f, idx in files if idx == n]
+                if not parts: continue
+                one = "%s_%02d%s.mp4" % (name[:-4], n + 1, ("_" + slug(it.get("nom_passage") or "")) if slug(it.get("nom_passage") or "") else "")
+                tmp = work / ("extrait%03d.mp4" % n)
+                concat(parts, tmp, ["-c", "copy", "-metadata", "title=" + title])
+                job["libelle"] = "Copie dans le Drive : " + one
+                to_drive(tmp, d, one)
+                names.append(one); size += (d / one).stat().st_size
+            job["resultat"] = {"fichiers": names, "largeur": W, "hauteur": H, "duree": round(total, 1), "extraits": True,
+                               "taille_mo": round(size / 1048576, 1)}
+            job["libelle"] = "Extraits enregistrés : %d fichiers" % len(names)
+            return
+        job["libelle"] = "Assemblage"
         tmp = work / "final.mp4"
         meta = work / "chapitres.txt"
         def esc_meta(t): return re.sub(r"([=;#\\\n])", r"\\\1", t)
-        lines = [";FFMETADATA1", "title=" + esc_meta(clean(pl.get("titre") or name[:-4]))]
+        lines = [";FFMETADATA1", "title=" + esc_meta(title)]
         for i, (a, t) in enumerate(chapters):
             b = chapters[i + 1][0] if i + 1 < len(chapters) else pos
             lines += ["[CHAPTER]", "TIMEBASE=1/1000", "START=%d" % round(a * 1000), "END=%d" % round(b * 1000), "title=" + esc_meta(t)]
         meta.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        run([FFMPEG, "-f", "concat", "-safe", "0", "-i", str(lst), "-i", str(meta), "-map", "0", "-map_metadata", "1", "-map_chapters", "1",
-             "-c", "copy", "-movflags", "+faststart", str(tmp)], None, None, job)
-        info = probe(tmp)
-        if not info or info["dur"] < 0.5:
-            raise RuntimeError("la vidéo assemblée est illisible")
+        concat([f for f, _ in files], tmp, ["-i", str(meta), "-map", "0", "-map_metadata", "1", "-map_chapters", "1", "-c", "copy"])
         job["libelle"] = "Copie dans le Drive"
-        part = d / (name + ".partiel")
-        size = tmp.stat().st_size
-        try:
-            shutil.copyfile(str(tmp), str(part))      # contenu seul : le disque Drive refuse parfois les attributs
-            if part.stat().st_size != size: raise RuntimeError("copie incomplète")
-            os.replace(str(part), str(d / name))
-        except Exception as e:
-            try: part.unlink()
-            except OSError: pass
-            keep = WORK_ROOT / name
-            shutil.copyfile(str(tmp), str(keep))
-            raise RuntimeError("copie dans le Drive impossible (%s). La vidéo est gardée sur le PC : %s" % (e, keep))
+        to_drive(tmp, d, name)
         def ts(x):
             x = int(x); h, m, sec = x // 3600, x % 3600 // 60, x % 60
             return ("%d:%02d:%02d" % (h, m, sec)) if h else ("%d:%02d" % (m, sec))
-        chap_txt = "\n".join("%s %s" % (ts(a), t) for a, t in chapters) + "\n"
-        chap_name = name[:-4] + "_chapitres.txt"
-        try: (d / chap_name).write_text(clean(chap_txt), encoding="utf-8")
-        except OSError as e: log("Fichier de chapitres non écrit :", e); chap_name = None
+        chap_name = None
+        if hab:      # liste des chapitres à coller dans une description : sans objet pour des extraits bruts
+            chap_txt = "\n".join("%s %s" % (ts(a), t) for a, t in chapters) + "\n"
+            chap_name = name[:-4] + "_chapitres.txt"
+            try: (d / chap_name).write_text(clean(chap_txt), encoding="utf-8")
+            except OSError as e: log("Fichier de chapitres non écrit :", e); chap_name = None
         # commentaires internes : fichier de sous-titres à part, jamais incrusté dans la vidéo (miroir de buildSrt dans index.html)
         def st(x):
             ms_ = int(round(max(0, x) * 1000))
@@ -453,10 +541,10 @@ def do_video(job):
             srt_name = name[:-4] + ".commentaires-ESAM.srt"
             try: (d / srt_name).write_text("\n".join(srt), encoding="utf-8")
             except OSError as e: log("Sous-titres non écrits :", e); srt_name = None
-        job["resultat"] = {"fichier": name, "largeur": W, "hauteur": H, "duree": round(total, 1),
+        job["resultat"] = {"fichier": name, "largeur": W, "hauteur": H, "duree": round(total, 1), "habillage": hab,
                            "commentaires": nb, "fichier_commentaires": srt_name,
                            "taille_mo": round((d / name).stat().st_size / 1048576, 1),
-                           "chapitres": len(chapters), "fichier_chapitres": chap_name}
+                           "chapitres": len(chapters) if hab else 0, "fichier_chapitres": chap_name}
         job["libelle"] = "Vidéo enregistrée : " + name
     finally:
         shutil.rmtree(work, ignore_errors=True)
@@ -476,46 +564,90 @@ def crop_box(w, h):
 
 def key_expr(keys, f, default=0.5):
     """Valeur du champ f (0 à 1) en fonction de t (secondes depuis le début du morceau), lissée entre les points
-    (expression ffmpeg ; miroir de rKeyAt dans index.html, même lissage en S)."""
+    (expression ffmpeg entre parenthèses ; miroir de rKeyAt dans index.html, même lissage en S).
+    Somme à plat, un terme par intervalle : un suivi de plusieurs centaines de points ne s'emboîte pas."""
     ks = sorted(({"t": float(k["t"]), "v": min(1.0, max(0.0, float(k[f])))} for k in (keys or [])), key=lambda k: k["t"])
-    if not ks: return "%.4f" % default
-    e = "%.4f" % ks[-1]["v"]
-    for i in range(len(ks) - 2, -1, -1):
-        a, b = ks[i], ks[i + 1]
-        span = max(0.001, b["t"] - a["t"])
-        sm = "clip((t-(%.3f))/%.3f,0,1)" % (a["t"], span)
-        e = "if(lt(t,%.3f),%.4f+(%.4f)*%s*%s*(3-2*%s),%s)" % (b["t"], a["v"], b["v"] - a["v"], sm, sm, sm, e)
-    return "if(lt(t,%.3f),%.4f,%s)" % (ks[0]["t"], ks[0]["v"], e)
+    if not ks: return "(%.4f)" % default
+    e = "%.4f" % ks[0]["v"]
+    for a, b in zip(ks, ks[1:]):
+        if abs(b["v"] - a["v"]) < 0.00005: continue
+        sm = "clip((t-(%.3f))/%.3f,0,1)" % (a["t"], max(0.001, b["t"] - a["t"]))
+        e += "+(%.4f)*%s*%s*(3-2*%s)" % (b["v"] - a["v"], sm, sm, sm)
+    return "(" + e + ")"
 
 def x_expr(keys, course):
     """Position x du cadre en pixels."""
     if course <= 0: return "0"
-    return "(%s)*%d" % (key_expr(keys, "x"), course)
+    return "%s*%d" % (key_expr(keys, "x"), course)
 
-BLUR, FEATHER = 0.1, 0.4   # flous : écart type du flou et largeur du fondu de bord, en fraction de la zone (comme le navigateur)
+# flous (comme softBlur dans index.html) : écart type du flou doux en fraction du petit côté de la zone, largeur du fondu de bord
+# (ovale au flou doux, puis rectangle ou mosaïque), nombre de carreaux de la mosaïque sur le petit côté
+BLUR, FEATHER, FEATHER2, PIX = 0.1, 0.4, 0.15, 8
 
-def blur_mask(work, zs):
-    """Masque d'ellipse aux bords fondus (niveaux de gris) pour une zone de zs pixels, fait une fois par taille."""
-    out = work / ("masque_%d.png" % zs)
+def zone_box(z, w, h):
+    """Taille en pixels (paire) d'une zone de flou : hauteur = s x hauteur de l'image, largeur = hauteur x ar (miroir de fxZone dans index.html)."""
+    zh = max(8, int(float(z.get("s") or 0.2) * h) // 2 * 2)
+    zw = max(8, int(zh * float(z.get("ar") or 1)) // 2 * 2)
+    return min(zw, w // 2 * 2), min(zh, h // 2 * 2)
+
+def blur_mask(work, zw, zh, rect, feather):
+    """Masque aux bords fondus (niveaux de gris) d'une zone de zw x zh pixels, ovale ou rectangle, fait une fois par taille."""
+    out = work / ("masque_%s_%d_%d_%d.png" % ("r" if rect else "o", zw, zh, round(feather * 100)))
     if not out.exists():
-        a = "255*clip((1-hypot((X-W/2)/(W/2),(Y-H/2)/(H/2)))/%g,0,1)" % FEATHER
-        run([FFMPEG, "-f", "lavfi", "-i", "color=c=black:s=%dx%d,format=gray" % (zs, zs), "-vf", "geq=lum='%s'" % a, "-frames:v", "1", str(out)])
+        if rect:
+            r = max(1.0, feather * min(zw, zh) / 2)
+            a = "255*clip(min(X,W-1-X)/%g,0,1)*clip(min(Y,H-1-Y)/%g,0,1)" % (r, r)
+        else:
+            a = "255*clip((1-hypot((X-W/2)/(W/2),(Y-H/2)/(H/2)))/%g,0,1)" % feather
+        run([FFMPEG, "-f", "lavfi", "-i", "color=c=black:s=%dx%d,format=gray" % (zw, zh), "-vf", "geq=lum='%s'" % a, "-frames:v", "1", str(out)])
     return out
 
 def blur_chain(flous, w, h, work, first):
-    """Zones de flou suivies, appliquées à l'image source avant le cadrage : (entrées ffmpeg des masques, filtre de [0:v] vers la suite)."""
+    """Zones de flou suivies (ovale ou rectangle, flou doux ou mosaïque), appliquées à l'image source avant le cadrage :
+    (entrées ffmpeg des masques, filtre de [0:v] vers la suite)."""
     fc, last, args = "", "[0:v]", []
     for j, z in enumerate(flous or []):
-        zs = max(8, int(float(z.get("s") or 0.2) * h) // 2 * 2)
-        if zs > min(w, h): zs = min(w, h) // 2 * 2
-        ex = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "x"), w, zs // 2, w - zs)
-        ey = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "y"), h, zs // 2, h - zs)
-        args += ["-loop", "1", "-i", str(blur_mask(work, zs))]
-        fc += ("%ssplit[fa%d][fb%d];[fb%d]crop=%d:%d:x='%s':y='%s',gblur=sigma=%.1f,format=yuva420p[fc%d];[%d:v]format=gray[fm%d];"
+        zw, zh = zone_box(z, w, h)
+        rect, pixel = z.get("forme") == "rect", z.get("mode") == "pixel"
+        ex = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "x"), w, zw // 2, w - zw)
+        ey = "clip(%s*%d-%d,0,%d)" % (key_expr(z.get("cles"), "y"), h, zh // 2, h - zh)
+        if pixel:
+            b = max(2, int(round(min(zw, zh) / PIX)))
+            eff = "scale=%d:%d:flags=area,scale=%d:%d:flags=neighbor" % (max(1, int(round(zw / b))), max(1, int(round(zh / b))), zw, zh)
+        else:
+            eff = "gblur=sigma=%.1f" % (min(zw, zh) * BLUR)
+        args += ["-loop", "1", "-i", str(blur_mask(work, zw, zh, rect, FEATHER2 if rect or pixel else FEATHER))]
+        fc += ("%ssplit[fa%d][fb%d];[fb%d]crop=%d:%d:x='%s':y='%s',%s,format=yuva420p[fc%d];[%d:v]format=gray[fm%d];"
                "[fc%d][fm%d]alphamerge[fz%d];[fa%d][fz%d]overlay=x='%s':y='%s':shortest=1[fo%d];") % (
-               last, j, j, j, zs, zs, ex, ey, zs * BLUR, j, first + j, j, j, j, j, j, j, ex, ey, j)
+               last, j, j, j, zw, zh, ex, ey, eff, j, first + j, j, j, j, j, j, j, ex, ey, j)
         last = "[fo%d]" % j
     return args, fc + last
+
+def load_sprites(pl, work):
+    """Écrit les dessins de formes envoyés par l'appli (PNG transparents, un par flèche ou cercle) : {identifiant: fichier}."""
+    out = {}
+    for i, (k, data) in enumerate((pl.get("sprites") or {}).items()):
+        out[str(k)] = png_from(data, work / ("forme%03d.png" % i))
+    return out
+
+def shape_chain(formes, sprites, first, fx, fy, hsrc):
+    """Formes suivies (flèches, cercles) posées sur l'image déjà mise au format, donc nettes à la taille de sortie.
+    fx, fy : expression de la position en pixels de sortie à partir de la position en fraction de l'image source ;
+    hsrc : hauteur de l'image source à l'écran, en pixels de sortie (le dessin est fait pour une hauteur « ref »).
+    Rend (entrées ffmpeg, suite de filtre à accoler au filtre précédent, sans étiquette de fin)."""
+    args, fc = [], ""
+    for f in formes or []:
+        png = sprites.get(str(f.get("image")))
+        if not png: continue
+        k = len(args) // 2
+        F = hsrc / max(1.0, float(f.get("ref") or 2160))
+        a = max(0.0, float(f.get("debut") or 0)); b = float(f["fin"]) if f.get("fin") is not None else 1e6
+        args += ["-i", str(png)]
+        fc += ("[sa%d];[%d:v]scale=w='max(2,iw*%.5f)':h='max(2,ih*%.5f)',format=rgba[sb%d];"
+               "[sa%d][sb%d]overlay=x='%s-(%.2f)':y='%s-(%.2f)':eof_action=repeat:enable='between(t,%.3f,%.3f)'") % (
+               k, first + k, F, F, k, k, k, fx(key_expr(f.get("cles"), "x")), float(f.get("ax") or 0) * F,
+               fy(key_expr(f.get("cles"), "y")), float(f.get("ay") or 0) * F, a, b)
+    return args, fc
 
 def story_cuts(total, bounds, limit):
     """Instants de coupe d'une story : morceaux de `limit` secondes au plus, coupés de préférence à une limite de passage (miroir de storyCuts dans index.html)."""
@@ -557,6 +689,7 @@ def do_reel(job):
     work = Path(tempfile.mkdtemp(prefix="esam_reel_", dir=str(WORK_ROOT)))
     try:
         # calques dessinés par le navigateur (logo, titre, textes, accéléré) : image plein cadre, plage de temps, fondus
+        sprites = load_sprites(pl, work)
         layers = []
         for i, c in enumerate(pl.get("calques") or []):
             layers.append((png_from(c["image"], work / ("c%03d.png" % i)), float(c["debut"]), float(c["fin"]),
@@ -568,8 +701,8 @@ def do_reel(job):
                 dur = max(0.5, float(sg.get("duree") or 3))
                 plan.append(("photo", sg, img, 1.0, pos, dur, i)); pos += dur
                 continue
-            vit = max(1.0, float(sg.get("vitesse") or 1))
             for pc in sg["morceaux"]:
+                vit = speed_of(pc, sg.get("vitesse") or 1)      # vitesse par morceau ; celle du passage pour une appli plus ancienne
                 src_d = max(0.05, float(pc["fin"]) - float(pc["debut"]))
                 plan.append(("clip", pc, None, vit, pos, src_d / vit, i))
                 pos += src_d / vit
@@ -609,6 +742,7 @@ def do_reel(job):
                 if not seg_bounds or seg_bounds[-1][1] != idx: seg_bounds.append((at, idx))
                 job["libelle"] = "%s %d sur %d : %s" % ("Photo" if kind == "photo" else "Passage", idx + 1, len(segs_in),
                                                         clean(segs_in[idx].get("nom") or (pc or {}).get("fichier") or ""))
+                nextra = 0
                 if kind == "photo":
                     if pc.get("zoom"):
                         n = max(1, int(round(dur * 30)))
@@ -623,11 +757,15 @@ def do_reel(job):
                     info = srcs[pc["fichier"]]
                     cw, ch, course, y = crop_box(info["w"], info["h"])
                     bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
-                    fc = bfc + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1,setpts=(PTS-STARTPTS)/%g,fps=30[b]"
-                          % (cw, ch, x_expr(pc.get("cles"), course), y, RW, RH, vit))
-                    cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])] + bargs
-                oargs, ofc = over(at, dur, 1 + len(bargs) // 4)
-                cmd += oargs + ["-filter_complex", fc + ofc, "-map", "[v]", "-t", "%.3f" % dur]
+                    xe = x_expr(pc.get("cles"), course)
+                    # formes suivies : leur place dans l'image source, ramenée au cadre 9:16 qui se déplace
+                    sargs, sfc = shape_chain(pc.get("formes"), sprites, 1 + len(bargs) // 4,
+                                             lambda e: "(%s*%d-(%s))*%.5f" % (e, info["w"], xe, RW / cw), lambda e: "(%s*%d-%d)*%.5f" % (e, info["h"], y, RH / ch), info["h"] * RH / ch)
+                    fc = bfc + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1" % (cw, ch, xe, y, RW, RH)) + sfc + ",setpts=(PTS-STARTPTS)/%g,fps=30[b]" % vit
+                    cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])] + bargs + sargs
+                    nextra = len(bargs) // 4 + len(sargs) // 2
+                oargs, ofc = over(at, dur, 1 + nextra)
+                cmd += oargs + fc_args(work, k, fc + ofc) + ["-map", "[v]", "-t", "%.3f" % dur]
             cmd += ENC["final"] + ["-g", "60", "-an", "-r", "30", str(out)]
             base = acc
             run(cmd, dur, lambda x: job.__setitem__("avance", 0.9 * (base + x * dur) / total), job)
@@ -765,10 +903,10 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "version": VERSION, "racine": str(ROOT), "racine_ok": ROOT.is_dir(), "gpu": ENC.get("gpu"),
                                        "travaux": jobs, "veille": {"mode": IDLE_MODE, "minutes": IDLE_MIN}})
             if u.path == "/api/interventions": return self.send_json({"interventions": list_interventions()})
-            if u.path == "/api/manifest": return self.send_json(manifest(folder(q.get("d"))))
+            if u.path == "/api/manifest": return self.send_json(manifest(folder(q.get("d")), q.get("src")))
             if u.path == "/api/image": return self.send_file(photo_copy(folder(q.get("d")), q.get("f"), q.get("taille")))
             if u.path == "/api/etat":
-                p = folder(q.get("d")) / WORK_DIR / "etat.json"
+                p = etat_file(folder(q.get("d")), q.get("src"))
                 return self.send_json(json.loads(p.read_text(encoding="utf-8")) if p.exists() else {})
             if u.path.startswith("/files/"):
                 parts = [urllib.parse.unquote(x) for x in u.path[len("/files/"):].split("/")]
@@ -806,10 +944,11 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "fichier": "musique" + ext})
             b = self.body()
             if u.path == "/api/proxies":
-                d = folder(b.get("d"))
+                d = folder(b.get("d")); src = "compil" if b.get("src") == "compil" else "rushs"
                 with JLOCK:
-                    j = next((x for x in JOBS if x["dossier"] == d.name and x["type"] == "proxies" and x["etat"] in ("attente", "en_cours")), None)
-                return self.send_json(public(j or new_job("proxies", d)))
+                    j = next((x for x in JOBS if x["dossier"] == d.name and x["type"] == "proxies" and x.get("source", "rushs") == src
+                              and x["etat"] in ("attente", "en_cours")), None)
+                return self.send_json(public(j or new_job("proxies", d, {"src": src})))
             if u.path == "/api/video": return self.send_json(public(new_job("video", folder(b.get("d")), b)))
             if u.path == "/api/reel": return self.send_json(public(new_job("reel", folder(b.get("d")), b)))
             if u.path == "/api/annuler":
@@ -824,7 +963,7 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/etat":
                 d = folder(b.get("d")); w = d / WORK_DIR; w.mkdir(exist_ok=True)
                 tmp = w / "etat.tmp"; tmp.write_text(json.dumps(b.get("etat", {}), ensure_ascii=False), encoding="utf-8")
-                os.replace(tmp, w / "etat.json")
+                os.replace(tmp, etat_file(d, b.get("src")))
                 return self.send_json({"ok": True})
             if u.path == "/api/fiche":
                 d = folder(b.get("d"))
@@ -873,6 +1012,7 @@ def main():
     if not shutil.which("ffmpeg"): log("ATTENTION : ffmpeg introuvable dans le PATH")
     if not ROOT.is_dir(): log("ATTENTION : dossier des rushs introuvable :", ROOT)
     detect_encoders()
+    detect_filter_file()
     load_jobs()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=idle_watch, daemon=True).start()
