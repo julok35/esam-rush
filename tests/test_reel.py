@@ -3,7 +3,7 @@
 Usage : python tests/test_reel.py [--garder]
 Prérequis : ffmpeg, playwright (pip install playwright ; playwright install chromium).
 Fabrique de faux rushs, lance server.py (port 8798, config temporaire), pose trois marqueurs,
-monte un réel de plus de 60 s avec cadrage suivi, accéléré, textes et musique, le fait calculer
+monte un réel de plus de 60 s avec cadrage suivi, retouches (flou suivi, cercle, ralenti), accéléré, textes et musique, le fait calculer
 par le PC puis en story, et vérifie les fichiers produits (1080 x 1920, durée, piste son).
 Les captures d'écran sont écrites dans le dossier temporaire affiché.
 """
@@ -62,19 +62,27 @@ async def navigateur(tmp, iv):
             await pg.mouse.move(cx - 60 + i * 15, cy); await pg.wait_for_timeout(150)
         await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
         print("cadrage :", await pg.inner_text("#rEdit .grp >> nth=0"))
-        # passage 1 : zone de flou suivie pendant la lecture
-        await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
-        await pg.click('#rEdit [data-rfsize="0.32"]'); await pg.wait_for_timeout(200)
+        # passage 1 : retouches du passage (flou pixelisé suivi du doigt pendant la lecture, cercle, ralenti à mi-passage)
         await pg.click('#rEdit [data-rtrim="a"]'); await pg.wait_for_timeout(200)
-        await pg.locator("#rCv").scroll_into_view_if_needed()
-        box = await pg.locator("#rCv").bounding_box()
+        await pg.click("#rEdit [data-rfx]"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1000)
+        await pg.click('#fxPanel [data-fxadd="flou"]'); await pg.wait_for_timeout(300)
+        await pg.fill("#fxSize", "32"); await pg.dispatch_event("#fxSize", "input")
+        await pg.click('#fxPanel [data-fxmode="pixel"]'); await pg.wait_for_timeout(200)
+        await pg.locator("#fxCv").scroll_into_view_if_needed()
+        box = await pg.locator("#fxCv").bounding_box()
         cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+        await pg.click("#fxPlay"); await pg.wait_for_timeout(300)             # lecture, puis le doigt se pose sur le flou et le suit
         await pg.mouse.move(cx, cy); await pg.mouse.down()
-        await pg.click("#rPlay", force=True)
         for i in range(8):
             await pg.mouse.move(cx - 80 + i * 20, cy - 30 + i * 6); await pg.wait_for_timeout(150)
-        await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
-        await pg.screenshot(path=str(tmp / "r1b_flou.png"))
+        await pg.mouse.up(); await pg.click("#fxPlay"); await pg.wait_for_timeout(300)
+        await pg.click('#fxPanel [data-fxadd="cercle"]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("const s = document.querySelector('#fxSlider'); s.value = 500; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))")
+        await pg.wait_for_timeout(500)
+        await pg.click('#fxPanel [data-fxvit="0.5"]'); await pg.wait_for_timeout(300)
+        await pg.screenshot(path=str(tmp / "r1b_retouches.png"))
+        await pg.click("#fxDone"); await pg.wait_for_timeout(400)
+        print("retouches :", await pg.inner_text("#rEdit .rtarget"))
         # photo du drone dans le montage, avec texte de 8 s
         await volet(0); await pg.click("#rPhSum"); await pg.wait_for_timeout(300)
         print("photos :", await pg.locator("#rPhList [data-rph]").count())
@@ -120,11 +128,16 @@ async def navigateur(tmp, iv):
         await pg.screenshot(path=str(tmp / "r3_page.png"), full_page=True)
         etat = api("api/etat?d=" + urllib.parse.quote(iv))
         reel = etat["meta"]["reel"]
-        print("titre :", reel["titreBox"], reel["titreDur"], "logo :", reel["logo"], "flous :", [len(x.get("flous") or []) for x in reel["items"]], [len(f["keys"]) for x in reel["items"] for f in (x.get("flous") or [])])
+        fx = [m.get("fx") or {} for m in etat["markers"]]
+        print("titre :", reel["titreBox"], reel["titreDur"], "logo :", reel["logo"], "flous des photos :", [len(x.get("flous") or []) for x in reel["items"]])
+        print("retouches :", [(len(f.get("flous") or []), len(f.get("formes") or []), f.get("vits")) for f in fx], [len(z["keys"]) for f in fx for z in (f.get("flous") or [])])
         print("éléments :", reel["elems"])
         assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] == 1.3 and reel["titreBox"]["c"] == "#F9DD10" and reel["titreDur"] == 8
         assert [e["kind"] for e in reel["elems"]] == ["fleche", "texte"] and reel["elems"][0]["rot"] == 135 and reel["elems"][1]["x"] < 0.45
-        assert any(x.get("photo") for x in reel["items"]) and any(len(f["keys"]) >= 2 for x in reel["items"] for f in (x.get("flous") or []))
+        assert any(x.get("photo") and x.get("flous") for x in reel["items"])
+        # le flou du passage est rangé dans les retouches du marqueur (partagées avec la vidéo compilée), avec ses points de suivi
+        assert any(len(z["keys"]) >= 2 and z["mode"] == "pixel" for f in fx for z in (f.get("flous") or []))
+        assert any((f.get("formes") or []) and (f.get("vits") or []) and f["vits"][0]["v"] == 0.5 for f in fx)
         print("enregistré :", len(reel["items"]), "passages,", [len(x.get("keys") or []) for x in reel["items"]], "points, vitesses", [x.get("vit") for x in reel["items"]], "musique", reel.get("musique"))
         for story in (False, True):
             await pg.click("#rGoStory" if story else "#rGoReel")

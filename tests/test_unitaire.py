@@ -35,10 +35,38 @@ def test_crop_box():
     assert server.crop_box(1000, 1000) == (562, 1000, 438, 0)        # carré : cadre plein hauteur, course de 438 px
 
 def test_key_expr():
-    assert server.key_expr([], "x") == "0.5000"
-    assert server.key_expr([{"t": 2, "x": 0.25}], "x") == "if(lt(t,2.000),0.2500,0.2500)"
+    assert server.key_expr([], "x") == "(0.5000)"
+    assert server.key_expr([{"t": 2, "x": 0.25}], "x") == "(0.2500)"
     e = server.key_expr([{"t": 0, "x": 0}, {"t": 4, "x": 1}], "x")
-    assert e.startswith("if(lt(t,0.000),0.0000,if(lt(t,4.000),0.0000+(1.0000)*") and e.endswith("1.0000))")
+    assert e == "(0.0000+(1.0000)*clip((t-(0.000))/4.000,0,1)*clip((t-(0.000))/4.000,0,1)*(3-2*clip((t-(0.000))/4.000,0,1)))", e
+    assert server.key_expr([{"t": 0, "x": 0.3}, {"t": 4, "x": 0.3}], "x") == "(0.3000)"      # intervalle sans mouvement : aucun terme
+
+def ffexpr(e, t):
+    """Évalue une expression ffmpeg de key_expr à l'instant t."""
+    return eval(e, {"__builtins__": {}}, {"t": t, "clip": lambda x, a, b: max(a, min(b, x))})
+
+def test_zone_box_et_masques():
+    assert server.zone_box({"s": 0.2}, 1920, 1080) == (216, 216)                      # carré : comme avant la v0.17
+    assert server.zone_box({"s": 0.1, "ar": 2.5}, 1920, 1080) == (270, 108)           # plaque : plus large que haute
+    assert server.zone_box({"s": 0.9, "ar": 4}, 640, 360) == (640, 324)               # bornée à l'image
+    assert server.speed_of({"vitesse": 0.5}) == 0.5 and server.speed_of({}) == 1.0 and server.speed_of({"vitesse": 99}) == 16.0
+    assert server.speed_of({}, 4) == 4.0 and server.speed_of({"vitesse": "x"}) == 1.0
+
+def test_sources():
+    assert server.is_source("DJI_20260912143005_0001_W.MP4") and not server.is_source("ESAM_Compilation_2026-09-12_Test.mp4")
+    assert not server.is_source("ESAM_Extraits_2026-09-12_Test_01_Bonne_piste.mp4") and not server.is_source("notes.txt")
+    assert server.is_source("ESAM_Compilation_2026-09-12_Test.mp4", "compil") and server.is_source("ESAM_Extraits_x.mp4", "compil")
+    assert not server.is_source("ESAM_Reel_2026-09-12_Test.mp4", "compil") and not server.is_source("DJI_20260912143005_0001_W.MP4", "compil")
+    d = TMP / "rushs" / "2026-09-12 Test"; d.mkdir(parents=True, exist_ok=True)
+    assert server.etat_file(d).name == "etat.json" and server.etat_file(d, "compil").name == "etat-compil.json"
+
+def test_chaines_de_filtres():
+    """Flous et formes : le filtre produit garde le bon nombre d'entrées et d'étiquettes (sans lancer ffmpeg pour les formes)."""
+    args, fc = server.shape_chain([{"image": "a", "ref": 2160, "ax": 100, "ay": 50, "cles": [{"t": 0, "x": 0.5, "y": 0.5}], "debut": 1, "fin": 3},
+                                   {"image": "absente", "cles": []}], {"a": Path("a.png")}, 2, lambda e: e + "*1920", lambda e: e + "*1080", 1080)
+    assert args == ["-i", "a.png"] and "[2:v]scale=w='max(2,iw*0.50000)'" in fc and "overlay=x='(0.5000)*1920-(50.00)':y='(0.5000)*1080-(25.00)'" in fc
+    assert "enable='between(t,1.000,3.000)'" in fc and fc.startswith("[sa0];") and not fc.endswith("]")
+    assert server.shape_chain([], {}, 1, None, None, 1080) == ([], "")
 
 def test_story_cuts():
     assert server.story_cuts(50, [0, 20, 40], 60) == [0, 50]
@@ -59,6 +87,24 @@ def test_jpeg_orientation():
         assert server.jpeg_orientation(p) == o, o
     p = TMP / "sans.jpg"; p.write_bytes(b"\xff\xd8\xff\xda"); assert server.jpeg_orientation(p) == 1
     p = TMP / "pas.jpg"; p.write_bytes(b"PNG"); assert server.jpeg_orientation(p) == 1
+
+def test_miroir_lissage():
+    """rKeyAt (index.html) et key_expr (server.py) donnent la même position entre les points de suivi."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  (Playwright absent : miroir rKeyAt non vérifié)"); return
+    keys = [{"t": 0.5, "x": 0.2, "y": 0.8}, {"t": 1.2, "x": 0.35, "y": 0.8}, {"t": 3.0, "x": 0.9, "y": 0.1}, {"t": 3.2, "x": 0.85, "y": 0.4}]
+    temps = [-1, 0, 0.5, 0.7, 1.19, 1.2, 2.0, 2.9, 3.1, 3.2, 8]
+    with sync_playwright() as p:
+        b = p.chromium.launch(); pg = b.new_page()
+        pg.goto((RACINE / "index.html").as_uri())
+        for f in ("x", "y"):
+            e = server.key_expr(keys, f)
+            for t in temps:
+                js = pg.evaluate("([k, t, f]) => window.ESAM_TEST.keyAt(k, t, f)", [keys, t, f])
+                assert abs(js - ffexpr(e, t)) < 0.0006, (f, t, js, ffexpr(e, t))
+        b.close()
 
 def test_miroir_story_cuts():
     """storyCuts (index.html) et story_cuts (server.py) coupent aux mêmes instants sur les mêmes plans."""
