@@ -458,6 +458,11 @@ body.srv .empty{max-width:760px}
 .srvst{margin-top:18px;font-size:13px;color:var(--muted)}
 .srvst summary{cursor:pointer;font-weight:600;padding:10px 0;min-height:44px}
 .srvst p{margin:0}
+.srvst .majline{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
+/* mise à jour du programme du PC : bandeau au-dessus de la liste quand une version plus récente existe */
+.majbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 14px;padding:10px 12px;border:2px solid var(--onblue);border-radius:10px;background:var(--yellow);color:var(--onblue);font-size:14px;font-weight:600}
+.majbox span{flex:1 1 220px}
+.majbox .btn{background:var(--bg);color:var(--ink);border-color:var(--onblue)}
 @media (min-width:1100px){
   body.srv .empty{max-width:1280px}
   body.srv .ivlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
@@ -678,10 +683,12 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <h2>Interventions</h2>
         <input class="field" id="ivFilter" type="search" placeholder="Filtrer par nom ou date" aria-label="Filtrer les interventions" autocomplete="off" hidden>
       </div>
+      <div class="majbox" id="majBox" hidden><span id="majTxt" role="status"></span><button type="button" class="btn small" id="majBtn">Mettre à jour le PC</button></div>
+      <p class="hint miss" id="majErr" role="alert" hidden></p>
       <p class="hint srvlead" id="srvLead">Une intervention par dossier du Drive. « Préparer » crée sur le PC une copie légère de chaque vidéo pour la lecture à distance ; les fichiers d'origine ne sont pas modifiés.</p>
       <p class="hint miss" id="srvInfo" hidden></p>
       <div id="ivList" class="ivlist"></div>
-      <details class="srvst" id="srvSt" hidden><summary id="srvStSum">État du PC</summary><p id="srvTech"></p></details>
+      <details class="srvst" id="srvSt" hidden><summary id="srvStSum">État du PC</summary><p id="srvTech"></p><p class="majline"><button type="button" class="btn small ghost" id="majCheck">Rechercher une mise à jour</button><span id="majRes" role="status"></span></p></details>
     </div>
   </section>
 
@@ -1012,7 +1019,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.16";
+const APP_VERSION = "0.17";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -3235,7 +3242,51 @@ async function srvInit(){
   $("helpHome").textContent = "Le logo et « Interventions », en haut à gauche, ramènent à la liste des interventions. Les marqueurs sont enregistrés dans le dossier de l'intervention.";
   renderResume();
   refreshList();
+  majLook(false);
 }
+/* mise à jour du programme du PC depuis l'appli. GET api/maj : une version plus récente existe-t-elle sur GitHub (réponse gardée
+   10 minutes par le PC, force = 1 pour redemander) ; POST api/maj : le PC la récupère (git pull) puis se relance.
+   La page est rechargée dès que le PC répond de nouveau, pour charger la nouvelle appli. */
+let MAJ = null, majBusy = false;
+async function majLook(force){
+  try { MAJ = await api(`api/maj${force ? "?force=1" : ""}`); } catch(e){ MAJ = null; }
+  renderMaj();
+  return MAJ;
+}
+function renderMaj(){
+  if(majBusy) return;
+  const on = !!(MAJ && MAJ.disponible);
+  $("majBox").hidden = !on;
+  if(on) $("majTxt").textContent = `Une version plus récente du programme est disponible${MAJ.nouvelle && MAJ.nouvelle !== MAJ.version ? ` : v${MAJ.nouvelle} (installée : v${MAJ.version})` : ""}.`;
+}
+function majFail(msg){
+  majBusy = false; $("majBtn").disabled = false; renderMaj();
+  $("majErr").hidden = false; $("majErr").textContent = `[${msg}]`;
+}
+async function majRun(){
+  if(majBusy) return;
+  majBusy = true; $("majBtn").disabled = true; $("majErr").hidden = true; $("majRes").textContent = "";
+  $("majBox").hidden = false; $("majTxt").textContent = "Mise à jour du PC en cours : récupération de la version...";
+  let r;
+  try { r = await api("api/maj", {}); } catch(e){ majFail(`Mise à jour impossible : ${errMsg(e)}`); return; }
+  if(!r.maj){ majBusy = false; $("majBtn").disabled = false; MAJ = null; renderMaj(); toast("Le PC est déjà à jour."); return; }
+  if(!r.relance){ majFail("Version récupérée, mais le programme du PC ne sait pas encore se relancer seul : lancez mettre-a-jour.ps1 sur le PC, une dernière fois."); return; }
+  $("majTxt").textContent = "Mise à jour du PC en cours : redémarrage du programme...";
+  const was = SRV.demarre, t0 = Date.now();
+  while(Date.now() - t0 < 60000){
+    await new Promise(res => setTimeout(res, 1000));
+    try { const st = await api("api/status"); if(st.demarre !== was){ location.reload(); return; } } catch(e){}
+  }
+  majFail("Le PC ne répond pas après la mise à jour. Consultez derushage.log sur le PC, ou lancez mettre-a-jour.ps1.");
+}
+$("majBtn").onclick = majRun;
+$("majCheck").onclick = async function(){
+  this.disabled = true; $("majRes").textContent = "Recherche..."; $("majErr").hidden = true;
+  const m = await majLook(true);
+  this.disabled = false;
+  $("majRes").textContent = !m ? "[Le PC n'a pas répondu.]" : m.disponible ? "Une version plus récente est disponible : bouton « Mettre à jour le PC » en haut de la liste." : m.raison ? `[Vérification impossible : ${m.raison}.]` : `Le PC est à jour (v${m.version}).`;
+  $("majRes").classList.toggle("miss", !m || (!m.disponible && !!m.raison));
+};
 let IVS = null;            // dernière réponse {st, ivs} de la liste des interventions, gardée pour le filtre
 async function refreshList(){
   clearTimeout(listT);

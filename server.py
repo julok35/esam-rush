@@ -8,12 +8,12 @@ proxies 540p + vignettes, photos pleine résolution, vidéo compilée en résolu
 Dépendances : Python 3.10+ (bibliothèque standard uniquement) et ffmpeg/ffprobe dans le PATH.
 Écoute uniquement sur 127.0.0.1 : l'accès depuis le téléphone passe par « tailscale serve ».
 """
-import base64, json, math, os, re, shutil, struct, subprocess, tempfile, threading, time, traceback, unicodedata, urllib.parse
+import base64, json, math, os, re, shutil, struct, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.parse
 from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.16"
+VERSION = "0.17"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -34,6 +34,10 @@ PROXY_DIR = "proxies"
 WORK_DIR = ".derushage"
 FFMPEG = shutil.which("ffmpeg") or "ffmpeg"
 FFPROBE = shutil.which("ffprobe") or "ffprobe"
+GIT = shutil.which("git")
+RESTART = 75                                             # code de sortie par lequel le serveur demande à être relancé (mise à jour)
+SUPERVISE = int(os.environ.get("ESAM_SUPERVISE") or 0)   # PID du superviseur quand ce processus est son enfant, sinon 0
+START = time.time()
 WIN = os.name == "nt"
 NOWIN = subprocess.CREATE_NO_WINDOW if WIN else 0
 
@@ -733,6 +737,66 @@ def idle_watch():
                             "Add-Type -Assembly System.Windows.Forms; [System.Windows.Forms.Application]::SetSuspendState('Suspend',$false,$false)"],
                            creationflags=NOWIN)
 
+# ---------------------------------------------------------------- mise à jour depuis l'appli
+MAJ = {"t": 0.0, "etat": None}; MAJ_LOCK = threading.Lock()
+
+def git(*args, timeout=90):
+    """Lance git dans le dossier du programme, sans fenêtre ni question à l'écran ; rend (code de sortie, texte produit)."""
+    r = subprocess.run([GIT, "-C", str(HERE)] + list(args), capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       timeout=timeout, stdin=subprocess.DEVNULL, env=dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never", LC_ALL="C"), creationflags=NOWIN)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+def version_in(text):
+    """Numéro de version déclaré dans le texte d'un server.py, ou None."""
+    m = re.search(r'^VERSION = "([^"]+)"', text or "", re.M)
+    return m.group(1) if m else None
+
+def maj_etat(force=False):
+    """Y a-t-il une version plus récente sur GitHub ? git fetch puis comparaison avec la branche suivie ; réponse gardée 10 minutes.
+    disponible est vrai aussi quand les fichiers du PC sont déjà plus récents que le programme en marche (git pull fait à la main)."""
+    with MAJ_LOCK:
+        if MAJ["etat"] and not force and time.time() - MAJ["t"] < 600: return MAJ["etat"]
+        e = {"possible": False, "disponible": False, "version": VERSION, "nouvelle": None, "relance": bool(SUPERVISE), "raison": ""}
+        try:
+            if not GIT: e["raison"] = "git est introuvable sur le PC"
+            elif not (HERE / ".git").exists(): e["raison"] = "le programme du PC n'a pas été installé avec git"
+            else:
+                e["possible"] = True
+                code, out = git("fetch", "--quiet")
+                if code: e["raison"] = "GitHub est injoignable depuis le PC"; log("Mise à jour : git fetch a échoué :", out[-300:])
+                code, n = git("rev-list", "--count", "HEAD..@{u}")
+                if code: e["raison"] = e["raison"] or "le dossier du programme ne suit aucune branche de GitHub"
+                elif int(n or 0) > 0:
+                    e["disponible"] = True; e["nouvelle"] = version_in(git("show", "@{u}:server.py")[1])
+                if not e["disponible"]:
+                    disque = version_in((HERE / "server.py").read_text(encoding="utf-8"))
+                    if disque and disque != VERSION: e["disponible"] = True; e["nouvelle"] = disque
+        except Exception as x:
+            e["raison"] = "la vérification a échoué" ; log("Mise à jour : vérification impossible :", clean(str(x))[:300])
+        MAJ["t"] = time.time(); MAJ["etat"] = e
+        return e
+
+def maj_faire():
+    """Récupère la dernière version (git pull --ff-only, comme mettre-a-jour.ps1) puis fait relancer le serveur par son superviseur.
+    Refusé pendant un calcul : la relance l'interromprait."""
+    if not GIT or not (HERE / ".git").exists(): raise ValueError("mise à jour depuis l'appli impossible sur ce PC (git absent)")
+    with JLOCK:
+        if any(j["etat"] in ("attente", "en_cours") for j in JOBS):
+            raise ValueError("un calcul est en cours sur le PC : attendez sa fin ou annulez-le, puis recommencez")
+    avant = git("rev-parse", "HEAD")[1]
+    code, out = git("pull", "--ff-only")
+    if code:
+        log("Mise à jour : git pull a échoué :", out[-600:])
+        if re.search(r"overwritten|local changes|fast-forward|diverg", out):
+            raise ValueError("un fichier du programme a été modifié sur ce PC ; tapez « git status » dans le dossier du programme pour voir lequel")
+        raise ValueError("GitHub est injoignable depuis le PC, ou la récupération a été refusée (détail dans derushage.log)")
+    with MAJ_LOCK: MAJ["etat"] = None
+    disque = version_in((HERE / "server.py").read_text(encoding="utf-8"))
+    if disque == VERSION and git("rev-parse", "HEAD")[1] == avant: return {"ok": True, "maj": False, "version": VERSION}
+    log("Mise à jour récupérée : v%s vers v%s" % (VERSION, disque or "?"), "" if SUPERVISE else "(relance manuelle nécessaire)")
+    if SUPERVISE: threading.Timer(0.7, os._exit, [RESTART]).start()      # la réponse HTTP part d'abord
+    return {"ok": True, "maj": True, "relance": bool(SUPERVISE), "version": disque}
+
 # ---------------------------------------------------------------- HTTP
 class H(BaseHTTPRequestHandler):
     server_version = "ESAMDerushage/" + VERSION
@@ -751,7 +815,7 @@ class H(BaseHTTPRequestHandler):
         return json.loads(self.rfile.read(n).decode("utf-8") or "{}") if n else {}
 
     def do_GET(self):
-        """Routes de lecture : page, état du serveur, interventions, manifeste, images, état de dérushage, fichiers des rushs, vendor."""
+        """Routes de lecture : page, état du serveur, mise à jour disponible, interventions, manifeste, images, état de dérushage, fichiers des rushs, vendor."""
         LAST_ACTIVITY[0] = time.time()
         u = urllib.parse.urlparse(self.path); q = dict(urllib.parse.parse_qsl(u.query))
         try:
@@ -762,8 +826,9 @@ class H(BaseHTTPRequestHandler):
                 return self.send_file(HERE / "vendor" / name)
             if u.path == "/api/status":
                 with JLOCK: jobs = [public(j) for j in JOBS]
-                return self.send_json({"ok": True, "version": VERSION, "racine": str(ROOT), "racine_ok": ROOT.is_dir(), "gpu": ENC.get("gpu"),
+                return self.send_json({"ok": True, "version": VERSION, "demarre": START, "racine": str(ROOT), "racine_ok": ROOT.is_dir(), "gpu": ENC.get("gpu"),
                                        "travaux": jobs, "veille": {"mode": IDLE_MODE, "minutes": IDLE_MIN}})
+            if u.path == "/api/maj": return self.send_json(maj_etat(q.get("force") == "1"))
             if u.path == "/api/interventions": return self.send_json({"interventions": list_interventions()})
             if u.path == "/api/manifest": return self.send_json(manifest(folder(q.get("d"))))
             if u.path == "/api/image": return self.send_file(photo_copy(folder(q.get("d")), q.get("f"), q.get("taille")))
@@ -781,7 +846,7 @@ class H(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError): pass
 
     def do_POST(self):
-        """Routes d'écriture : musique (fichier brut), lancement et annulation des calculs, état de dérushage, fiche, photo."""
+        """Routes d'écriture : musique (fichier brut), mise à jour du programme, lancement et annulation des calculs, état de dérushage, fiche, photo."""
         LAST_ACTIVITY[0] = time.time()
         u = urllib.parse.urlparse(self.path)
         try:
@@ -805,6 +870,10 @@ class H(BaseHTTPRequestHandler):
                 os.replace(tmp, w / ("musique" + ext))
                 return self.send_json({"ok": True, "fichier": "musique" + ext})
             b = self.body()
+            if u.path == "/api/maj":
+                # JSON exigé : une page d'un autre site ne peut pas envoyer ce type de requête sans accord préalable du serveur
+                if not (self.headers.get("Content-Type") or "").startswith("application/json"): return self.send_error(403)
+                return self.send_json(maj_faire())
             if u.path == "/api/proxies":
                 d = folder(b.get("d"))
                 with JLOCK:
@@ -868,8 +937,42 @@ class H(BaseHTTPRequestHandler):
                 if not chunk: break
                 self.wfile.write(chunk); left -= len(chunk)
 
+def watch_parent(ppid):
+    """Arrête le serveur quand son superviseur disparaît (tâche planifiée arrêtée) : le port doit être libre pour la relance."""
+    if WIN:
+        try:
+            import ctypes
+            from ctypes import wintypes
+            k = ctypes.WinDLL("kernel32", use_last_error=True)
+            k.OpenProcess.restype = wintypes.HANDLE; k.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+            k.WaitForSingleObject.restype = wintypes.DWORD; k.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            h = k.OpenProcess(0x00100000, False, ppid)          # SYNCHRONIZE
+            if not h: return
+            if k.WaitForSingleObject(h, 0xFFFFFFFF) != 0: return   # INFINITE ; 0 : le superviseur est terminé
+        except Exception: return
+    else:
+        while os.getppid() == ppid: time.sleep(1)
+    os._exit(0)
+
+def supervise():
+    """Processus lancé par la tâche planifiée : il garde le serveur dans un processus enfant et le relance quand celui-ci
+    sort avec le code RESTART. Après une mise à jour, l'enfant relancé exécute donc le nouveau server.py."""
+    import signal
+    env = dict(os.environ, ESAM_SUPERVISE=str(os.getpid())); child = [None]
+    def stop(*a):
+        if child[0] and child[0].poll() is None: child[0].terminate()
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, stop)
+    while True:
+        child[0] = subprocess.Popen([sys.executable, str(Path(__file__).resolve())], env=env)
+        try: code = child[0].wait()
+        except KeyboardInterrupt: stop()
+        if code != RESTART: sys.exit(code)
+        log("Relance du serveur après mise à jour")
+
 def main():
     """Démarre le serveur : encodeurs, historique des calculs, fil de calcul, fil de veille, HTTP."""
+    if SUPERVISE: threading.Thread(target=watch_parent, args=(SUPERVISE,), daemon=True).start()
     if not shutil.which("ffmpeg"): log("ATTENTION : ffmpeg introuvable dans le PATH")
     if not ROOT.is_dir(): log("ATTENTION : dossier des rushs introuvable :", ROOT)
     detect_encoders()
@@ -881,4 +984,6 @@ def main():
     srv.serve_forever()
 
 if __name__ == "__main__":
-    main()
+    # sans argument : superviseur + serveur enfant (mise à jour depuis l'appli) ; --direct : serveur seul, sans relance possible
+    if SUPERVISE or "--direct" in sys.argv: main()
+    else: supervise()

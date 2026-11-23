@@ -51,7 +51,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
 | compilation | Plan de la vidéo compilée et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
-| mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
+| mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul, mise à jour du programme du PC (`majLook`, `majRun`) | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
 | réel et story | Montage vertical 9:16 : plan, calques, aperçu, rendu navigateur, envoi au PC | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote` |
@@ -160,7 +160,8 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 |---|---|---|
 | `GET /`, `/index.html` | | la page (jamais mise en cache) |
 | `GET /vendor/<nom>` | nom de fichier simple | bibliothèque ou police |
-| `GET /api/status` | | `{ok, version, racine, racine_ok, gpu, travaux: [calcul], veille: {mode, minutes}}` |
+| `GET /api/status` | | `{ok, version, demarre, racine, racine_ok, gpu, travaux: [calcul], veille: {mode, minutes}}` ; `demarre` : heure de démarrage du serveur, qui change à chaque relance |
+| `GET /api/maj[?force=1]` | | `{possible, disponible, version, nouvelle, relance, raison}` : `git fetch` puis comparaison avec la branche suivie, réponse gardée 10 minutes sauf `force` |
 | `GET /api/interventions` | | `{interventions: [{nom, videos, proxies, fiche, compilation, maj}]}` |
 | `GET /api/manifest?d=` | | `{dossier, clips: [{nom, dur, w, h, codec, cree, proxy, thumbs: {sheets, tw, th, cols, rows, every, count}}], photos: [{nom, heure}]}` |
 | `GET /api/image?d=&f=&taille=` | `taille` = `petite` (360 px) ou `moyenne` (3200 px) | JPEG redressé selon l'EXIF, gardé dans `proxies/photos` |
@@ -169,6 +170,7 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `POST /api/proxies` | `{d}` | le calcul créé ou déjà en cours |
 | `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, logo, ouverture: {image, duree}, passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [{fichier, debut, fin}]}]}` (images en data URL PNG) | le calcul créé |
 | `POST /api/reel` | `{d, mode: "reel"|"story", nom, titre_video, segments: [...], calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", vitesse, nom, morceaux: [{fichier, debut, fin, cles: [{t, x}], flous: [{s, cles: [{t, x, y}]}]}]}` | le calcul créé |
+| `POST /api/maj` | `{}` en JSON (toute autre requête : 403) | `{ok, maj, relance, version}` après `git pull --ff-only` ; si `maj` et `relance`, le serveur se relance 0,7 s plus tard ; refus (400) pendant un calcul |
 | `POST /api/annuler` | `{id}` | `{ok}` |
 | `POST /api/etat` | `{d, etat}` | `{ok}` |
 | `POST /api/fiche` | `{d, nom, md}` ; supprime les autres `ESAM_Derushage_*.md` du dossier | `{ok, fichier}` |
@@ -184,7 +186,9 @@ Un calcul (`travaux.json`, 30 derniers conservés) :
 
 Un seul fil `worker()` exécute les calculs dans l'ordre. L'annulation pose `job["cancel"]`, lue entre deux lignes de progression ffmpeg ; le processus est tué. Au redémarrage, un calcul resté en `attente` ou `en_cours` passe à `interrompu`.
 
-Sécurité : le serveur n'écoute que sur 127.0.0.1 ; Tailscale fournit HTTPS et l'authentification. Il n'y a pas d'autre contrôle d'accès.
+Sécurité : le serveur n'écoute que sur 127.0.0.1 ; Tailscale fournit HTTPS et l'authentification. Il n'y a pas d'autre contrôle d'accès. `POST /api/maj` exige un corps JSON, ce qu'une page d'un autre site ne peut pas envoyer sans accord du serveur.
+
+Relance après mise à jour : lancé sans argument (cas de la tâche planifiée), `server.py` est un superviseur (`supervise()`) qui garde le vrai serveur dans un processus enfant (variable `ESAM_SUPERVISE` = PID du superviseur) et le relance quand il sort avec le code `RESTART` (75) ; l'enfant relancé exécute le nouveau `server.py`. L'enfant s'arrête si son superviseur disparaît (`watch_parent`), pour libérer le port. `python server.py --direct` lance le serveur seul, sans relance possible. Une modification de `supervise()` elle-même ne prend effet qu'au redémarrage de la tâche (`mettre-a-jour.ps1` ou ouverture de session).
 
 ## 6. Fichiers produits
 
@@ -226,7 +230,7 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 - Échelle visuelle : texte de 12 px au minimum, champs de saisie à 16 px sur écran tactile ; titres Anton en 22, 28 ou 40 px ; rayons de 6, 10 ou 16 px (plus les pastilles rondes) ; cible tactile de 44 px (`--tap`) ; bord de contrôle `--ctl`, anneau de focus `--ring`. Un état sélectionné ne repose jamais sur le seul bleu pâle (bord à l'encre), ni la sensibilité sur la seule couleur (pastille jaune et texte).
 - Vocabulaire de l'interface : « intervention » (le dossier chargé), « passage » (début et fin), « repère » (un instant). Le message de sauvegarde de l'en-tête passe par `setSave(détail, erreur, court)`.
 - Jamais de sortie vidéo accumulée en mémoire : écriture par morceaux (OPFS ou Blob).
-- Livraison : pousser sur `main` publie le mode navigateur sur GitHub Pages ; sur le PC, `mettre-a-jour.ps1` fait `git pull` et redémarre la tâche planifiée.
+- Livraison : pousser sur `main` publie le mode navigateur sur GitHub Pages ; sur le PC, le bandeau « Mettre à jour le PC » de l'appli (`majRun`, `api/maj`) ou `mettre-a-jour.ps1` font `git pull` et relancent le serveur.
 
 ## 9. Tester
 
@@ -234,6 +238,7 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 |---|---|---|
 | `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroir `storyCuts` / `story_cuts` (Playwright sur `index.html` en `file://`) | 10 s |
 | `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture | 1 min |
+| `python tests/test_maj.py` | mise à jour depuis l'appli : faux GitHub (dépôt git local), serveur sur le port 8797, annonce, refus pendant un calcul, récupération, relance (sans navigateur) | 15 s |
 | `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel puis story, contrôle des fichiers (1080 x 1920, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
 | `python tests/fabriquer_rushs.py DOSSIER [--vp9]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) | |
 | `python tests/fabriquer_longue.py DOSSIER` | intervention de 3 h sur 4 caméras, déjà préparée (planches seules), pour mesurer la mémoire | |

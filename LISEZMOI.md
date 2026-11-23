@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.16
-date_maj: 2026-11-22
+version: 0.17
+date_maj: 2026-11-23
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -80,7 +80,11 @@ L'adresse en `https` est indispensable : sans elle, le navigateur du téléphone
 
 ## 7. Mise à jour
 
-Le code vit sur GitHub (https://github.com/julok35/esam-rush). Pour installer la dernière version sur le PC : clic droit sur `mettre-a-jour.ps1`, « Exécuter avec PowerShell ». Le script récupère les fichiers, redémarre le serveur et affiche la version. Un calcul en cours est interrompu : lancez la mise à jour quand rien ne tourne. Vos réglages (`config.json`) ne sont jamais touchés.
+Le code vit sur GitHub (https://github.com/julok35/esam-rush). Vos réglages (`config.json`) ne sont jamais touchés par une mise à jour.
+
+**Depuis l'appli (à partir de la v0.17)** : quand une version plus récente existe, un bandeau jaune « Mettre à jour le PC » apparaît en haut de la liste des interventions, sur le téléphone comme sur le PC. Un appui : le PC récupère la version, redémarre son programme (quelques secondes) et la page se recharge. La mise à jour est refusée tant qu'un calcul tourne. Sous la liste, « État du PC » propose aussi « Rechercher une mise à jour » (le PC interroge GitHub au plus toutes les 10 minutes sinon).
+
+**Sur le PC** : clic droit sur `mettre-a-jour.ps1`, « Exécuter avec PowerShell ». Le script récupère les fichiers, redémarre le serveur et affiche la version. Un calcul en cours est interrompu : lancez-le quand rien ne tourne. Ce script reste nécessaire une fois pour passer d'une version antérieure à la v0.17, et en secours si le PC ne répond plus après une mise à jour.
 
 Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout seul, une à deux minutes après chaque envoi sur GitHub.
 
@@ -103,7 +107,8 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 
 Le badge en haut à droite de l'appli indique la version :
 - « v0.9 PC » sur fond bleu : l'appli passe par le programme du PC, et les deux sont à jour. Les calculs se font sur le PC.
-- « v0.9 PC » sur fond jaune : l'appli et le programme du PC n'ont pas la même version. Lancez `mettre-a-jour.ps1`.
+- « v0.9 PC » sur fond jaune : l'appli et le programme du PC n'ont pas la même version. Rechargez la page ; si le fond reste jaune, lancez `mettre-a-jour.ps1`.
+- « Mise à jour impossible : un fichier du programme a été modifié sur ce PC » : ouvrez PowerShell dans le dossier du programme et tapez `git status` pour voir lequel.
 - « v0.9 » sans « PC » : mode navigateur, les calculs se font dans l'appareil qui affiche la page. C'est le cas de https://julok35.github.io/esam-rush/ et de toute ouverture sans passer par le PC.
 
 Le journal `derushage.log` indique aussi la version au démarrage du programme.
@@ -161,6 +166,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.17 | 2026-11-23 | Mise à jour du PC depuis l'appli : un bandeau « Mettre à jour le PC » apparaît dans la liste des interventions quand une version plus récente existe ; le PC la récupère, redémarre son programme et la page se recharge. Refusée pendant un calcul. « Rechercher une mise à jour » sous « État du PC ». Pour installer cette version, lancer `mettre-a-jour.ps1` une dernière fois. |
 | 0.16 | 2026-11-22 | Lecteur : l'image ne reste plus figée sur une vignette après un glissement sur la règle ou sur le bord d'un passage (l'aperçu se referme toujours, et il occupe la même taille que la vidéo) ; après « Voir » un passage, un saut plus loin ne met plus la lecture en pause ; après une coupure de connexion, « Lire » reprend la vidéo. Pistes : « Écran » passe en première ligne (la caméra choisie par défaut pour la vidéo compilée et le réel ne change pas). |
 | 0.15 | 2026-11-22 | Ergonomie revue de bout en bout. Sécurité : supprimer un marqueur s'annule (le passage revient aussi dans le réel) ; un passage sensible est rappelé en jaune avant de créer un réel ou une vidéo ; avertissement si l'on ferme l'onglet pendant un calcul dans le navigateur. Téléphone : fiche de marqueur plus courte avec Enregistrer toujours visible, boutons et pistes qui ne bougent plus pendant la lecture, paysage utilisable, cibles de 44 px, plus de zoom automatique à la saisie. Réel : volets Montage, Passage, Habillage, « Cadrer » après un ajout, titre qui ne recouvre plus le cartouche ESAM, nom du fichier produit en fin de calcul. Sommaire remis d'aplomb et en deux colonnes sur PC ; retour à la liste des interventions par le logo ; aide dans l'appli (bouton Aide) ; filtre dans la liste des interventions. Clavier, focus et contrastes lisibles au soleil ; thème automatique, clair ou sombre (Plus d'options). Vocabulaire unifié : intervention, passage, repère. |
 | 0.14 | 2026-10-27 | Dossier de travail : « Ouvrir le dossier des rushs » importe toutes les vidéos et photos du dossier et de ses sous-dossiers (sauf `proxies`) et reprend la fiche qui s'y trouve ; sur ordinateur (Chrome, Edge), la fiche et les vidéos produites y sont enregistrées et le dernier dossier se rouvre d'un clic (« Reprendre ») ; sur téléphone, le dossier est importé avec les noms d'origine, mais le travail reste gardé dans le navigateur |

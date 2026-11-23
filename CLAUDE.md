@@ -30,10 +30,12 @@ Projet : outil de dérushage des vidéos drone de l'ESAM (secours animalier en m
 
 - `python tests/test_unitaire.py` après toute modification de `server.py` ou des calculs en miroir.
 - `python tests/test_fumee.py` après toute modification de `server.py` ou du mode PC.
+- `python tests/test_maj.py` après toute modification de la mise à jour depuis l'appli (`api/maj`, `supervise`, `watch_parent`).
+- La partie Windows (tâche planifiée, `pythonw`, `watch_parent`) ne se teste que sur le PC de traitement.
 - `python tests/test_reel.py` après toute modification de l'onglet Réel (6 à 10 minutes sans carte NVIDIA).
 - Vérifier visuellement par capture d'écran en 390x844 (téléphone) et 1400x900 (PC) ; mode navigateur : servir le dossier (`python -m http.server`), ouvrir `index.html` et charger des fichiers de `tests` avec `set_input_files('#fileIn', ...)`.
 
 ## Livraison
 
 - Pousser sur `main` publie le mode navigateur sur https://julok35.github.io/esam-rush/ (GitHub Pages, une à deux minutes).
-- Sur le PC de traitement, Julien lance `mettre-a-jour.ps1` (git pull + redémarrage de la tâche « ESAM Derushage »).
+- Sur le PC de traitement, Julien met à jour depuis l'appli (bandeau « Mettre à jour le PC » de la liste des interventions) ; `mettre-a-jour.ps1` (git pull + redémarrage de la tâche « ESAM Derushage ») reste le secours.
