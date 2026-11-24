@@ -148,6 +148,14 @@ textarea.field{min-height:70px;resize:vertical}
 @media (max-width:520px){ .mcomp .mvl{display:none} .mcomp .mvs{display:inline} }
 .msave{flex:none;font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:0 2px;min-height:24px;white-space:nowrap;text-decoration:underline dotted;text-underline-offset:3px}
 .msave.err{color:var(--red);text-decoration-style:solid}
+/* téléphone : le nom et l'état de l'enregistrement sur une ligne ; dates et durée compilée sont dans le Sommaire */
+@media (max-width:699px){
+  .mission{display:flex;align-items:center;gap:10px;padding:4px 14px}
+  .mission .mname{flex:1;min-width:0;width:auto;font-size:22px;min-height:40px;text-overflow:ellipsis}
+  .mmeta,.mcomp{display:none}
+  .mline{flex:none;max-width:48%;margin:0;min-width:0}
+  .msave{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+}
 /* « Vidéo compilée » n'a pas de sens dans l'onglet Réel */
 .mission:has(~ #reel:not([hidden])) .mcomp{visibility:hidden}
 
@@ -194,7 +202,15 @@ textarea.field{min-height:70px;resize:vertical}
 .inwin.pend{border:2px dashed var(--ink);color:var(--ink)}
 .inwin .iwl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3}
 .inwin .iwl small{display:block;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
-.inwin .iwb{display:flex;gap:6px;flex:none}
+.inwin .iwb{display:flex;gap:6px;flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.inwin .iwb::-webkit-scrollbar{display:none}
+.inwin .iwb>*{flex:none}
+.inwin .chip{min-height:44px;padding:6px 12px;white-space:nowrap}
+.inwin .namesel{min-height:44px;font-size:14px}
+/* marqueur que l'on vient de poser : ses noms courants à toucher, sans ouvrir la fiche */
+.inwin.new{border:2px solid var(--ink);color:var(--ink)}
+.inwin.new .iwl{flex:none}
+.inwin.new .iwb{flex:1 1 auto;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
 .inwin .btn{min-height:44px;padding:4px 12px;font-size:13px;border-width:1.5px}
 .inwin.on .btn{background:var(--bg);color:var(--ink);border-color:var(--onblue)}
 /* téléphone : le texte sur une ligne, les boutons dessous (défilement horizontal s'ils débordent) */
@@ -204,8 +220,8 @@ textarea.field{min-height:70px;resize:vertical}
   .inwin .iwl small{display:inline;margin-left:6px}
   .inwin.empty .iwl{white-space:normal}
   .inwin.empty .iwl small{display:block;margin-left:0}
-  .inwin .iwb{overflow-x:auto;scrollbar-width:none;padding-right:4px}
-  .inwin .iwb::-webkit-scrollbar{display:none}
+  .inwin .iwb{padding-right:4px}
+  .inwin.new .iwb{padding-right:28px}
   .inwin .iwb:empty{display:none}
 }
 
@@ -247,7 +263,6 @@ textarea.field{min-height:70px;resize:vertical}
 .hov{position:fixed;z-index:40;background:var(--onblue);color:var(--onstage);border-radius:10px;padding:4px;pointer-events:none;font-size:12px;font-weight:600}
 .hov canvas{display:block;border-radius:6px;background:var(--stage)}
 .hov div{padding:4px 4px 2px}
-.tlhint{margin:6px 16px 0;font-size:12px;color:var(--muted)}
 
 /* ---------- colonne de droite sur PC : marqueurs, raccourcis, pistes ---------- */
 .sidelist{display:none}
@@ -324,33 +339,31 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
 }
 
 /* ---------- sommaire ---------- */
-.sumhead{padding:16px}
-.sumhead label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
-.flight{font-size:13px;color:var(--muted);margin:10px 0 14px}
+.sumhead{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.sumgo{width:100%}
+.sumfiche .btn{flex:1}
+.sumaut{display:flex;align-items:center;gap:10px}
+.sumaut label{flex:none;font-weight:700;font-size:13px}
+.sumaut .field{flex:1;min-width:0;padding:8px 12px}
+.flight{font-size:12px;color:var(--muted)}
 .list{list-style:none;margin:0;padding:0 16px 30px}
-.card{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
-.card .idx{grid-row:1;grid-column:1;width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-top:4px}
-.card .when{font-family:Anton,Impact,sans-serif;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
-.card .ttl{font-weight:700;font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+/* carte d'un marqueur : quatre rangées au plus sur téléphone (heure, nom et caméra, commentaire, actions) */
+.card{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.chead{display:flex;align-items:center;gap:10px;min-width:0}
+.card .idx{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.card .idx.sens{background:var(--yellow);border-radius:6px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
+.card .when{font-family:Anton,Impact,sans-serif;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card .cdur{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.card .ttl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
+.card .namesel,.card .camsel{width:100%;min-height:44px;font-size:14px;padding:8px 10px}
+.card .camsel.none{display:flex;align-items:center}
 .card .meta{font-size:13px;color:var(--muted)}
-.card .sensbox{background:var(--paleyellow);border-left:5px solid var(--yellow);padding:6px 10px;font-size:13px;font-weight:600;border-radius:0 6px 6px 0;margin-top:4px}
-.card .note{font-size:13px;margin-top:2px}
-.card .cams{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.card>:not(.idx){grid-column:2;min-width:0}       /* une carte peut avoir 5 à 9 lignes : tout reste dans la colonne de droite */
-.card .ttl{gap:8px}
-.card .ttl .camlbl{margin-left:4px}
-.card .camw{display:inline-flex;align-items:center;gap:8px}
-.card .cams [data-go]{gap:6px}
-.card .cams .aux{margin-left:auto;display:flex;gap:6px}
-@media (max-width:1099px){
-  .card .namesel,.card .camsel{min-height:44px;font-size:14px;padding:8px 10px}
-  .card .namesel{flex:1 1 100%}
-  .card .ttl .camlbl{margin-left:0}
-  .card .cams .btn{min-height:44px;padding:8px 14px}
-}
-.icom{display:block;margin-top:8px}
-.icom span{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
-.icom textarea{min-height:44px;font-size:14px;padding:8px 10px}
+.card .sensbox{background:var(--paleyellow);border-left:5px solid var(--yellow);padding:6px 10px;font-size:13px;font-weight:600;border-radius:0 6px 6px 0}
+.card .note{font-size:13px}
+.card .cams{display:flex;gap:6px}
+.card .cams .btn{flex:1 1 0;min-width:0;padding:6px 4px;gap:5px;white-space:nowrap}
+.icom{display:block}
+.icom textarea{display:block;min-height:44px;height:44px;font-size:14px;padding:10px;line-height:1.4;resize:none;overflow:hidden}
 .emptylist{padding:10px 16px 40px;color:var(--muted);max-width:52ch}
 .chrono{margin:0 16px 8px;border:1px solid var(--line);border-radius:10px;padding:14px}
 .chrono h3{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:0 0 10px}
@@ -368,8 +381,16 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   #sum:not([hidden]){display:grid;grid-template-columns:420px minmax(0,1fr);align-items:start}
   .sumside{grid-column:1;grid-row:1 / span 2;position:sticky;top:var(--top);max-height:calc(100vh - var(--top));overflow:auto;border-right:1px solid var(--line);padding-bottom:16px}
   #sum>.list,#sum>.emptylist{grid-column:2;padding-left:28px;padding-right:28px}
-  .list{max-width:980px}
-  .card .icom textarea{max-width:72ch}
+  .list{max-width:1040px}
+  /* PC : heure, nom et caméra sur une ligne ; commentaire et actions sur la suivante */
+  .card{grid-template-columns:250px minmax(0,1fr) auto;gap:6px 14px;padding:10px 0;align-items:center}
+  .card .ttl{grid-column:2 / -1;grid-template-columns:minmax(0,240px) minmax(0,180px)}
+  .card .namesel,.card .camsel{min-height:38px;padding:6px 10px}
+  .card .sensbox,.card .meta,.card .note{grid-column:1 / -1}
+  .card .icom{grid-column:1 / 3}
+  .card .icom textarea{min-height:38px;height:38px;padding:7px 10px}
+  .card .cams{grid-column:3}
+  .card .cams .btn{flex:none;padding:6px 12px}
   .chrono{margin:0 16px 8px}
 }
 
@@ -519,6 +540,8 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rtarget{margin-top:10px}
 .rtarget .lbl{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
 .rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ract .btn{flex:1 1 0;min-width:0;white-space:nowrap;padding-left:6px;padding-right:6px}
+.rtarget .hint{margin:6px 0 0}
 .rh{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:22px 0 8px}
 .rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px}
 .rlist:empty{display:none}
@@ -775,7 +798,6 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
             </div>
           </div>
         </div>
-        <p class="tlhint" id="tlHint">Glissez les poignées d'un passage pour ajuster son début ou sa fin. Zoom avec - et + ou en pinçant les pistes.</p>
       </div>
     </div>
 
@@ -800,7 +822,6 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <summary>Plus d'options</summary>
         <div class="foot">
           <label class="btn small ghost" for="fileIn">Ajouter des vidéos</label>
-          <button class="btn small ghost" id="reset">Changer d'intervention</button>
           <button type="button" class="btn small ghost" id="themeBtn">Thème : automatique</button>
         </div>
         <div class="olbl">Fichiers et calage des pistes</div>
@@ -825,14 +846,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <h2 class="vh">Sommaire</h2>
     <div class="sumside">
     <div class="sumhead">
-      <label for="auteur">Auteur de la vidéo compilée (signe les commentaires internes)</label>
-      <input class="field" id="auteur" placeholder="Ex. : Julien de Feydeau" autocomplete="name">
-      <div class="flight" id="flight"></div>
-      <div class="actions">
-        <button class="btn primary" id="cmpOpen" aria-describedby="emptyList">Créer la vidéo compilée</button>
-        <button class="btn" id="exp" aria-describedby="emptyList">Exporter la fiche</button>
-        <label class="btn ghost" for="mdIn">Reprendre une fiche</label>
+      <button class="btn primary sumgo" id="cmpOpen" aria-describedby="emptyList">Créer la vidéo compilée</button>
+      <div class="actions sumfiche">
+        <button class="btn small" id="exp" aria-describedby="emptyList">Exporter la fiche</button>
+        <label class="btn small ghost" for="mdIn">Reprendre une fiche</label>
       </div>
+      <div class="sumaut">
+        <label for="auteur">Auteur</label>
+        <input class="field" id="auteur" placeholder="Signe les commentaires internes" autocomplete="name">
+      </div>
+      <div class="flight" id="flight"></div>
     </div>
     <details class="chrono" id="chrono" hidden></details>
     </div>
@@ -982,7 +1005,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <p class="helpver" id="helpVer"></p>
     <h4>Visionner</h4>
     <ul>
-      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Touchez un numéro sur les pistes pour nommer ou modifier le marqueur.</li>
+      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète (titre libre, sensibilité, texte du carton).</li>
       <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
@@ -991,10 +1014,10 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <ul><li>Une vignette par intervalle sur la piste choisie. Touchez une vignette pour y aller dans Visionner, ou <b>Marquer</b> pour poser un repère à cet instant.</li></ul>
     <h4>Sommaire</h4>
     <ul>
-      <li>Tous les marqueurs dans l'ordre, avec la caméra retenue pour la vidéo compilée et le commentaire interne (jamais incrusté dans la vidéo).</li>
+      <li>Tous les marqueurs dans l'ordre : nom, caméra retenue pour la vidéo compilée et commentaire interne (jamais incrusté dans la vidéo) se règlent sur la carte ; <b>Modifier</b> ouvre le reste (sensibilité, intérêt, texte du carton).</li>
       <li>La chronologie RETEX (retour d'expérience) calcule les délais à partir des marqueurs nommés Décollage, Bonne piste, Confirmation, Secours arrivée, etc.</li>
       <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant. Les retouches valent pour la vidéo compilée, les extraits et le réel.</li>
-      <li><b>Créer la vidéo compilée</b>, habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
+      <li><b>Créer la vidéo compilée</b> : format, marge et heure incrustée sont repliés sous « Réglages ». Habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
     <h4>Réel</h4>
     <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), ajoutés depuis « Ajouter des passages », plus les photos de l'intervention.</li></ul>
@@ -1035,11 +1058,13 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <p style="margin:0 0 12px;font-size:14px" id="cmpLead"></p>
       <div class="grp"><span class="lbl">Habillage</span><div class="chips" id="cmpHab"></div></div>
       <ul class="cmplist" id="cmpList"></ul>
-      <div class="grp"><span class="lbl">Résolution</span><div id="cmpResInfo" style="font-size:14px"></div></div>
-      <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
-      <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
-      <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
       <div class="grp" id="cmpSepBox"><span class="lbl">Fichiers produits</span><div class="chips" id="cmpSep"></div></div>
+      <details class="shmore" id="cmpOpts"><summary id="cmpOptsSum">Réglages</summary>
+      <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
+      <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
+      <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
+      <div class="grp"><span class="lbl">Résolution</span><div id="cmpResInfo" style="font-size:14px"></div></div>
+      </details>
       <div class="senswarn" id="cmpSensW" hidden></div>
       <p class="warn" id="cmpEst"></p>
       <div class="sheetbtns">
@@ -1075,7 +1100,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.19";
+const APP_VERSION = "0.20";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1101,7 +1126,7 @@ const v = $("v");
 
 const S = {
   clips: [], tracks: [], active: 0, t: 0, base: 0, dur: 0, real: true,
-  cur: null, zoom: 1, rate: 1, pending: null, stopAt: null,
+  cur: null, zoom: 1, rate: 1, pending: null, fresh: null, stopAt: null,
   markers: [], meta: {intervention: "", version: 0, log: []}, offsets: {}, key: null
 };
 let pendingSeek = null, raf = 0, dl = null;
@@ -1223,7 +1248,7 @@ async function writeFiche(manual){
       }
     }
     const d = new Date();
-    setSave(`Fiche v${S.meta.version.toFixed(1)} enregistrée automatiquement à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} dans ${ficheDest()} (${name})`, false, `Fiche enregistrée ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setSave(`Fiche v${S.meta.version.toFixed(1)} enregistrée automatiquement à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} dans ${ficheDest()} (${name})`, false, `Enregistré ${pad(d.getHours())}:${pad(d.getMinutes())}`);
     if(manual) toast(`Fiche v${S.meta.version.toFixed(1)} enregistrée dans ${ficheDest()}.`);
     return true;
   } catch(e){
@@ -1830,13 +1855,12 @@ document.addEventListener("change", e => {
 document.addEventListener("change", e => {
   const el = e.target; if(!el.dataset || !el.dataset.name) return;
   const m = S.markers.find(x => x.id === el.dataset.name); if(!m || el.value === "__custom") return;
-  m.preset = el.value || null; m.title = el.value || "";
-  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  nameMarker(m, el.value);
 });
 function renderSideList(){
   const el = $("sideList"); if(!el) return;
   const list = sorted();
-  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Détails du ${kindName(m).toLowerCase()} ${i+1}" title="Détails">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
+  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Modifier le ${kindName(m).toLowerCase()} ${i+1}" title="Modifier (nom libre, sensibilité, texte du carton)">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
 }
 function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
 /* position d'une pastille : jamais rognée par les bords de la timeline (11 px = demi-pastille) */
@@ -1857,6 +1881,19 @@ function renderMarkers(){
   renderComp();inWinKey = "";if(S.clips.length) renderInWin();
 }
 let inWinKey = "";
+/* marqueur que l'on vient de poser (S.fresh = {id, t, named}) : le bandeau propose ses noms courants pendant 20 s,
+   lecture en cours ou non ; une fois nommé, il affiche le nom 2,5 s puis reprend son état habituel */
+const FRESH_MS = 20000, NAMED_MS = 2500;
+function freshMarker(){
+  const f = S.fresh; if(!f) return null;
+  const m = S.markers.find(x => x.id === f.id), age = Date.now() - f.t;
+  if(!m || (f.named ? age > NAMED_MS : (age > FRESH_MS || m.preset || m.title))){ S.fresh = null; return null; }
+  return m;
+}
+function nameMarker(m, preset){
+  m.preset = preset || null; m.title = preset || "";
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+}
 function windowState(){
   const abs = S.base + S.t;
   const list = sorted();
@@ -1876,7 +1913,7 @@ function windowState(){
    États : passage en cours (après Début), dans un passage ou sur un repère, juste avant ou après un passage, ailleurs, aucun marqueur. */
 function renderInWin(){
   const el = $("inWin");if(!el || $("view").hidden) return;
-  const w = windowState();
+  const w = windowState(), fresh = freshMarker();
   let key;
   let txt;
   let sub = "";
@@ -1886,15 +1923,25 @@ function renderInWin(){
     txt = `Passage en cours depuis ${clockAbs(S.pending.at)}`;
     sub = `${ms(Math.abs(w.abs - S.pending.at))}, touchez Fin pour le terminer`;
     btns = '<button type="button" class="btn small ghost" data-wa="pcancel">Annuler le début</button>';
+  } else if(fresh){
+    const n0 = sorted().indexOf(fresh) + 1, kn = kindName(fresh).toLowerCase();
+    if(S.fresh.named){ key = `named:${fresh.id}`; txt = `${kindName(fresh)} ${n0} : ${label(fresh)}`; sub = "nommé"; }
+    else {
+      key = `new:${fresh.id}`; txt = `Nommer le ${kn} ${n0}`; sub = fresh.to != null ? `${clockAbs(fresh.at)}, ${len(fresh.to - fresh.at)}` : clockAbs(fresh.at);
+      btns = PRESET_MAIN.map(p => `<button type="button" class="chip" data-wa="name" data-id="${fresh.id}" data-v="${esc(p)}">${esc(p)}</button>`).join("")
+        + `<button type="button" class="btn small ghost" data-wa="edit" data-id="${fresh.id}">Autre...</button>`;
+    }
   } else if(w.cur){
     const m = w.cur.m, n = w.cur.i + 1;
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
-    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}`;
+    const named = !!(m.preset || m.title);
+    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}:${named}`;
+    if(!named) btns += nameSelect(m);          // sans nom : la liste des noms est là, sans ouvrir la fiche
     txt = m.to != null ? `Passage ${n}, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : `Repère ${n}`;
     sub = label(m)+(ec ? `, compilé en ${camName(ec).toLowerCase()}` : "");
     if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(camName(shown).toLowerCase())}</button>`;
     if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button>`;
-    btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Détails</button>`;
+    btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Modifier</button>`;
   } else if(w.after || w.before){
     const o = w.after || w.before, n2 = o.i + 1;
     key = `near:${o.m.id}:${w.after ? "a" : "b"}`;
@@ -1907,8 +1954,10 @@ function renderInWin(){
   if(sub){ const sm = document.createElement("small"); sm.textContent = sub; tx.appendChild(sm); }
   if(key !== inWinKey){
     inWinKey = key; $("inWinBtns").innerHTML = btns;
-    el.classList.toggle("on", !!w.cur && !S.pending);
+    el.classList.toggle("on", !S.pending && (fresh ? !!S.fresh.named : !!w.cur));
     el.classList.toggle("pend", !!S.pending);
+    el.classList.toggle("new", !S.pending && !!fresh && !S.fresh.named);
+    $("inWinBtns").scrollLeft = 0;
     el.classList.toggle("empty", !btns);
     document.querySelector(".stage").classList.toggle("inside", !!(!S.pending && w.cur && w.cur.m.to != null));
   }
@@ -1919,6 +1968,11 @@ $("inWin").addEventListener("click", e => {
   const m = S.markers.find(x => x.id === b.dataset.id); if(!m) return;
   const abs = S.base + S.t, n = sorted().indexOf(m) + 1;
   if(b.dataset.wa === "edit"){ v.pause(); openSheet(m, false); return; }
+  if(b.dataset.wa === "name"){
+    nameMarker(m, b.dataset.v); S.fresh = {id:m.id, t:Date.now(), named:true}; inWinKey = ""; renderInWin();
+    setTimeout(() => { if(S.clips.length){ inWinKey = ""; renderInWin(); } }, NAMED_MS + 60);
+    return;
+  }
   if(b.dataset.wa === "cam"){ setCam(m, track().lens); return; }
   const old = {at:m.at, to:m.to};
   if(b.dataset.wa === "debut"){ if(abs > m.to - 1){ toast("Le début doit rester avant la fin du passage."); return; } m.at = abs; }
@@ -1926,6 +1980,11 @@ $("inWin").addEventListener("click", e => {
   persist(); renderMarkers(); renderSummary();
   toast(`Passage ${n} : ${clockAbs(m.at)} à ${clockAbs(m.to)}.`, "Annuler", () => { m.at = old.at; m.to = old.to; persist(); renderMarkers(); renderSummary(); });
 });
+// souris : la molette fait défiler la rangée de noms quand elle dépasse (pas de barre de défilement visible)
+$("inWinBtns").addEventListener("wheel", function(e){
+  if(this.scrollWidth <= this.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  this.scrollLeft += e.deltaY; e.preventDefault();
+}, {passive:false});
 function drawPending(){
   const b = $("pendBand"); if(!b) return;
   const p = pps(), a = S.pending.at - S.base, z = S.t;
@@ -1991,31 +2050,33 @@ function camsFor(m){
 function renderSummary(){
   const list = sorted();
   let h = "";
+  /* carte compacte : heure et durée, nom et caméra, puis seulement ce qui est renseigné (sensibilité, intérêt, thèmes,
+     texte du carton, retouches), le commentaire interne sur une ligne qui grandit, et les actions sur une rangée */
   list.forEach((m, i) => {
-    const when = clockAbs(m.at) + (m.to != null ? ` à ${clockAbs(m.to)}` : "");
-    const ti = trackIdx(m.cam);
-    const meta = (m.to != null ? `Passage de ${len(m.to-m.at)}` : "Repère") + (m.interest ? `, intérêt ${INTEREST[m.interest-1].toLowerCase()}` : "") + (ti >= 0 ? `, caméra ${S.tracks[ti].name.toLowerCase()}` : "");
-    h += `<li class="card"><div class="idx">${i+1}</div>`;
-    h += `<div class="when">${when}</div>`;
-    h += `<div class="ttl">${nameSelect(m)} <span class="camw"><span class="camlbl">Caméra</span> ${camSelect(m)}</span></div>`;
-    h += `<div class="meta">${esc(meta)}${m.themes && m.themes.length ? `. ${esc(m.themes.join(", "))}` : ''}</div>`;
+    const ec = effCam(m), fxs = fxSummary(m), extra = [];
+    if(m.interest) extra.push(`Intérêt ${INTEREST[m.interest-1].toLowerCase()}`);
+    if(m.themes && m.themes.length) extra.push(m.themes.join(", "));
+    if(fxs) extra.push(`Retouches : ${fxs}`);
+    h += `<li class="card"><div class="chead"><span class="idx${isSens(m) ? " sens" : ""}">${i+1}</span><span class="when">${clockAbs(m.at)}${m.to != null ? ` à ${clockAbs(m.to)}` : ""}</span><span class="cdur">${m.to != null ? len(m.to-m.at) : "repère"}</span></div>`;
+    h += `<div class="ttl">${nameSelect(m)}${camSelect(m)}</div>`;
     if(isSens(m)) h += `<div class="sensbox">Sensibilité : ${esc(m.sens.join(", "))}</div>`;
-    else h += '<div class="meta">Sensibilité : aucune</div>';
+    if(extra.length) h += `<div class="meta">${esc(extra.join(". "))}</div>`;
     if(m.note) h += `<div class="note">Texte du carton : ${esc(m.note)}</div>`;
-    const fxs = fxSummary(m);
-    if(fxs) h += `<div class="meta">Retouches : ${esc(fxs)}</div>`;
-    h += `<label class="icom"><span>Commentaire interne ESAM (sous-titre, jamais publié)</span><textarea class="field" rows="2" data-com="${m.id}" placeholder="Ex. : flouter la plaque à 0:12, bon plan pour Instagram">${esc(m.comment || "")}</textarea></label>`;
+    h += `<label class="icom"><span class="vh">Commentaire interne ESAM du ${kindName(m).toLowerCase()} ${i+1} (sous-titre, jamais publié)</span><textarea class="field" rows="1" data-com="${m.id}" placeholder="Commentaire interne (jamais publié)">${esc(m.comment || "")}</textarea></label>`;
     h += '<div class="cams">';
-    const ec = effCam(m);
-    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button>`;
-    h += `<span class="aux">${ec != null ? `<button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>` : ""}<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></span></div></li>`;
+    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>`;
+    h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
   $("list").innerHTML = h;
+  growComs();
   $("emptyList").hidden = list.length > 0;
   $("cmpOpen").disabled = $("exp").disabled = !list.length;        // sans marqueur, rien à compiler ni à exporter
   renderSideList();
   renderChrono();
 }
+/* commentaire interne : une ligne au repos, la hauteur suit le texte (sans effet tant que l'onglet est masqué) */
+function growCom(t){ if(!t.offsetParent) return; t.style.height = "auto"; t.style.height = `${t.scrollHeight + 4}px`; }
+function growComs(){ $("list").querySelectorAll("textarea[data-com]").forEach(t => { if(t.value) growCom(t); }); }
 function byPreset(p){ return sorted().filter(m => m.preset === p); }
 function chrono(){
   const list = sorted(); if(!list.length) return null;
@@ -2064,7 +2125,8 @@ function renderAll(){ renderHeader(); renderTimeline(); renderTracks(); renderSu
 let draft = null, draftIsNew = false;
 function addMarker(a, b){
   const m = {id:uid(), at:a, to:b, preset:null, title:"", themes:[], interest:0, sens:[NONE], note:"", cam:track() ? track().lens : null};
-  S.markers.push(m); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  S.markers.push(m); S.fresh = {id:m.id, t:Date.now()};
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
   toast(`${b != null ? `Passage ${clockAbs(a)} à ${clockAbs(b)}` : `Repère ${clockAbs(a)}`} ajouté.`, "Annuler", () => {
     S.markers = S.markers.filter(x => x.id !== m.id); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard(); toast(`${kindName(m)} retiré.`);
   });
@@ -2414,7 +2476,7 @@ async function openDir(dir){
   S.dirHandle = dir; S.verBumped = false;
   if(!(await importFolder(items))){ S.dirHandle = null; return; }
   idb("readwrite", st => st.put(dir, "dossier")).catch(() => {});
-  setSave(`Fiche enregistrée automatiquement dans le dossier « ${dir.name} » à chaque modification`, false, "Enregistrement automatique");
+  setSave(`Fiche enregistrée automatiquement dans le dossier « ${dir.name} » à chaque modification`, false, "Enregistrement auto");
   $("exp").textContent = "Enregistrer la fiche maintenant";
 }
 $("dirOpen").onclick = async () => {
@@ -2676,7 +2738,7 @@ $("auteur").addEventListener("input", function(){ S.meta.auteur = clean(this.val
 $("list").addEventListener("input", e => {
   const t = e.target; if(!t.dataset || !t.dataset.com) return;
   const m = S.markers.find(x => x.id === t.dataset.com); if(!m) return;
-  m.comment = clean(t.value); persist();
+  m.comment = clean(t.value); persist(); growCom(t);
 });
 
 function setTab(which){
@@ -2756,7 +2818,7 @@ $("bGrid").addEventListener("click", e => {
 $("tabView").onclick = () => { setTab("view"); };
 $("tabSum").onclick = () => { setTab("sum"); };
 
-/* retour à l'accueil (navigateur) ou à la liste des interventions (PC) : bouton « Changer d'intervention » et logo de l'en-tête */
+/* retour à l'accueil (navigateur) ou à la liste des interventions (PC) : bouton de retour de l'en-tête (chevron et logo) */
 function goHome(){
   v.pause(); v.removeAttribute("src");
   S.clips.forEach(c => { URL.revokeObjectURL(c.url); });
@@ -2772,7 +2834,6 @@ function goHome(){
   BACKEND.reset();
   renderResume();
 }
-$("reset").onclick = goHome;
 /* en mode navigateur, revenir à l'accueil oblige à rechoisir les vidéos : on demande confirmation */
 $("home").onclick = () => {
   if(!S.clips.length) return;
@@ -3152,8 +3213,8 @@ function renderCmpSetup(){
     return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}${fxs ? `, ${esc(fxs)}` : ""}` : '<span class="miss">[aucune image]</span>'}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? "s" : ""}`) : ""}</span></label>${it ? `<button type="button" class="btn small ghost" data-fx="${m.id}" aria-label="Retoucher le passage ${i+1}">Retoucher</button>` : ""}</li>`;
   }).join("") || '<li><label>Aucun marqueur.</label></li>';
   sensWarn($("cmpSensW"), sens, "« Retoucher » pose un flou qui suit le visage ou la plaque.");
-  $("cmpLead").textContent = hab ? "Les passages cochés sont enchaînés dans l'ordre chronologique, chacun précédé d'un carton sur fond noir (nom, heure de début et de fin, commentaire), à la résolution d'origine des rushs."
-    : "Les passages cochés sortent bruts, à la résolution d'origine : ni carton, ni heure incrustée, ni logo. Seules leurs retouches (flous, flèches, cercles, vitesse) sont appliquées.";
+  $("cmpLead").textContent = hab ? "Les passages cochés s'enchaînent dans l'ordre, chacun précédé d'un carton (nom, heures, texte)."
+    : "Les passages cochés sortent bruts : ni carton, ni heure, ni logo, seulement leurs retouches.";
   chipRow($("cmpHab"), ["Cartons, heure et logo","Aucun : extraits bruts"], (t, i) => hab === !i);
   chipRow($("cmpSep"), ["Une seule vidéo","Un fichier par passage"], (t, i) => !!CMP.sep === !!i);
   $("cmpSepBox").hidden = hab;
@@ -3166,6 +3227,8 @@ function renderCmpSetup(){
   $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait en arrière-plan, sa durée dépend de la puissance de l'ordinateur.` : "Aucun passage à compiler.";
   $("cmpGo").disabled = !pl.items.length;
   $("cmpClock").parentNode.hidden = BACKEND.pc || !hab;        // le PC n'incruste pas l'heure (elle figure sur les cartons)
+  // réglages secondaires repliés : la ligne de résumé dit ce qui sera fait sans les ouvrir
+  $("cmpOptsSum").textContent = `Réglages : ${CMP.fmt === "v" ? "vertical 9:16" : "horizontal 16:9"}, ${CMP.win ? `marge de ${CMP.win} s` : "sans marge"}${BACKEND.pc || !hab ? "" : (CMP.clock ? ", heure incrustée" : ", sans heure")}`;
   if(BACKEND.pc){
     $("cmpResInfo").textContent = `Celle des ${prodSource() ? "vidéos" : "rushs"} d'origine (jusqu'à la 4K)${CMP.fmt === "v" ? ", image recadrée au centre" : ""}`;
     $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait sur le PC : vous pourrez fermer l'appli, ${pl.sep ? "les fichiers arriveront" : "la vidéo arrivera"} dans le dossier de l'intervention.` : "Aucun passage à compiler.";
@@ -3722,8 +3785,8 @@ async function openRemote(name, src){
   if(!S.meta.intervention) S.meta.intervention = clean(name.replace(/^\d{4}-\d{2}-\d{2}[ _]*/, ""));
   S.verBumped = false;
   showApp(); seek(0, false);
-  if(SRVS) setSave("Vidéo compilée ouverte pour en extraire des morceaux : vos marqueurs sont enregistrés sur le PC à chaque modification, à part de ceux des rushs", false, "Enregistrement automatique");
-  else setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement automatique");
+  if(SRVS) setSave("Vidéo compilée ouverte pour en extraire des morceaux : vos marqueurs sont enregistrés sur le PC à chaque modification, à part de ceux des rushs", false, "Enregistrement auto");
+  else setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement auto");
   if(S.markers.length) toast(`${nMarq(S.markers.length)} ${S.markers.length > 1 ? "retrouvés" : "retrouvé"} pour cette ${SRVS ? "vidéo" : "intervention"}.`);
   else if(SRVS) toast("Marquez les morceaux à garder : ils sortiront bruts, sans carton, sans heure et sans logo.");
   loadSheets();
@@ -4719,7 +4782,7 @@ function rTargetCtl(it){
 /* passage vidéo : ses retouches (flous suivis, flèches, cercles, vitesse) se règlent dans le dialogue des retouches */
 function rFxCtl(m){
   const sm = fxSummary(m);
-  return `<div class="rtarget"><span class="lbl">Retouches du passage</span><p class="hint" style="margin:0 0 8px">${sm ? `${esc(sm.charAt(0).toUpperCase() + sm.slice(1))}.` : "Flou qui suit un visage ou une plaque, flèche ou cercle qui suit l'animal, ralenti ou accéléré."} Elles valent aussi pour la vidéo compilée.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small${sm ? " ghost" : ""}" data-rfx="1">${sm ? "Modifier les retouches" : "Flouter, annoter, changer la vitesse"}</button></div></div>`;
+  return `<div class="rtarget"><div class="rbtns ract"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button><button type="button" class="btn small" data-rfx="1" title="Flous suivis, flèches, cercles, ralenti ou accéléré">Retoucher</button></div><p class="hint">${sm ? `Retouches : ${esc(sm)}. Elles valent aussi pour la vidéo compilée.` : "Retoucher : flou sur un visage ou une plaque, flèche, cercle, ralenti."}</p></div>`;
 }
 /* réglages du flou choisi */
 function rFlouCtl(it){
@@ -4742,7 +4805,7 @@ function renderReelEdit(){
   }
   const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = rNbFlous(it);
   const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
+  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage${nk ? ` (${nk} point${nk > 1 ? 's' : ''})` : ' (fixe, au centre)'}</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.</p>${nk ? `<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}</div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);

@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.19
+version: 0.20
 date_maj: 2026-11-24
 ---
 
@@ -73,9 +73,9 @@ L'adresse en `https` est indispensable : sans elle, le navigateur du téléphone
 
 1. Réveillez le PC depuis Home Assistant, puis ouvrez l'appli sur le téléphone : la liste des interventions s'affiche.
 2. « Préparer » lance la fabrication des proxies et des vignettes. La progression s'affiche ; vous pouvez fermer l'appli pendant ce temps.
-3. « Ouvrir » charge l'intervention. Début, Fin et Repère posent les marqueurs ; ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
+3. « Ouvrir » charge l'intervention. Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
 4. L'icône d'appareil photo enregistre l'image en pleine résolution dans le sous-dossier `Photos`.
-5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche sous le nom de l'intervention) ; onglet Sommaire, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
+5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; onglet Sommaire, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
 6. Après 20 minutes sans activité, le PC se remet en veille.
 
 ## 7. Mise à jour
@@ -122,7 +122,7 @@ Le journal `derushage.log` indique aussi la version au démarrage du programme.
 
 ## Commentaires internes
 
-Dans l'onglet Sommaire, chaque passage a un champ « Commentaire interne ESAM ». Le champ « Auteur de la vidéo compilée » se remplit une fois et signe tous les commentaires. À la compilation, ces commentaires partent dans un fichier de sous-titres `.commentaires-ESAM.srt` posé à côté de la vidéo, affiché pendant le passage concerné.
+Dans l'onglet Sommaire, chaque marqueur a un champ « Commentaire interne ». Le champ « Auteur » se remplit une fois et signe tous les commentaires. À la compilation, ces commentaires partent dans un fichier de sous-titres `.commentaires-ESAM.srt` posé à côté de la vidéo, affiché pendant le passage concerné.
 
 - VLC l'affiche automatiquement (même dossier, nom commençant comme celui de la vidéo).
 - Dans Google Drive : ouvrir la vidéo, menu des trois points, « Gérer les sous-titres », ajouter le fichier `.srt`. Seuls ceux qui regardent la vidéo dans le Drive les voient.
@@ -161,7 +161,7 @@ Le cadre bleu du cadrage et l'aperçu prennent la forme choisie ; le montage, le
 
 1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend le passage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire. « Ajouter des photos » propose les photos JPEG : en mode PC, celles du dossier de l'intervention et de son sous-dossier `Photos` ; en mode navigateur, celles choisies avec les vidéos, trouvées dans le dossier des rushs ou ajoutées par « Choisir des photos JPEG ». Une photo dure 2 à 8 s (4 s par défaut), avec un zoom lent qu'on peut couper, et se cadre comme un passage.
 2. **Passage** (cadrage) : touchez un passage, ou « Cadrer » dans le message qui suit un ajout. Sur téléphone, l'onglet se parcourt par trois volets : Montage, Passage, Habillage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse dans le réel (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
-   **Retouches** : « Flouter, annoter, changer la vitesse » ouvre les retouches du passage (voir plus haut) : flous qui suivent un visage ou une plaque, flèches et cercles qui suivent l'animal, ralentis et accélérés. Elles sont appliquées quel que soit le cadrage et valent aussi pour la vidéo compilée. Sur une photo, « + Flou (visage, plaque) » pose directement une zone floutée (petite, moyenne ou grande).
+   **Retouches** : « Retoucher », à côté de « Début ici » et « Fin ici », ouvre les retouches du passage (voir plus haut) : flous qui suivent un visage ou une plaque, flèches et cercles qui suivent l'animal, ralentis et accélérés. Elles sont appliquées quel que soit le cadrage et valent aussi pour la vidéo compilée. Sur une photo, « + Flou (visage, plaque) » pose directement une zone floutée (petite, moyenne ou grande).
 3. **Habillage** : titre d'accroche (3, 5 ou 8 s, ou tout le réel), logo ESAM (cartouche avec le nom, logo seul cerclé de blanc, ou aucun), carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
 4. **Aperçu du réel** : lecture du montage complet en vertical, sur une version allégée des vidéos, avec textes et musique. La liste « Sur l'image », sous l'aperçu, donne tout ce qui est posé sur la vidéo (titre, logo, textes des passages, éléments ajoutés) : touchez-en un, dans la liste ou sur l'image, pour l'amener à l'écran et le sélectionner. Glissez-le pour le déplacer ; tirez le rond bleu, la molette ou le curseur « Taille » pour changer sa taille ; choisissez sa couleur (blanc, jaune, bleu, rouge, noir) et, pour un texte, avec ou sans bandeau. « Remettre à sa place » revient à la position d'origine. Les boutons « Placer, taille et couleur » (Habillage, texte d'un passage) y mènent aussi.
    **Textes libres et formes** : « + Texte », « + Flèche », « + Cercle », « + Cadre » ajoutent un élément au moment affiché dans l'aperçu. Réglez sa place, sa taille, sa couleur, son orientation (formes), son début (« Commencer à ») et sa durée (2 à 8 s ou jusqu'à la fin). Les éléments suivent le temps du réel : si vous changez le montage, revérifiez leur moment.
@@ -194,6 +194,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.20 | 2026-11-24 | Interface allégée, moins de gestes. Visionner : après Début et Fin ou Repère, le bandeau propose les noms courants, un toucher nomme le marqueur sans ouvrir de fiche ni arrêter la lecture ; sur téléphone, le nom de l'intervention tient sur une ligne et laisse la place à l'image et aux pistes. Sommaire : une carte compacte par marqueur (deux fois plus de marqueurs à l'écran sur téléphone, trois fois plus sur PC), commentaire interne sur une ligne qui grandit, « Créer la vidéo compilée » en tête. Vidéo compilée : format, marge et heure incrustée repliés sous « Réglages », le dialogue tient sur un écran. Réel : « Début ici », « Fin ici » et « Retoucher » sur une rangée, plus de boutons inactifs. Même mot partout pour ouvrir la fiche d'un marqueur (« Modifier ») ; bouton « Changer d'intervention » retiré (le retour est en haut à gauche). |
 | 0.19 | 2026-11-24 | Une piste par appareil : les vidéos de téléphone sont rangées d'après la marque et le modèle lus dans le fichier (« iPhone 15 Pro », « Google Pixel 7 »...) ; une vidéo repassée par une messagerie, qui les a perdus, reste sur « Autre caméra ». Une vidéo compilée rouverte avec d'autres vidéos garde sa propre piste « Vidéo montée » au lieu d'être recouverte. Les passages déjà marqués suivent leur vidéo sur sa nouvelle piste. |
 | 0.18 | 2026-11-24 | Onglet Réel : format « LinkedIn 4:5 » ou « LinkedIn carré 1:1 » en plus du réel 9:16, avec le même montage, cadrage et habillage ; bouton « Créer la vidéo LinkedIn ». |
 | 0.17 | 2026-11-23 | Retouches d'un passage (bouton « Retoucher ») : flous ovales ou rectangles, doux ou pixelisés, qui suivent un visage ou une plaque (suivi automatique ou au doigt) ; flèches et cercles « au crayon » qui suivent l'animal ; ralenti et accéléré à partir d'un instant. Elles valent pour la vidéo compilée, les extraits et le réel. Extraits bruts : habillage « Aucun » (ni carton, ni heure, ni logo), en une vidéo ou un fichier par passage, choisi d'office quand on repart d'une vidéo compilée ; en mode PC, la vidéo compilée d'une intervention se rouvre depuis la liste pour en extraire des morceaux. Les messages s'affichent aussi par-dessus un dialogue ouvert. |

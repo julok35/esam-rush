@@ -42,10 +42,10 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
 | playback | Lecture du clip de la piste active ; `seek` recharge le fichier après une erreur de lecture | `seek`, `togglePlay`, `setTrack` |
 | drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX | `renderTimeline`, `drawStrips`, `renderMarkers`, `renderSummary`, `chrono` |
-| markers | Création et édition des marqueurs (dialogue `#sheet` : noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `renderInWin` |
+| markers | Création et édition des marqueurs (dialogue `#sheet` : noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, marqueur que l'on vient de poser et ses noms courants à toucher (`S.fresh`), passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `renderInWin`, `freshMarker`, `nameMarker` |
 | export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement sur la règle et des bords (aperçu de vignette `#scrubPrev`, ouvert et fermé par `showPrev`, `hidePrev`, `releasePrev` seulement), raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`, `#reset`) | `setZoom`, `setTab`, `keydown`, `goHome` |
+| events | Transport, zoom et pincement, glissement sur la règle et des bords (aperçu de vignette `#scrubPrev`, ouvert et fermé par `showPrev`, `hidePrev`, `releasePrev` seulement), raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`) | `setZoom`, `setTab`, `keydown`, `goHome` |
 | clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
@@ -85,6 +85,7 @@ S = {
   markers: [],      // voir 3.2
   meta: {intervention, version, log, auteur, reel, pistes},   // version et log : changelog de la fiche ; pistes : 2 une fois les pistes d'avant la v0.19 migrées
   offsets: {},      // décalage manuel par caméra, en secondes (calage des pistes)
+  fresh: null,      // {id, t, named} : marqueur que l'on vient de poser, à nommer depuis le bandeau (20 s) ; jamais enregistré
   key: null,        // empreinte des fichiers chargés : clé localStorage
   dirHandle: null   // dossier des rushs ouvert par showDirectoryPicker
 }
