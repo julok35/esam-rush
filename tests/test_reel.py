@@ -40,7 +40,7 @@ async def navigateur(tmp, iv):
             if await pg.is_visible("#rPanes"): await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(200)
         for a, z in ((3, 80), (40, 55)):
             await at(a); await pg.click("#mkS"); await at(z); await pg.click("#mkE")
-            if await pg.is_visible("#sheet"): await pg.click("#shCancel")
+            if await pg.is_visible("#sheet"): await pg.click("#shSave")
         await at(70); await pg.click("#mkP")
         if await pg.is_visible("#sheet"): await pg.click("#shSave")
         await pg.click("#tabReel"); await pg.wait_for_timeout(500)
