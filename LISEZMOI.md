@@ -73,7 +73,7 @@ L'adresse en `https` est indispensable : sans elle, le navigateur du téléphone
 
 1. Réveillez le PC depuis Home Assistant, puis ouvrez l'appli sur le téléphone : la liste des interventions s'affiche.
 2. « Préparer » lance la fabrication des proxies et des vignettes. La progression s'affiche ; vous pouvez fermer l'appli pendant ce temps.
-3. « Ouvrir » charge l'intervention. Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
+3. « Ouvrir » charge l'intervention. Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète, qui s'enregistre en se fermant ; « Annuler » dans le message qui suit la remet comme avant). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
 4. L'icône d'appareil photo enregistre l'image en pleine résolution dans le sous-dossier `Photos`.
 5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; onglet Sommaire, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
 6. Après 20 minutes sans activité, le PC se remet en veille.

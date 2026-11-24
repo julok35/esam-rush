@@ -412,7 +412,8 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .helpin kbd{font-family:inherit;font-weight:700;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:0 5px;background:var(--soft)}
 .helpver{font-size:13px;color:var(--muted);margin:0}
 .helpin h3:focus{outline:none}
-/* fiche de marqueur : le cas courant (nommer, enregistrer) tient sans défiler ; boutons collés en bas */
+/* fiche de marqueur : tient sans défiler sur téléphone ; groupes peu utilisés repliés avec leur état en résumé ;
+   la sensibilité reste dépliée ; Supprimer et Terminé collés en bas (fermer garde les changements) */
 #sheet{max-height:92vh;max-height:92dvh}
 #sheet .sheetin{padding-bottom:0}
 .shhead{display:flex;align-items:flex-start;gap:8px}
@@ -420,13 +421,22 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .shx{flex:none;width:44px;height:44px;margin:-8px -8px 0 0;border:0;border-radius:50%;background:none;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
 .shx:hover{background:var(--soft)}
 #sheet .grp{margin:12px 0}
+#sheet>.sheetin>h3{margin:4px 0 6px}
+.shfold{border-top:1px solid var(--line)}
+.shfold>summary{gap:10px}
+.shfold>summary .shk{flex:none}
+.shfold>summary .shv{flex:1;min-width:0;text-align:right;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shfold>summary .shv.todo{color:var(--red);font-weight:700}
+.shfold[open]{padding-bottom:6px}
+#sheet .shsens{border:2px solid transparent;border-radius:10px;padding:8px 10px;margin:8px -12px}
+.shsens.on{background:var(--paleyellow);border-color:var(--yellow)}
+.shsens.on .lbl::after{content:" (à vérifier)"}
+@media (min-width:700px){ .shpair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px} }
 .shmore{margin:10px 0 0}
 .shmore>summary{display:flex;align-items:center;min-height:44px;font-weight:600;font-size:14px;cursor:pointer}
 .shmore[open]>summary{margin-bottom:4px}
 .shmore>summary::before{content:"";flex:none;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin:0 12px 0 4px}
 .shmore[open]>summary::before{transform:rotate(45deg)}
-.shwhen>summary{font-weight:600;font-size:14px;color:var(--ink)}
-.shwhen>summary .hint{margin-left:6px;font-weight:500}
 .shsub{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px}
 .shsub:first-child{margin-top:0}
 #sheet .sheetbtns{position:sticky;bottom:0;z-index:2;background:var(--bg);margin:14px -18px 0;padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
@@ -953,23 +963,22 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 
 <dialog class="sheet" id="sheet" aria-labelledby="shTitle">
   <form method="dialog" class="sheetin" id="sheetForm">
-    <div class="shhead">
-      <h3 id="shTitle">Nouveau repère</h3>
-      <button type="button" class="shx" id="shClose" aria-label="Fermer sans enregistrer"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h3 id="shTitle">Passage</h3>
+    <details class="shmore shfold" id="shWhenBox"><summary><span class="shk" id="shWhenK">Moment</span><span class="shv" id="shWhen"></span></summary><div id="shAdj"></div></details>
+    <details class="shmore shfold" id="shNameBox"><summary><span class="shk">Nom</span><span class="shv" id="shNameSum"></span></summary>
+      <div id="shNames">
+        <div class="chips" id="shPresets" role="group" aria-label="Noms courants"></div>
+        <details class="shmore" id="shMoreNames"><summary id="shMoreNamesSum">Autres noms</summary><div id="shPresetsMore"></div></details>
+        <input class="field" id="shName" placeholder="Ou saisissez un titre libre" aria-label="Titre libre" autocomplete="off" style="margin-top:8px">
+      </div>
+    </details>
+    <div class="grp shsens" id="shSensBox"><span class="lbl" id="shSensLbl">Sensibilité avant diffusion</span><div class="chips" id="shSens" role="group" aria-labelledby="shSensLbl"></div></div>
+    <div class="shpair">
+      <div class="grp"><span class="lbl" id="shCamLbl">Caméra pour la vidéo compilée</span><div class="chips" id="shCam" role="group" aria-labelledby="shCamLbl"></div></div>
+      <div class="grp"><span class="lbl" id="shIntLbl">Intérêt pour la com</span><div class="chips" id="shInt" role="group" aria-labelledby="shIntLbl"></div></div>
     </div>
-    <details class="shmore shwhen" id="shWhenBox"><summary><span id="shWhen"></span><span class="hint">Ajuster</span></summary><div id="shAdj"></div></details>
-    <div class="grp" id="shNames">
-      <span class="lbl" id="shNameLbl">Nom</span>
-      <div class="chips" id="shPresets" role="group" aria-labelledby="shNameLbl"></div>
-      <details class="shmore" id="shMoreNames"><summary id="shMoreNamesSum">Autres noms</summary><div id="shPresetsMore"></div></details>
-      <input class="field" id="shName" placeholder="Ou saisissez un titre libre" aria-label="Titre libre" autocomplete="off" style="margin-top:8px">
-    </div>
-    <div class="grp"><span class="lbl" id="shSensLbl">Sensibilité avant diffusion</span><div class="chips" id="shSens" role="group" aria-labelledby="shSensLbl"></div>
-      <div id="shSensMiss" hidden></div></div>
-    <div class="grp"><span class="lbl">Caméra pour la vidéo compilée</span><div class="chips" id="shCam"></div></div>
-    <div class="grp"><span class="lbl">Intérêt pour la com</span><div class="chips" id="shInt"></div></div>
-    <details class="shmore" id="shMore"><summary id="shMoreSum">Ce qu'on voit, texte du carton, commentaire interne</summary>
-    <div class="grp"><span class="lbl">Ce qu'on voit</span><div class="chips" id="shThemes"></div></div>
+    <details class="shmore shfold" id="shMore"><summary><span class="shk">Thèmes, carton, commentaire</span><span class="shv" id="shMoreSum"></span></summary>
+    <div class="grp"><span class="lbl" id="shThemesLbl">Ce qu'on voit</span><div class="chips" id="shThemes" role="group" aria-labelledby="shThemesLbl"></div></div>
     <div class="grp">
       <label class="lbl" for="shNote">Texte du carton (visible dans la vidéo compilée)</label>
       <textarea class="field" id="shNote" placeholder="Ex. : le chien est repéré en thermique au bord du torrent"></textarea>
@@ -981,8 +990,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     </details>
     <div class="sheetbtns">
       <button type="button" class="btn ghost" id="shDel" hidden>Supprimer</button>
-      <button type="button" class="btn ghost" id="shCancel">Annuler</button>
-      <button type="button" class="btn primary grow" id="shSave">Enregistrer</button>
+      <button type="button" class="btn primary grow" id="shSave">Terminé</button>
     </div>
   </form>
 </dialog>
@@ -1005,7 +1013,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <p class="helpver" id="helpVer"></p>
     <h4>Visionner</h4>
     <ul>
-      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète (titre libre, sensibilité, texte du carton).</li>
+      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
       <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
@@ -2121,8 +2129,9 @@ function renderAll(){ renderHeader(); renderTimeline(); renderTracks(); renderSu
 
 /* ---------- markers ----------
    Un marqueur : {id, at, to (null = repère), preset, title, themes, interest, sens, note, comment, cam}. Heures absolues (S.base + t).
-   La fiche de marqueur (#sheet) édite une copie (draft) validée par Enregistrer. */
-let draft = null, draftIsNew = false;
+   La fiche de marqueur (#sheet) édite une copie (draft) ; la fermer (Terminé, Échap, appui à côté) l'enregistre,
+   et le message qui suit propose Annuler pour revenir à l'état d'avant. Seul Supprimer ferme sans enregistrer. */
+let draft = null, draftIsNew = false, shMoreOpen = null;   // shMoreOpen : dernier choix (ouvert ou replié) pour Thèmes, carton, commentaire
 function addMarker(a, b){
   const m = {id:uid(), at:a, to:b, preset:null, title:"", themes:[], interest:0, sens:[NONE], note:"", cam:track() ? track().lens : null};
   S.markers.push(m); S.fresh = {id:m.id, t:Date.now()};
@@ -2174,8 +2183,9 @@ function keepFocus(fn){
 }
 function renderSheet(){ keepFocus(renderSheetNow); }
 function renderSheetNow(){
-  const d = draft;
-  $("shTitle").textContent = draftIsNew ? (d.to != null ? "Nouveau passage" : "Nouveau repère") : (d.to != null ? "Modifier le passage" : "Modifier le repère");
+  const d = draft, n = sorted().findIndex(x => x.id === d.id) + 1;
+  $("shTitle").textContent = n ? `${kindName(d)} ${n}` : (d.to != null ? "Nouveau passage" : "Nouveau repère");
+  $("shWhenK").textContent = d.to != null ? "Moment" : "Heure";
   $("shWhen").textContent = d.to != null ? `${clockAbs(d.at)} à ${clockAbs(d.to)} (${len(d.to-d.at)})` : clockAbs(d.at);
   let adj = "";
   if(d.to != null){
@@ -2187,35 +2197,68 @@ function renderSheetNow(){
   $("shPresetsMore").innerHTML = PRESET_MORE.map(g => `<div class="shsub">${g[0]}</div><div class="chips">${g[1].map(t => `<button type="button" class="chip" data-v="${esc(t)}" aria-pressed="${draft.preset === t}">${esc(t)}</button>`).join("")}</div>`).join("");
   const more = PRESET_MORE.reduce((a, g) => a.concat(g[1]), []);
   $("shMoreNamesSum").textContent = more.indexOf(draft.preset) >= 0 ? `Autres noms (${draft.preset})` : `Autres noms (${more.length})`;
-  const nm = d.themes.length + (($("shNote").value || "").trim() ? 1 : 0) + (($("shCom").value || "").trim() ? 1 : 0);
-  $("shMoreSum").textContent = `Ce qu'on voit, texte du carton, commentaire interne${nm ? ` (${nm} renseigné${nm > 1 ? "s" : ""})` : ""}`;
   const cams = camsFor(d);
-  if(cams.length && !cams.some(x => x.tr.lens === d.cam)) d.cam = cams[0].tr.lens;
-  $("shCam").innerHTML = cams.map(x => `<button type="button" class="chip" data-l="${esc(x.tr.lens)}" aria-pressed="${x.tr.lens === d.cam}">${esc(x.tr.name)}</button>`).join("") || '<span class="miss" style="font-size:13px">[aucune image à ce moment]</span>';
+  const cam = effCam(d);   // caméra compilée ; d.cam ne change que sur un choix, jamais à l'ouverture
+  $("shCam").innerHTML = cams.map(x => `<button type="button" class="chip" data-l="${esc(x.tr.lens)}" aria-pressed="${x.tr.lens === cam}">${esc(x.tr.name)}</button>`).join("") || '<span class="miss" style="font-size:13px">[aucune image à ce moment]</span>';
   chipRow($("shThemes"), THEMES, t => d.themes.indexOf(t) >= 0);
   chipRow($("shInt"), INTEREST, (t, i) => d.interest === i+1);
   chipRow($("shSens"), [NONE].concat(SENS), t => d.sens.indexOf(t) >= 0, "s");
   $("shSens").firstElementChild.classList.remove("s");
-  $("shSensMiss").hidden = d.sens.length > 0;
-  $("shSave").disabled = d.sens.length === 0;
+  $("shSensBox").classList.toggle("on", d.sens.some(x => x !== NONE));
   $("shDel").hidden = draftIsNew;
+  sheetSums();
+}
+/* résumés des groupes repliés : nom retenu, et ce qui est renseigné sous Thèmes, carton, commentaire */
+function sheetSums(){
+  const d = draft; if(!d) return;
+  const nm = d.preset ? presetLabel(d) : clean($("shName").value.trim()), ns = $("shNameSum");
+  ns.textContent = nm || "à nommer"; ns.classList.toggle("todo", !nm);
+  const note = clean($("shNote").value.trim()), com = clean($("shCom").value.trim());
+  const parts = (d.themes.length ? [d.themes.length > 2 ? `${d.themes.length} thèmes` : d.themes.join(", ")] : [])
+    .concat(note ? ["carton"] : [], com ? ["commentaire"] : []);
+  $("shMoreSum").textContent = parts.join(", ") || "rien";
 }
 function openSheet(m, isNew){
   draft = JSON.parse(JSON.stringify(m)); draftIsNew = isNew;
   if(!draft.sens || !draft.sens.length) draft.sens = [NONE];
-  $("shName").value = draft.preset ? presetLabel(draft) : draft.title; $("shNote").value = draft.note; $("shCom").value = draft.comment || "";
+  $("shName").value = draft.preset ? presetLabel(draft) : draft.title; $("shNote").value = draft.note || ""; $("shCom").value = draft.comment || "";
+  const named = !!(draft.preset || draft.title);
   $("shWhenBox").open = false;
+  $("shNameBox").open = !named;                                   // déplié seulement quand il reste à nommer
   $("shMoreNames").open = !!draft.preset && PRESET_MAIN.indexOf(draft.preset) < 0;
-  $("shMore").open = !!(draft.themes.length || draft.note || draft.comment);   // ouvert quand un de ses champs est renseigné
+  $("shMore").open = !!shMoreOpen;
   renderSheet();
   const dlg = $("sheet");
   if(typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open","");
   dlg.scrollTop = 0;
-  // focus initial : le nom choisi, sinon Enregistrer pour un titre libre, sinon le premier nom proposé
-  const pick = $("shNames").querySelector('.chip[aria-pressed="true"]') || (draft.title && !draft.preset ? $("shSave") : $("shPresets").querySelector(".chip"));
+  // focus initial : le premier nom proposé s'il reste à nommer, sinon la ligne Nom (en haut de la fiche)
+  const pick = named ? $("shNameBox").querySelector("summary") : $("shPresets").querySelector(".chip");
   if(pick) pick.focus();
 }
-function closeSheet(){ const dlg = $("sheet"); if(dlg.open) dlg.close(); draft = null; }
+/* ferme sans rien enregistrer (Supprimer) */
+function closeSheet(){ draft = null; const dlg = $("sheet"); if(dlg.open) dlg.close(); }
+/* ferme en enregistrant : rien ne se passe si rien n'a changé ; sinon le message propose Annuler */
+function commitSheet(){
+  if(!draft) return;
+  const d = draft;
+  if(!d.sens.length) d.sens = [NONE];
+  if(d.preset) d.title = d.preset;
+  else d.title = clean($("shName").value.trim());                 // vide : le marqueur reste « à nommer »
+  d.note = clean($("shNote").value.trim()); d.comment = clean($("shCom").value.trim());
+  const i = S.markers.findIndex(m => m.id === d.id), before = i >= 0 ? S.markers[i] : null;
+  closeSheet();
+  const K = ["at","to","preset","title","themes","interest","sens","note","comment","cam"], v = (m, k) => JSON.stringify(m[k] == null ? "" : m[k]);
+  if(before && K.every(k => v(before, k) === v(d, k))) return;
+  if(i >= 0) S.markers[i] = d; else S.markers.push(d);
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  const n = sorted().indexOf(d) + 1;
+  if(!before){ toast(`${label(d)} ajouté à ${clockAbs(d.at)}.`); return; }
+  toast(`${kindName(d)} ${n} enregistré.`, "Annuler", () => {
+    const j = S.markers.findIndex(m => m.id === d.id); if(j < 0) return;
+    S.markers[j] = before; persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+    toast(`${kindName(before)} ${n} remis comme avant.`);
+  });
+}
 $("shNames").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
   const t = b.dataset.v;
@@ -2225,6 +2268,7 @@ $("shNames").addEventListener("click", e => {
 });
 $("shName").addEventListener("input", function(){
   if(draft && draft.preset && this.value !== presetLabel(draft)){ draft.preset = null; renderSheet(); }
+  else sheetSums();
 });
 $("shThemes").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
@@ -2256,29 +2300,17 @@ $("shAdj").addEventListener("click", e => {
   if(draft.preset) $("shName").value = presetLabel(draft);
   renderSheet();
 });
-$("shCancel").onclick = closeSheet;
-$("shClose").onclick = closeSheet;
-["shNote","shCom"].forEach(id => { $(id).addEventListener("change", () => { if(draft) renderSheet(); }); });
-// un appui sur le fond (hors du cadre de la fiche) ferme sans enregistrer, comme Annuler
+["shNote","shCom"].forEach(id => { $(id).addEventListener("input", sheetSums); });
+$("shMore").addEventListener("toggle", function(){ if(draft) shMoreOpen = this.open; });
+// un appui sur le fond (hors du cadre de la fiche) ferme en enregistrant, comme Terminé
 (() => {
   const dlg = $("sheet");
   let down = false;
   function outside(e){ const r = dlg.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; }
   dlg.addEventListener("pointerdown", e => { down = e.target === dlg && outside(e); });
-  dlg.addEventListener("click", e => { if(down && e.target === dlg && outside(e)) closeSheet(); down = false; });
+  dlg.addEventListener("click", e => { if(down && e.target === dlg && outside(e)) commitSheet(); down = false; });
 })();
-$("shSave").onclick = () => {
-  if(!draft) return;
-  if(!draft.sens.length) draft.sens = [NONE];
-  if(draft.preset) draft.title = draft.preset;
-  else draft.title = clean($("shName").value.trim()) || (draft.themes[0] || "Sans titre");
-  draft.note = clean($("shNote").value.trim()); draft.comment = clean($("shCom").value.trim());
-  const i = S.markers.findIndex(m => m.id === draft.id);
-  if(i >= 0) S.markers[i] = draft; else S.markers.push(draft);
-  const saved = draft;
-  closeSheet(); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
-  toast(i >= 0 ? `${kindName(saved)} modifié.` : `${label(saved)} ajouté à ${clockAbs(saved.at)}.`);
-};
+$("shSave").onclick = commitSheet;
 /* suppression annulable : le marqueur et son élément du réel (cadrage, flous, texte) reviennent à leur place */
 $("shDel").onclick = () => {
   if(!draft) return;
@@ -2297,7 +2329,8 @@ $("shDel").onclick = () => {
     toast(`${kindName(m)} ${n} rétabli${rit ? ", avec sa place dans le réel" : ""}.`);
   });
 };
-$("sheet").addEventListener("cancel", () => { draft = null; });
+// Échap ferme comme Terminé : la fiche s'enregistre (Annuler dans le message pour revenir)
+$("sheet").addEventListener("close", () => { if(draft) commitSheet(); });
 
 /* ---------- export / import ----------
    buildMarkdown() : fiche lisible + bloc <!-- derushage-data {...} --> qui permet de la reprendre ; parseFiche/applyFiche. */
