@@ -1075,7 +1075,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.18";
+const APP_VERSION = "0.19";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1128,6 +1128,7 @@ function esc(s){ return clean(s).replace(/[&<>"]/g, c => ({
 })[c]); }
 function slug(s){ return clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40); }
 function hash(str){ let h = 5381; for(let i=0;i<str.length;i++){ h = ((h<<5)+h+str.charCodeAt(i))|0; } return (h>>>0).toString(36); }
+function camName(l){ const tr = S.tracks.find(x => x.lens === l); return tr ? tr.name : lensName(l); }     // nom affiché de la piste
 function lensName(l){
   const m = /^(.)(\d+)$/.exec(l || "");     // "?2", "T2" : pistes ajoutées par autoLens()
   if(m) return `${lensName(m[1])} ${m[2]}`;
@@ -1470,14 +1471,16 @@ async function thumbsFor(c, step, onProgress){
 
 /* fichiers sans nom DJI : une image 5:4 (640 x 512) vient de la caméra thermique ; deux fichiers qui se chevauchent
    ne viennent pas de la même caméra, ils vont sur des pistes distinctes ("?", "?2", ...), en gardant si possible
-   la même définition d'image sur une piste */
+   la même définition d'image sur une piste. Une vidéo produite par l'outil (PROD_RE, sans heure réelle) garde la piste "?"
+   pour elle seule : les vidéos de téléphone chargées avec elle vont sur "?2", "?3"... au lieu de se poser sur elle */
 function autoLens(){
   const auto = S.clips.filter(c => c.auto).sort((a, b) => (a.start||0)-(b.start||0) || a.name.localeCompare(b.name));
   const lanes = [];
+  if(auto.some(c => PROD_RE.test(c.name))) lanes.push({base:"?", lens:"?", end:Infinity, dim:""});
   auto.forEach(c => {
     const base = c.w && c.h && Math.abs(c.w/c.h - 1.25) < 0.02 ? "T" : "?", dim = `${c.w}x${c.h}`;
     c.lens = base;
-    if(c.start == null || !c.ok) return;
+    if(c.start == null || !c.ok || PROD_RE.test(c.name)) return;
     const free = lanes.filter(l => l.base === base && l.end <= c.start + 0.5);
     const lane = free.find(l => l.dim === dim) || free[0];
     if(lane){ lane.end = c.start + (c.dur || 0); lane.dim = dim; c.lens = lane.lens; return; }
@@ -1514,8 +1517,11 @@ function rebuild(){
       c.e = c.s + (c.dur || 0);
       if(c.ok){ cursor = c.e; end = Math.max(end, c.e); }
     });
-    return {lens:l, name:l === "?" && prodSource() ? "Vidéo montée" : lensName(l), clips:clips};
+    return {lens:l, name:clips.every(c => PROD_RE.test(c.name)) ? "Vidéo montée" : lensName(l), clips:clips};
   });
+  // avec une vidéo montée sur "?", les autres pistes "?N" sont renumérotées à partir de 1 pour l'affichage
+  const autres = S.tracks.filter(tr => /^\?\d*$/.test(tr.lens) && tr.name !== "Vidéo montée");
+  if(autres.length && S.tracks.some(tr => tr.lens === "?" && tr.name === "Vidéo montée")) autres.forEach((tr, i) => { tr.name = autres.length > 1 ? `${lensName("?")} ${i+1}` : lensName("?"); });
   S.dur = Math.max(end, 1);
   let ai = S.tracks.findIndex(t => t.lens === activeLens);
   if(ai < 0){
@@ -1726,7 +1732,7 @@ function camSelect(m){
 }
 function setCam(m, lens){
   m.cam = lens; persist(); renderMarkers(); renderSummary(); inWinKey = "";
-  toast(`Passage ${sorted().indexOf(m)+1} : caméra ${lensName(lens).toLowerCase()} pour la compilation.`);
+  toast(`Passage ${sorted().indexOf(m)+1} : caméra ${camName(lens).toLowerCase()} pour la compilation.`);
 }
 document.addEventListener("change", e => {
   const c = e.target; if(c.dataset && c.dataset.cam){
@@ -1797,8 +1803,8 @@ function renderInWin(){
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
     key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}`;
     txt = m.to != null ? `Passage ${n}, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : `Repère ${n}`;
-    sub = label(m)+(ec ? `, compilé en ${lensName(ec).toLowerCase()}` : "");
-    if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(lensName(shown).toLowerCase())}</button>`;
+    sub = label(m)+(ec ? `, compilé en ${camName(ec).toLowerCase()}` : "");
+    if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(camName(shown).toLowerCase())}</button>`;
     if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button>`;
     btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Détails</button>`;
   } else if(w.after || w.before){
