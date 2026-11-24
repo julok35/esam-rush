@@ -500,14 +500,23 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rmode{padding:0 0 8px}
 .rpanes{display:none}
 .rpanes .chip[aria-selected="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
-/* téléphone : un volet à la fois (Montage, Passage, Habillage), la barre « Créer » reste visible partout */
+/* téléphone : un volet à la fois, la barre « Créer » reste visible partout. Le volet choisit aussi le mode de l'image
+   (rPane) : Passage = cadrage du passage choisi, Habillage = aperçu du réel avec titre, logo et éléments ; pas de 3e rangée de choix.
+   Ordre du volet Habillage : titre d'accroche, aperçu (où il s'affiche), éléments sur l'image, puis logo, carton de fin et musique repliés. */
 @media (max-width:1099px){
   .rpanes{display:flex;width:100%;flex-wrap:nowrap}
   .rpanes .chip{flex:1}
-  #reel[data-pane="montage"] .rmain, #reel[data-pane="montage"] #rPaneHab, #reel[data-pane="passage"] #rPaneMontage, #reel[data-pane="passage"] #rPaneHab, #reel[data-pane="habillage"] .rmain, #reel[data-pane="habillage"] #rPaneMontage{display:none}
-  /* hors du volet Montage, le détail du réel s'efface : une ligne de moins au-dessus de l'image */
-  #reel:not([data-pane="montage"]) #rInfo{display:none}
-  .rside .rh:first-child{margin-top:4px}
+  .rgrid{display:flex;flex-direction:column}
+  .rside{display:contents}
+  #rPaneTitre{order:-1}
+  .rmode, #reel .rh{display:none}
+  #reel[data-pane="montage"] .rmain, #reel[data-pane="montage"] #rPaneTitre, #reel[data-pane="montage"] #rPaneHab, #reel[data-pane="passage"] #rPaneMontage, #reel[data-pane="passage"] #rPaneTitre, #reel[data-pane="passage"] #rPaneHab, #reel[data-pane="habillage"] #rPaneMontage{display:none}
+  /* hors du volet Montage, la durée du réel s'efface : l'image monte d'autant (elle reste sur le bouton « Créer ») */
+  #reel:not([data-pane="montage"]) .rtot{display:none}
+  #reel:not([data-pane="montage"]) .rhead{padding-top:8px}
+  #rPaneTitre .grp{margin:4px 0 12px}
+  /* aperçu un peu moins haut dans Habillage : titre et réglages de l'élément choisi restent près de l'image */
+  #reel[data-pane="habillage"] .rstage.v canvas{width:min(100%, calc(min(54vh,560px)*var(--rar,.5625)))}
 }
 .rtot b{font-family:Anton,Impact,sans-serif;font-size:22px;font-weight:400;display:block;line-height:1.15}
 .rtot small{display:block;font-size:12px;color:var(--muted)}
@@ -536,6 +545,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .redit:empty{display:none}
 .redit .rsel{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
 .redit .rsel b{font-size:16px}
+/* en-tête du passage choisi : précédent, nom et durée, suivant (passer au passage suivant sans revenir au Montage) */
+.redit .rnav{margin-top:8px}
+.redit .rnav>div{flex:1;min-width:0;text-align:center}
+.redit .rnav b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.redit .rnav small{display:block;font-size:12px;color:var(--muted)}
 .redit .hint{margin:8px 0 0}
 .rtarget{margin-top:10px}
 .rtarget .lbl{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
@@ -556,11 +570,27 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rlist .rtx{flex:1;min-width:0;text-align:left;background:none;border:0;padding:6px 2px;color:inherit;font:inherit;cursor:pointer;min-height:44px}
 .rlist .rtx b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rlist .rtx small{display:block;font-size:12px;color:var(--muted)}
-.rlist .ib{flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
-.rlist .ib:disabled{opacity:.3}
+.rlist .ib, .redit .ib{flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.rlist .ib:disabled, .redit .ib:disabled{opacity:.3}
+/* une ligne du montage ouvre le passage (chevron) ; une ligne à ajouter porte un « + » ; les flèches et la croix
+   n'apparaissent qu'avec « Ordre et retrait » (classe order) */
+.rlist .rtx{position:relative;padding-right:30px}
+.rlist .rtx::after{content:"";position:absolute;right:10px;top:50%;width:8px;height:8px;margin-top:-5px;border-right:2.4px solid var(--muted);border-top:2.4px solid var(--muted);transform:rotate(45deg)}
+.rlist.order .rtx{padding-right:2px}
+.rlist.order .rtx::after{display:none}
+.rlist.add .rtx::after{content:"+";border:0;transform:none;width:26px;height:26px;margin-top:-13px;right:2px;border-radius:50%;background:var(--blue);color:var(--onblue);font-size:20px;font-weight:700;line-height:26px;text-align:center}
+.rlhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0 8px}
+.rlhead .lbl{font-weight:700;font-size:13px}
+.rlhead .btn{flex:none}
 .rlist.add .rn{background:var(--soft);color:var(--ink);border:1.5px dashed var(--muted)}
 .rlist.add .rn.sens{background:var(--yellow);color:var(--onblue);border:2px solid var(--onblue)}
 .radd{margin-top:10px}
+.rmore{border-top:1px solid var(--line);margin-top:14px}
+.rmore summary{flex-wrap:wrap;row-gap:0}
+.rmore summary small{flex-basis:100%;padding-left:13px;font-weight:400;font-size:12px;color:var(--muted)}
+.rtitreopt{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rtitreopt .lbl{font-weight:700;font-size:13px;flex:none}
+#rPaneTitre .rlhead{margin:0 0 6px;min-height:var(--tap,44px)}
 .radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:44px;display:flex;align-items:center;gap:6px}
 .radd summary::before{content:"";width:0;height:0;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
 .radd[open] summary::before{transform:rotate(90deg)}
@@ -569,9 +599,12 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rnone{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:4px}
 .rnone p{margin:0 0 12px;max-width:52ch}
 .rrange{width:100%;accent-color:var(--blue);height:32px}
-.chip.rcol i{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:6px;vertical-align:-2px;border:1.5px solid var(--line)}
+.chip.rcol{width:44px;min-width:44px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.chip.rcol i{display:block;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)}
 .relems .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rphotos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+/* photos à ajouter : une bande qui défile de côté, une seule rangée de hauteur */
+.rphotos{list-style:none;margin:0;padding:0 0 4px;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity}
+.rphotos li{flex:0 0 104px;scroll-snap-align:start}
 .rphotos:empty{display:none}
 .rphotos button{width:100%;padding:0;border:1.5px solid var(--line);border-radius:10px;background:var(--soft);color:var(--ink);overflow:hidden;cursor:pointer;display:block}
 .rphotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--stage)}
@@ -592,6 +625,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   .rside{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--top) + 12px);max-height:calc(100vh - var(--top) - 72px);max-height:calc(100dvh - var(--top) - 72px);overflow:auto;padding:10px 6px 0 0}
   .rside .rh:first-child{margin-top:0}
   .rstage.v canvas{width:min(100%, calc(min(70vh,760px)*var(--rar,.5625)))}
+  /* aperçu : l'image est verticale, les réglages de ce qui est posé dessus prennent la place libre à sa droite */
+  #reel[data-mode="apercu"] .rmain{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,330px);column-gap:24px;align-items:start}
+  #reel[data-mode="apercu"] .rmain>*{grid-column:1}
+  #reel[data-mode="apercu"] #rEdit{grid-column:2;grid-row:1 / span 4;border-top:0}
+  #reel[data-mode="apercu"] #rEdit>.grp:first-child, #reel[data-mode="apercu"] #rEdit>.rsel:first-child{margin-top:0}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
 /* ---------- retouches d'un passage (dialogue #fx) : image en haut, réglages défilants dessous ; deux colonnes sur PC ---------- */
@@ -886,32 +924,37 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <div class="rside">
       <div id="rPaneMontage">
       <h3 class="rh">Montage</h3>
+      <div class="rnone" id="rNone" hidden>
+        <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
+        <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
+      </div>
+      <div class="rlhead" id="rListHead" hidden><span class="lbl" id="rListLbl">Dans le réel</span><button type="button" class="btn small ghost" id="rOrder" aria-pressed="false">Ordre et retrait</button></div>
+      <ol class="rlist" id="rList" aria-labelledby="rListLbl"></ol>
+      <div class="radd" id="rAddBox" hidden>
+        <div class="rlhead"><span class="lbl" id="rAddSum">Passages à ajouter</span><button type="button" class="btn small" id="rAddAll">Tout ajouter</button></div>
+        <ul class="rlist add" id="rAdd" aria-labelledby="rAddSum"></ul>
+      </div>
+      <div class="radd" id="rPhBox">
+        <div class="rlhead"><span class="lbl" id="rPhSum">Photos</span><label class="btn small ghost" for="rPhotoIn" id="rPhPick">Choisir des photos JPEG</label></div>
+        <ul class="rphotos" id="rPhList" aria-labelledby="rPhSum"></ul>
+        <p class="hint" id="rPhEmpty" hidden></p>
+      </div>
       <div class="grp rfmt">
         <span class="lbl" id="rFmtLbl">Format de la vidéo</span>
         <div class="chips" id="rFmt" role="group" aria-labelledby="rFmtLbl"></div>
         <p class="hint" id="rFmtHint"></p>
       </div>
-      <div class="rnone" id="rNone" hidden>
-        <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
-        <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
       </div>
-      <ol class="rlist" id="rList"></ol>
-      <details class="radd" id="rAddBox"><summary id="rAddSum">Ajouter des passages</summary><ul class="rlist add" id="rAdd"></ul></details>
-      <details class="radd" id="rPhBox"><summary id="rPhSum">Ajouter des photos</summary>
-        <ul class="rphotos" id="rPhList"></ul>
-        <p class="hint" id="rPhEmpty" hidden></p>
-        <div class="actions" style="margin-top:8px" id="rPhPick"><label class="btn small ghost" for="rPhotoIn">Choisir des photos JPEG</label></div>
-      </details>
-      </div>
-      <div id="rPaneHab">
+      <div id="rPaneTitre">
       <h3 class="rh">Habillage</h3>
       <div class="grp">
-        <label class="lbl" for="rTitre">Titre d'accroche</label>
+        <div class="rlhead"><label class="lbl" for="rTitre">Titre d'accroche</label><button type="button" class="btn small ghost" id="rTitrePlace">Placer, taille, couleur</button></div>
         <input class="field" id="rTitre" maxlength="70" autocomplete="off" placeholder="Ex. : Perdu depuis 3 jours, retrouvé par le drone">
-        <span class="lbl" style="margin-top:10px;display:block">Durée du titre</span>
-        <div class="chips" id="rTitreDur"></div>
-        <div class="rbtns"><button type="button" class="btn small ghost" id="rTitrePlace">Placer, taille et couleur</button></div>
+        <div class="rtitreopt" id="rTitreOpt"><span class="lbl">Affiché</span><div class="chips" id="rTitreDur" role="group" aria-label="Durée du titre"></div></div>
       </div>
+      </div>
+      <details class="radd rmore" id="rPaneHab">
+      <summary id="rHabSum"><span>Logo, carton de fin, musique</span><small id="rHabInfo"></small></summary>
       <div class="grp">
         <span class="lbl">Logo ESAM</span>
         <div class="chips" id="rLogo"></div>
@@ -938,7 +981,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         </div>
         <p class="hint">Uniquement une musique libre de droits ou dont l'ESAM a les droits. Sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.</p>
       </div>
-      </div>
+      </details>
       <div class="rexport">
         <div class="senswarn" id="rSensW" hidden></div>
         <button type="button" class="btn primary" id="rGoReel">Créer le réel</button>
@@ -1020,7 +1063,8 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <li><b>Créer la vidéo compilée</b> : format, marge et heure incrustée sont repliés sous « Réglages ». Habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
     <h4>Réel</h4>
-    <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), ajoutés depuis « Ajouter des passages », plus les photos de l'intervention.</li></ul>
+    <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), touchés dans « Passages à ajouter » (ou <b>Tout ajouter</b>), plus les photos de l'intervention. <b>Ordre et retrait</b> fait apparaître les flèches et la croix de chaque ligne.</li>
+      <li>Sur téléphone, trois volets : <b>Montage</b>, <b>Passage</b> (cadrage du passage touché ; les flèches de l'en-tête passent au précédent ou au suivant), <b>Habillage</b> (titre d'accroche, aperçu du réel et tout ce qui est posé dessus ; logo, carton de fin et musique sont repliés dessous). Sur PC, « Cadrage » et « Aperçu du réel » au-dessus de l'image ; toucher le titre montre l'aperçu.</li></ul>
     <h4>Revenir</h4>
     <ul><li id="helpHome">Le logo en haut à gauche ramène à l'accueil. Vos marqueurs restent gardés dans ce navigateur.</li></ul>
     <div class="sheetbtns"><button type="button" class="btn primary grow" id="helpClose">Fermer</button></div>
@@ -3991,6 +4035,8 @@ const ra = document.createElement("audio");ra.preload = "auto";
 const rcv = $("rCv"), rctx = rcv.getContext("2d");
 const ICON_UP = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>';
+const ICON_LEFT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"/></svg>';
+const ICON_RIGHT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6l6 6-6 6"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
 function reelData(){
@@ -4703,6 +4749,7 @@ function rGoCadrer(){
 function rSave(){ persist(); renderComp(); }
 function renderReel(){
   const r = reelData(), pl = reelPlan(false), it = rSelItem();
+  $("reel").dataset.mode = REEL.mode;
   REEL.pl = pl;
   // en-tête
   const cuts = storyCuts(pl), nst = cuts.length - 1;
@@ -4715,10 +4762,15 @@ function renderReel(){
   chipRow($("rFmt"), RFMTK.map(k => RFMTS[k].lib), (t, i) => r.fmt === RFMTK[i]);
   $("rFmtHint").textContent = story ? "Instagram et Facebook : réel, ou story découpée en morceaux de 60 s." : r.fmt === "li" ? "Fil LinkedIn : vertical 4:5, la plus grande place sur téléphone sans être recadrée." : "Fil LinkedIn : carré, s'affiche en entier sur téléphone comme sur ordinateur.";
   // montage
+  const ord = !!REEL.order && r.items.length > 0;
+  $("rListHead").hidden = !r.items.length;
+  $("rListLbl").textContent = `Dans le réel (${r.items.length})`;
+  $("rOrder").setAttribute("aria-pressed", ord); $("rOrder").textContent = ord ? "Terminé" : "Ordre et retrait";
+  $("rList").classList.toggle("order", ord);
   $("rList").innerHTML = r.items.map((x, i) => {
     const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, m = x.photo ? null : rMarker(x), nf = rNbFlous(x), sn = sensTxt(m);
     const src = x.photo ? (ph ? `Photo${x.zoom === false ? '' : ', zoom lent'}` : '<span class="miss">[photo à choisir à nouveau]</span>') : (tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>');
-    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button><button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button></li>`;
+    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button>${ord ? `<button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button>` : ''}</li>`;
   }).join("");
   const free = sorted().filter(m => !r.items.some(x => x.id === m.id));
   $("rAdd").innerHTML = free.map(m => {
@@ -4726,11 +4778,12 @@ function renderReel(){
     return `<li><span class="rn${isSens(m) ? ' sens' : ''}">${n}</span><button type="button" class="rtx" data-radd="${m.id}"><b>${esc(label(m))}</b><small>${clockAbs(m.at)}${m.to != null ? `, ${len(z - a)}` : ', repère (6 s autour)'}</small>${sensTag(sensTxt(m))}</button></li>`;
   }).join("");
   $("rAddBox").hidden = !free.length;
-  $("rAddSum").textContent = `Ajouter des passages (${free.length})`;
-  if(!r.items.length && free.length) $("rAddBox").open = true;
+  $("rAddSum").textContent = `Passages à ajouter (${free.length})`;
+  $("rAddAll").hidden = free.length < 2;
   renderPhotos();
   // habillage
   if(document.activeElement !== $("rTitre")) $("rTitre").value = r.titre;
+  $("rTitreOpt").hidden = $("rTitrePlace").hidden = !r.titre;
   chipRow($("rTitreDur"), ["3 s","5 s","8 s","Tout le réel"], (t, i) => (r.titreDur || 0) === RTDURS[i]);
   chipRow($("rLogo"), ["Cartouche ESAM","Logo seul","Aucun"], (t, i) => r.logo.mode === RLOGOS[i]);
   $("rLogoPlace").hidden = r.logo.mode === "non";
@@ -4739,17 +4792,20 @@ function renderReel(){
   if(document.activeElement !== $("rFinTxt")) $("rFinTxt").value = r.fin.texte || "";
   if(document.activeElement !== $("rFinSous")) $("rFinSous").value = r.fin.sous || "";
   renderMusic();
+  $("rHabInfo").textContent = [["Cartouche ESAM","Logo seul","Sans logo"][RLOGOS.indexOf(r.logo.mode)], r.fin.on ? "carton de fin" : "sans carton de fin",
+    r.musique ? `musique « ${r.musique.nom} »` : "sans musique"].join(", ");
   // éditeur du passage
   renderReelEdit();
   // export
   const empty = !pl.segs.length;
   $("rGoReel").disabled = empty; $("rGoStory").disabled = empty; $("rGoStory").hidden = !story;
   $("rGoReel").textContent = story ? "Créer le réel" : "Créer la vidéo LinkedIn";
-  $("rGoStory").textContent = `Créer la story${nst > 1 ? ` (${nst} morceaux)` : ""}`;
+  $("rGoStory").textContent = nst > 1 ? `Créer ${nst} stories` : "Créer la story";     // une ligne : la barre collante reste basse
+  $("rGoStory").title = nst > 1 ? `Story découpée en ${nst} morceaux de 60 s au plus` : "";
   const tips = [];
   if(pl.skipped) tips.push(`${pl.skipped} passage(s) sans image ignoré(s)`);
   if(pl.total > 90) tips.push(`au-delà d'une minute et demie, ${story ? "un réel" : "une vidéo"} est rarement regardé${story ? "" : "e"} jusqu'au bout`);
-  $("rEst").textContent = empty ? "Ajoutez au moins un passage." : (pcOpen() ? "Calcul sur le PC en pleine résolution, vidéo déposée dans le dossier de l'intervention." : "Calcul dans ce navigateur, garder l'onglet ouvert.")+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
+  $("rEst").textContent = empty ? "Ajoutez au moins un passage." : `${F.quoi} de ${len(pl.total)}, ${pcOpen() ? "calculé sur le PC en pleine résolution." : "calculé dans ce navigateur : gardez l'onglet ouvert."}`+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
   sensWarn($("rSensW"), empty ? [] : rSensLines(), "");
   // scène
   const noItem = REEL.mode === "cadrage" && !it, noSeg = REEL.mode === "apercu" && empty;
@@ -4764,7 +4820,7 @@ function renderPhotos(){
     const when = p.t && S.real ? clockAbs(p.t) : phShort(p.name);
     return `<li><button type="button" data-rph="${esc(p.name)}" title="${esc(p.name)}"><img alt="" loading="lazy" data-ph="${esc(p.name)}" src="${esc(phThumbSrc(p))}"><small>${esc(when)}</small></button></li>`;
   }).join("");
-  $("rPhSum").textContent = `Ajouter des photos (${free.length})`;
+  $("rPhSum").textContent = free.length ? `Photos à ajouter (${free.length})` : "Photos";
   $("rPhEmpty").textContent = PH.list.length ? (free.length ? "" : "Toutes les photos sont déjà dans le montage.")
     : pcOpen() ? "Aucune photo JPEG dans le dossier de l'intervention ni dans son sous-dossier Photos." : "Aucune photo chargée.";
   $("rPhEmpty").hidden = !$("rPhEmpty").textContent;
@@ -4791,6 +4847,11 @@ function rFlouCtl(it){
   const near = !it.photo && (z.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
   return `<div class="grp"><span class="lbl">Flou ${fl.indexOf(z) + 1}</span><p class="hint" style="margin:0 0 8px">Glissez-le sur ce qu'il faut cacher${it.photo ? '.' : ' ; pendant la lecture, suivez-le du doigt.'}</p><div class="chips">${RFSIZES.map((s, i) => `<button type="button" class="chip" data-rfsize="${s}" aria-pressed="${Math.abs(z.s - s) < 0.001}">${["Petit","Moyen","Grand"][i]}</button>`).join("")}</div><div class="rbtns">${it.photo ? '' : `<button type="button" class="btn small ghost" data-rfkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button>`}<button type="button" class="btn small ghost" data-rfdel="1">Supprimer ce flou</button></div></div>`;
 }
+/* en-tête du passage choisi : précédent et suivant dans l'ordre du montage (cadrer les passages l'un après l'autre) */
+function rNavHead(it, meta){
+  const items = reelData().items, idx = items.indexOf(it), n = items.length;
+  return `<div class="rsel rnav"><button type="button" class="ib" data-rnav="-1" aria-label="Passage précédent"${idx > 0 ? '' : ' disabled'}>${ICON_LEFT}</button><div><b>${idx + 1}/${n}. ${esc(rLabel(it))}</b><small>${meta}</small></div><button type="button" class="ib" data-rnav="1" aria-label="Passage suivant"${idx < n - 1 ? '' : ' disabled'}>${ICON_RIGHT}</button></div>`;
+}
 function renderReelEdit(){
   const it = rSelItem(), box = $("rEdit");
   // libellé du canevas : ce que les flèches déplacent quand il a le focus
@@ -4798,14 +4859,14 @@ function renderReelEdit(){
     : `Image du passage. ${rZoneSel(it) ? "Flèches : déplacer le flou choisi, Échap : revenir au cadre." : "Flèches gauche et droite : déplacer le cadre."}`);
   if(REEL.mode === "apercu"){ box.innerHTML = rElemsPanel(); return; }
   if(!it){ box.innerHTML = ""; return; }
-  const idx = reelData().items.indexOf(it), z = rZoneSel(it);
+  const z = rZoneSel(it);
   if(it.photo){
-    box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(rLabel(it))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${len(rItemDur(it))} dans le réel</span></div>${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
+    box.innerHTML = `${rNavHead(it, `${len(rItemDur(it))} dans le réel`)}${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
     return;
   }
   const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = rNbFlous(it);
   const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage${nk ? ` (${nk} point${nk > 1 ? 's' : ''})` : ' (fixe, au centre)'}</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.</p>${nk ? `<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}</div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
+  box.innerHTML = `${rNavHead(it, `${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel`)}${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage${nk ? ` (${nk} point${nk > 1 ? 's' : ''})` : ' (fixe, au centre)'}</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.</p>${nk ? `<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}</div>`}${cams.length > 1 ? `<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div>` : ''}<div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}"${s > 1 ? ` aria-label="Accéléré x${s}"` : ''}>${s === 1 ? 'Normale' : `x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -4831,32 +4892,42 @@ function rElemsPanel(){
   if(r.logo.mode !== "non") keys.push(["logo", "Logo"]);
   r.items.forEach((x, i) => { if(x.texte) keys.push([`txt:${x.id}`, `Texte du ${i + 1} : ${x.texte}`]); });
   r.elems.forEach(el => { keys.push([`el:${el.id}`, rElName(el)]); });
-  h += `<div class="grp"><span class="lbl">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === k}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div><span class="lbl" style="margin-top:10px;display:block">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div></div>`;
   const box = k && rBoxOf(k);
+  // ajouter à l'instant affiché ; rien de choisi : liste de ce qui est posé ; un élément choisi : ses réglages à la place
+  h += `<div class="grp"><span class="lbl">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div>`;
   if(!box){
-    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Cet aperçu est allégé : la vidéo finale sera nette, en ${RW} x ${RH}, tirée des rushs d'origine.</p>`;
+    if(keys.length) h += `<span class="lbl" style="margin-top:12px;display:block">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="false">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div>`;
+    return `${h}</div><p class="hint">Touchez un élément sur l'image pour le déplacer ou le régler. Aperçu allégé : la vidéo finale sera nette.</p>`;
   }
+  h += "</div>";
   const el = k.indexOf("el:") === 0 ? rElem(k.slice(3)) : null, isTxt = k === "titre" || k.indexOf("txt:") === 0 || (el && el.kind === "texte");
   const nm = k === "titre" ? "Titre d'accroche" : k === "logo" ? "Logo ESAM" : el ? rElName(el) : "Texte du passage";
-  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
+  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b><button type="button" class="btn small" data-runsel="1">Terminé</button></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
   if(el && el.kind === "texte") h += `<div class="grp"><label class="lbl" for="rElTxt">Texte</label><input class="field" id="rElTxt" maxlength="90" autocomplete="off" value="${esc(el.texte || "")}"></div>`;
   h += `<div class="grp"><label class="lbl" for="rElSize">Taille : <span id="rElSizeV">${Math.round((box.s || 1)*100)} %</span></label><input type="range" class="rrange" id="rElSize" min="40" max="300" step="5" value="${Math.round((box.s || 1)*100)}"></div>`;
   if(el && el.kind !== "texte") h += `<div class="grp"><label class="lbl" for="rElRot">Orientation : <span id="rElRotV">${el.rot || 0}°</span></label><input type="range" class="rrange" id="rElRot" min="-180" max="180" step="5" value="${el.rot || 0}"></div>`;
   if(k !== "logo"){
     const cur = (box.c || (el && el.kind !== "texte" ? "#F9DD10" : "#ffffff")).toUpperCase();
-    h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-rcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}"><i style="background:${c[1]}"></i>${c[0]}</button>`).join("")}</div></div>`;
+    h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-rcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}" aria-label="${c[0]}" title="${c[0]}"><i style="background:${c[1]}"></i></button>`).join("")}</div></div>`;
   }
   if(isTxt && k !== "titre") h += `<div class="grp"><span class="lbl">Fond</span><div class="chips"><button type="button" class="chip" data-rfond="1" aria-pressed="${box.fond !== false}">Bandeau</button><button type="button" class="chip" data-rfond="0" aria-pressed="${box.fond === false}">Sans fond</button></div></div>`;
   if(el){
     h += `<div class="grp"><span class="lbl">Affiché à partir de ${ms(el.a)}</span><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rel-start="1">Commencer à ${ms(REEL.o)}</button></div><span class="lbl" style="margin-top:10px;display:block">Durée</span><div class="chips">${REDURS.map(d => `<button type="button" class="chip" data-rel-dur="${d}" aria-pressed="${(el.d || 0) === d}">${d ? `${d} s` : 'Jusqu\'à la fin'}</button>`).join("")}</div></div>`;
   }
-  h += `<div class="rbtns"><button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>${k.indexOf("txt:") === 0 && r.items.filter(x => x.texte).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même réglage pour tous les textes</button>' : ''}${el ? '<button type="button" class="btn small ghost" data-rel-del="1">Supprimer</button>' : ''}<button type="button" class="btn small ghost" data-runsel="1">Terminé</button></div>`;
+  h += `<div class="rbtns"><button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>${k.indexOf("txt:") === 0 && r.items.filter(x => x.texte).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même réglage pour tous les textes</button>' : ''}${el ? '<button type="button" class="btn small ghost" data-rel-del="1">Supprimer</button>' : ''}</div>`;
   return h;
 }
-/* volet affiché sur téléphone : montage, passage (scène et réglages) ou habillage ; sans effet sur PC.
+/* volet affiché sur téléphone : montage, passage (image en cadrage et réglages du passage) ou habillage (titre, aperçu
+   du réel et ce qui est posé dessus) ; sans effet visible sur PC. Le volet et le mode de l'image vont ensemble :
+   Passage = cadrage, Habillage = aperçu (rPane règle le mode, rSetMode le volet), d'où une seule rangée de choix sur téléphone.
    Onglets ARIA (role=tab, aria-selected, flèches gauche et droite) ; créés une fois pour garder le focus. */
-const RPANES = [["montage","Montage","rPaneMontage"],["passage","Passage","rPanePassage"],["habillage","Habillage","rPaneHab"]];
+const RPANES = [["montage","Montage","rPaneMontage"],["passage","Passage","rPanePassage"],["habillage","Habillage","rPaneTitre"]];
 function rPane(name){
+  rPaneUi(name);
+  const want = name === "passage" ? "cadrage" : name === "habillage" ? "apercu" : null;
+  if(want && REEL.mode !== want) rSetMode(want);
+}
+function rPaneUi(name){
   $("reel").dataset.pane = name;
   const box = $("rPanes");
   if(!box.children.length) box.innerHTML = RPANES.map((p, i) => `<button type="button" class="chip" role="tab" id="rTab${i}" data-k="${i}" aria-controls="${p[2]}">${p[1]}</button>`).join("");
@@ -4881,6 +4952,7 @@ function rSelect(id, keepPane){
 function rSetMode(mode){
   if(REEL.playing) rStop();
   REEL.mode = mode; REEL.cur = null;
+  rPaneUi(mode === "apercu" ? "habillage" : "passage");
   if(mode === "cadrage" && !rSelItem() && reelData().items.length) REEL.sel = reelData().items[0].id;
   renderReel();
   if(mode === "apercu") rSeekApercu(REEL.o, false); else { const it = rSelItem(); if(it) rSeekCadrage(it.photo ? 0 : clamp(REEL.t, it.a, it.z), false); }
@@ -4898,8 +4970,7 @@ function rDefBox(key){ const lm = reelData().logo.mode; return rBoxDef(key === "
 function rPlace(key){
   const pl = reelPlan(false), l = rLayers(pl).find(x => x.key === key);
   if(!l){ toast("Rien à placer : l'élément n'apparaît pas dans le réel."); return; }
-  REEL.lsel = key; rPane("passage");
-  if(REEL.mode !== "apercu") rSetMode("apercu");
+  REEL.lsel = key; rPane("habillage");
   rSeekApercu(Math.min(l.b - 0.05, l.a + (l.fi ? 0.6 : 0.1)), false);
   renderReelEdit();
   const rc = $("rStage").getBoundingClientRect();
@@ -4951,6 +5022,21 @@ $("rAdd").addEventListener("click", e => {
   rSave(); rSelect(it.id, true);
   toast(isSens(m) ? "Passage sensible ajouté : pensez au flou." : "Passage ajouté au réel.", "Cadrer", rGoCadrer);
 });
+/* tous les passages marqués restants, dans l'ordre chronologique ; annulable */
+$("rAddAll").onclick = () => {
+  const r = reelData(), free = sorted().filter(m => !r.items.some(x => x.id === m.id)); if(!free.length) return;
+  const added = free.map(m => { const it = rNew(m); rInsert(it, m.at); return it; });
+  if(!rSelItem()) REEL.sel = r.items[0].id;
+  REEL.cur = null; rSave(); renderReel();
+  const ns = free.filter(isSens).length;
+  toast(`${added.length} passages ajoutés au réel${ns ? `, dont ${ns} sensible${ns > 1 ? "s" : ""} : pensez au flou` : ""}.`, "Annuler", () => {
+    const rr = reelData(); rr.items = rr.items.filter(x => added.indexOf(x) < 0);
+    if(REEL.sel && !rItem(REEL.sel)) REEL.sel = rr.items.length ? rr.items[0].id : null;
+    REEL.cur = null; rSave(); renderReel();
+  });
+};
+/* les flèches et la croix de chaque ligne n'apparaissent qu'à la demande */
+$("rOrder").onclick = () => { REEL.order = !REEL.order; renderReel(); $("rOrder").focus({preventScroll:true}); };
 $("rPhList").addEventListener("click", e => {
   const b = e.target.closest("[data-rph]"); if(!b) return;
   const p = phGet(b.dataset.rph); if(!p) return;
@@ -4962,7 +5048,7 @@ $("rPhList").addEventListener("click", e => {
 $("rPhotoIn").addEventListener("change", e => {
   const n = phFiles(e.target.files); e.target.value = "";
   toast(n ? `${n} photo${n > 1 ? "s" : ""} disponible${n > 1 ? "s" : ""} pour le réel.` : "Aucune nouvelle photo JPEG.");
-  renderPhotos(); $("rPhBox").open = true;
+  renderPhotos();
 });
 $("rEdit").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
@@ -4993,6 +5079,12 @@ $("rEdit").addEventListener("click", e => {
     rSave(); renderReelEdit(); rDraw(); return;
   }
   const it = rSelItem(); if(!it) return;
+  if(b.dataset.rnav){
+    const items = reelData().items, nx = items[items.indexOf(it) + +b.dataset.rnav]; if(!nx) return;
+    rSelect(nx.id);
+    const nb = $("rEdit").querySelector(`[data-rnav="${b.dataset.rnav}"]`); if(nb && !nb.disabled) nb.focus({preventScroll:true});
+    return;
+  }
   if(b.dataset.rplace){ rPlace(b.dataset.rplace); return; }
   if(b.dataset.rfx){
     const m = rMarker(it), tr = rTrack(it); if(!m || !tr) return;
@@ -5038,7 +5130,17 @@ $("rEdit").addEventListener("input", e => {
   const li = $("rList").querySelector(`[data-rsel="${it.id}"] b`); if(li) li.textContent = it.texte || rLabel(it);
   if(had !== !!it.texte){ const pos = e.target.selectionStart; renderReelEdit(); const f = $("rTexte"); f.focus(); try { f.setSelectionRange(pos, pos); } catch(x){} }
 });
-$("rTitre").addEventListener("input", function(){ reelData().titre = clean(this.value); rSave(); if(REEL.mode === "apercu") rDraw(); });
+$("rTitre").addEventListener("focus", () => {
+  if(!reelPlan(false).segs.length || REEL.playing) return;
+  if(REEL.mode !== "apercu") rSetMode("apercu");
+  // le titre apparaît en fondu : se placer juste après, tant qu'il est affiché
+  const d = reelData().titreDur; if(REEL.o < 0.6 || (d && REEL.o > d - 0.5)) rSeekApercu(0.6, false);
+});
+$("rTitre").addEventListener("input", function(){
+  const r = reelData(); r.titre = clean(this.value); rSave();
+  $("rTitreOpt").hidden = $("rTitrePlace").hidden = !r.titre;
+  if(REEL.mode === "apercu"){ rDraw(); if(!REEL.lsel) renderReelEdit(); }
+});
 /* format de sortie : le cadrage (position horizontale) et les places des éléments, en fraction de l'image, restent valables */
 $("rFmt").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
