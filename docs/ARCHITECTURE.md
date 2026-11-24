@@ -83,14 +83,14 @@ S = {
   dur: 0,           // durée de la timeline
   real: true,       // true : les heures affichées sont des heures réelles ; false : relatives (00:00:00)
   markers: [],      // voir 3.2
-  meta: {intervention, version, log, auteur, reel},   // version et log : changelog de la fiche
+  meta: {intervention, version, log, auteur, reel, pistes},   // version et log : changelog de la fiche ; pistes : 2 une fois les pistes d'avant la v0.19 migrées
   offsets: {},      // décalage manuel par caméra, en secondes (calage des pistes)
   key: null,        // empreinte des fichiers chargés : clé localStorage
   dirHandle: null   // dossier des rushs ouvert par showDirectoryPicker
 }
 ```
 
-Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). Deux ordres distincts : `ORDER` pour l'affichage des pistes (écran en premier), `CAM_PRIO` pour la caméra prise quand le choix d'un passage n'a pas d'image (`tracksByCam`, utilisé par `camsFor`, `planFor`, `rTrack`). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti). Sans nom DJI (galerie Android, qui renomme en `1000012345.mp4`), `autoLens()` devine la piste : image 5:4 = thermique, et deux fichiers qui se chevauchent vont sur des pistes distinctes (`?`, `?2`, ...). Une vidéo produite par l'outil (`PROD_RE`) garde la piste `?` pour elle seule (« Vidéo montée ») ; les vidéos de téléphone chargées avec elle vont sur `?2`, `?3`... (affichées « Autre caméra 1, 2... »).
+Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W grand angle, Z zoom, T thermique, S écran ; V et N réservés ; `?` pour tout autre fichier (téléphone). Deux ordres distincts : `ORDER` pour l'affichage des pistes (écran en premier), `CAM_PRIO` pour la caméra prise quand le choix d'un passage n'a pas d'image (`tracksByCam`, utilisé par `camsFor`, `planFor`, `rTrack`). L'heure de début vient du nom DJI (heure locale) ou, à défaut, de `creation_time` du conteneur (UTC, converti). Sans nom DJI (téléphone, ou galerie Android qui renomme en `1000012345.mp4`), `autoLens()` devine la piste : image 5:4 = thermique ; appareil connu = une piste par appareil (`@<slug>`, nommée par `devName` : « iPhone 15 Pro », « Google Pixel 7 », d'après la marque et le modèle lus dans le fichier par `mp4Device` en mode navigateur ou `device()` de `server.py` en mode PC ; ignoré pour DJI) ; sinon `?` (« Autre caméra », vidéo repassée par une messagerie). Deux fichiers qui se chevauchent vont sur des pistes distinctes (`?2`, `@Pixel_7_2`...). Une vidéo produite par l'outil (`PROD_RE`) garde la piste `?` pour elle seule (« Vidéo montée »). Les fiches d'avant la v0.19 (`S.meta.pistes` absent) nommaient ces pistes `?`, `?2`... : `migrateCams` et `migrateOffsets` reportent une fois caméras des passages, retouches, réel et calage sur les nouvelles pistes.
 
 ### 3.2 Marqueur
 
@@ -196,7 +196,7 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `GET /vendor/<nom>` | nom de fichier simple | bibliothèque ou police |
 | `GET /api/status` | | `{ok, version, racine, racine_ok, gpu, travaux: [calcul], veille: {mode, minutes}}` |
 | `GET /api/interventions` | | `{interventions: [{nom, videos, proxies, fiche, compilation, compil, compil_proxies, maj}]}` (`compil` : vidéos compilées ou extraits que l'on peut rouvrir comme source) |
-| `GET /api/manifest?d=[&src=compil]` | `src=compil` : les vidéos compilées de l'intervention au lieu des rushs | `{dossier, source, clips: [{nom, dur, w, h, codec, cree, proxy, thumbs: {sheets, tw, th, cols, rows, every, count}}], photos: [{nom, heure}]}` |
+| `GET /api/manifest?d=[&src=compil]` | `src=compil` : les vidéos compilées de l'intervention au lieu des rushs | `{dossier, source, clips: [{nom, dur, w, h, codec, cree, appareil: {marque, modele} ou null, proxy, thumbs: {sheets, tw, th, cols, rows, every, count}}], photos: [{nom, heure}]}` |
 | `GET /api/image?d=&f=&taille=` | `taille` = `petite` (360 px) ou `moyenne` (3200 px) | JPEG redressé selon l'EXIF, gardé dans `proxies/photos` |
 | `GET /api/etat?d=[&src=compil]` | | contenu de `.derushage/etat.json` (ou `etat-compil.json`) ou `{}` |
 | `GET /files/<dossier>/<chemin>` | | fichier des rushs (proxies, planches, musique), requêtes Range acceptées |
