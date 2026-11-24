@@ -1,7 +1,7 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.18
+version: 0.19
 date_maj: 2026-11-24
 ---
 
@@ -194,6 +194,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.19 | 2026-11-24 | Une piste par appareil : les vidéos de téléphone sont rangées d'après la marque et le modèle lus dans le fichier (« iPhone 15 Pro », « Google Pixel 7 »...) ; une vidéo repassée par une messagerie, qui les a perdus, reste sur « Autre caméra ». Une vidéo compilée rouverte avec d'autres vidéos garde sa propre piste « Vidéo montée » au lieu d'être recouverte. Les passages déjà marqués suivent leur vidéo sur sa nouvelle piste. |
 | 0.18 | 2026-11-24 | Onglet Réel : format « LinkedIn 4:5 » ou « LinkedIn carré 1:1 » en plus du réel 9:16, avec le même montage, cadrage et habillage ; bouton « Créer la vidéo LinkedIn ». |
 | 0.17 | 2026-11-23 | Retouches d'un passage (bouton « Retoucher ») : flous ovales ou rectangles, doux ou pixelisés, qui suivent un visage ou une plaque (suivi automatique ou au doigt) ; flèches et cercles « au crayon » qui suivent l'animal ; ralenti et accéléré à partir d'un instant. Elles valent pour la vidéo compilée, les extraits et le réel. Extraits bruts : habillage « Aucun » (ni carton, ni heure, ni logo), en une vidéo ou un fichier par passage, choisi d'office quand on repart d'une vidéo compilée ; en mode PC, la vidéo compilée d'une intervention se rouvre depuis la liste pour en extraire des morceaux. Les messages s'affichent aussi par-dessus un dialogue ouvert. |
 | 0.16 | 2026-11-22 | Lecteur : l'image ne reste plus figée sur une vignette après un glissement sur la règle ou sur le bord d'un passage (l'aperçu se referme toujours, et il occupe la même taille que la vidéo) ; après « Voir » un passage, un saut plus loin ne met plus la lecture en pause ; après une coupure de connexion, « Lire » reprend la vidéo. Pistes : « Écran » passe en première ligne (la caméra choisie par défaut pour la vidéo compilée et le réel ne change pas). |

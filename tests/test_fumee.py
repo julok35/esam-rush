@@ -38,6 +38,7 @@ async def navigateur():
         pistes = await pg.eval_on_selector_all(".lab", "l => l.map(e => e.textContent.trim())")
         print("pistes :", pistes)
         assert len(pistes) >= 3, "pistes manquantes"
+        assert any("Pixel 8" in x for x in pistes), "piste du téléphone non nommée d'après l'appareil"
         assert not erreurs, erreurs
         await b.close()
 

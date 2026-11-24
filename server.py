@@ -13,7 +13,7 @@ from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.18"
+VERSION = "0.19"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -100,7 +100,17 @@ def probe(path):
             created = datetime.fromisoformat(ct.replace("Z", "+00:00")).timestamp()
             if created < 1.2e9: created = None
         except ValueError: pass
-    return {"w": w, "h": h, "dur": dur, "codec": vs.get("codec_name"), "created": created}
+    return {"w": w, "h": h, "dur": dur, "codec": vs.get("codec_name"), "created": created, "appareil": device(d, vs)}
+
+def device(d, vs):
+    """Marque et modèle de l'appareil (iPhone, Android, ©mak/©mod) ; None si le fichier n'en dit rien (vidéo repassée par une messagerie).
+    Même lecture que mp4Device dans l'appli (mode navigateur) ; le nom affiché est fait par devName dans l'appli."""
+    t = {}
+    for tags in ((vs.get("tags") or {}), (d.get("format", {}).get("tags") or {})):
+        t.update({k.lower(): str(v).strip() for k, v in tags.items()})
+    marque = t.get("com.apple.quicktime.make") or t.get("com.android.manufacturer") or t.get("make") or ""
+    modele = t.get("com.apple.quicktime.model") or t.get("com.android.model") or t.get("model") or ""
+    return {"marque": marque, "modele": modele} if marque or modele else None
 
 ENC = {}
 def detect_encoders():
@@ -258,6 +268,11 @@ def manifest(d, src=None):
         meta_p = d / PROXY_DIR / (f.stem + ".json")
         if not meta_p.exists(): continue
         m = json.loads(meta_p.read_text(encoding="utf-8"))
+        if "appareil" not in m and not f.name.startswith("DJI_"):        # préparé avant la v0.19 : appareil lu une fois et gardé
+            try:
+                m["appareil"] = (probe(f) or {}).get("appareil")
+                meta_p.write_text(json.dumps(m, ensure_ascii=False), encoding="utf-8")
+            except Exception as e: log("Appareil illisible", f.name, e)
         rel = lambda p: "files/" + urllib.parse.quote(d.name) + "/" + urllib.parse.quote(PROXY_DIR) + "/" + urllib.parse.quote(p)
         m["proxy"] = rel(f.stem + ".mp4")
         m["thumbs"]["sheets"] = [rel(s) for s in m["thumbs"]["sheets"]]
@@ -355,7 +370,7 @@ def do_proxies(job):
         run(cmd, info["dur"], lambda x: job.__setitem__("avance", (base + x * info["dur"]) / total), job)
         os.replace(tmp_proxy, pdir / (f.stem + ".mp4"))
         sheets = sorted(p.name for p in pdir.glob(f.stem + ".thumbs_*.jpg"))
-        meta = {"nom": f.name, "dur": info["dur"], "w": info["w"], "h": info["h"], "codec": info["codec"], "cree": info["created"],
+        meta = {"nom": f.name, "dur": info["dur"], "w": info["w"], "h": info["h"], "codec": info["codec"], "cree": info["created"], "appareil": info["appareil"],
                 "thumbs": {"sheets": sheets, "tw": tw, "th": 90, "cols": 10, "rows": 10, "every": THUMB_EVERY,
                            "count": int(math.ceil(info["dur"] / THUMB_EVERY))}}
         (pdir / (f.stem + ".json")).write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")

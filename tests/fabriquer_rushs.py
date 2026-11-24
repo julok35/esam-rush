@@ -34,7 +34,9 @@ def main():
     out = iv / "PXL_20260912_143040.mp4"; tmp = iv / "_tmp_tel.mp4"
     ct = datetime(2026, 9, 12, 14, 30, 40).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000000Z")
     run(["-f", "lavfi", "-i", "testsrc=size=320x180:rate=30:duration=15"] + venc + [str(tmp)])
-    run(["-display_rotation", "90", "-i", str(tmp), "-c", "copy", "-metadata", "creation_time=" + ct, str(out)])
+    # marque et modèle comme un Android récent (meta > keys) : la vidéo va sur la piste « Google Pixel 8 »
+    run(["-display_rotation", "90", "-i", str(tmp), "-c", "copy", "-metadata", "creation_time=" + ct, "-movflags", "use_metadata_tags",
+         "-metadata", "com.android.manufacturer=Google", "-metadata", "com.android.model=Pixel 8", str(out)])
     tmp.unlink()
     print("cree", out.name)
     # Photos JPEG : une du drone (heure dans le nom), une dans le sous-dossier Photos

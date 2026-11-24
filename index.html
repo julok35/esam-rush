@@ -1075,7 +1075,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.18";
+const APP_VERSION = "0.19";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1128,6 +1128,7 @@ function esc(s){ return clean(s).replace(/[&<>"]/g, c => ({
 })[c]); }
 function slug(s){ return clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40); }
 function hash(str){ let h = 5381; for(let i=0;i<str.length;i++){ h = ((h<<5)+h+str.charCodeAt(i))|0; } return (h>>>0).toString(36); }
+function camName(l){ const tr = S.tracks.find(x => x.lens === l); return tr ? tr.name : lensName(l); }     // nom affiché de la piste
 function lensName(l){
   const m = /^(.)(\d+)$/.exec(l || "");     // "?2", "T2" : pistes ajoutées par autoLens()
   if(m) return `${lensName(m[1])} ${m[2]}`;
@@ -1278,7 +1279,7 @@ async function addFiles(list){
     let md = null;
     try { md = await parseMedia(f); } catch(e){ md = null; }
     const dur = md && md.duration > 0 ? md.duration : await readDuration(url);
-    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", auto:!p, w:md ? md.dw : 0, h:md ? md.dh : 0, start:PROD_RE.test(f.name) ? null : p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
+    S.clips.push({id:uid(), file:f, reader:new Reader(f), media:md, thumbs:[], name:f.name, size:f.size, url:url, lens:p ? p.lens : "?", auto:!p, dev:p ? null : devName(md && md.dev), w:md ? md.dw : 0, h:md ? md.dh : 0, start:PROD_RE.test(f.name) ? null : p ? p.start : (md && md.created ? md.created : null), dur:dur, ok:dur != null});
   }
   prog.hidden = true;
   // la galerie Android (sélecteur de photos) remplace les noms par des numéros : les caméras DJI ne se lisent plus dans le nom
@@ -1339,7 +1340,58 @@ async function parseMedia(file){
     out = {codec:vt.codec, width:w, height:hgt, rot:rot, dw: rot % 180 ? hgt : w, dh: rot % 180 ? w : hgt, created:created, timescale:ts, samples:samples, duration:duration, desc:desc, bitrate: duration ? bytes*8/duration : 0};
   };
   mf.appendBuffer(ab);mf.flush();
+  if(out){ try { out.dev = mp4Device(all); } catch(e){ out.dev = null; } }
   return out && out.samples.length ? out : null;
+}
+/* marque et modèle de l'appareil dans le moov : métadonnées QuickTime (meta > keys + ilst : com.apple.quicktime.make,
+   com.android.manufacturer...) ou udta > ©mak, ©mod. Les vidéos repassées par une messagerie n'en ont plus. */
+function mp4Device(u8){
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), td = new TextDecoder(), tags = {};
+  const str = (o, n) => td.decode(u8.subarray(o, o+n)).replace(/\0+$/, "").trim();
+  function boxes(s, e, cb){
+    let p = s;
+    while(p + 8 <= e){
+      let sz = dv.getUint32(p), hd = 8;
+      const ty = String.fromCharCode(u8[p+4], u8[p+5], u8[p+6], u8[p+7]);
+      if(sz === 1){ sz = Number(dv.getBigUint64(p+8)); hd = 16; } else if(sz === 0) sz = e - p;
+      if(sz < hd || p + sz > e) break;
+      cb(ty, p + hd, p + sz, p);
+      p += sz;
+    }
+  }
+  function dataVal(s, e){ let v = null; boxes(s, e, (t, a, b) => { if(t === "data" && b - a > 8) v = str(a+8, b-a-8); }); return v; }
+  function meta(s, e){
+    if(str(s+4, 4) !== "hdlr") s += 4;                // meta ISO : version et drapeaux avant les boîtes
+    const keys = [];
+    boxes(s, e, (t, a, b) => {
+      if(t !== "keys") return;
+      let q = a + 8;
+      for(let i = 0, n = dv.getUint32(a+4); i < n && q + 8 <= b; i++){ const ks = dv.getUint32(q); if(ks < 8) break; keys.push(str(q+8, ks-8)); q += ks; }
+    });
+    boxes(s, e, (t, a, b) => { if(t === "ilst") boxes(a, b, (t2, a2, b2, p2) => { const k = keys.length ? keys[dv.getUint32(p2+4)-1] : t2; if(k) tags[k] = dataVal(a2, b2); }); });
+  }
+  boxes(0, u8.length, (t, a, b) => {
+    if(t !== "moov") return;
+    boxes(a, b, (t2, a2, b2) => {
+      if(t2 === "meta") meta(a2, b2);
+      if(t2 === "udta") boxes(a2, b2, (t3, a3, b3) => {
+        if(t3 === "meta") meta(a3, b3);
+        else if(t3 === "\u00a9mak" || t3 === "\u00a9mod") tags[t3] = dataVal(a3, b3) || (b3 - a3 > 4 ? str(a3+4, Math.min(dv.getUint16(a3), b3-a3-4)) : null);
+      });
+    });
+  });
+  const make = tags["com.apple.quicktime.make"] || tags["com.android.manufacturer"] || tags["\u00a9mak"] || "";
+  const model = tags["com.apple.quicktime.model"] || tags["com.android.model"] || tags["\u00a9mod"] || "";
+  return make || model ? {make:make, model:model} : null;
+}
+/* nom d'appareil affiché pour une piste ; null pour un drone DJI (ses caméras se distinguent autrement) */
+function devName(dev){
+  if(!dev) return null;
+  const make = clean(dev.make || dev.marque).trim(), model = clean(dev.model || dev.modele).trim();
+  if(/^dji/i.test(make) || /^dji/i.test(model) || !(make || model)) return null;
+  if(!model) return make;
+  if(!make || /^apple$/i.test(make) || model.toLowerCase().indexOf(make.toLowerCase()) === 0) return model;
+  return `${make.charAt(0).toUpperCase()}${make.slice(1)} ${model}`;
 }
 function Reader(file){ this.f = file; this.buf = null; this.s = 0; this.e = 0; }
 Reader.prototype.read = async function(smp, block){
@@ -1468,22 +1520,57 @@ async function thumbsFor(c, step, onProgress){
   await Promise.all(pend);
 }
 
-/* fichiers sans nom DJI : une image 5:4 (640 x 512) vient de la caméra thermique ; deux fichiers qui se chevauchent
-   ne viennent pas de la même caméra, ils vont sur des pistes distinctes ("?", "?2", ...), en gardant si possible
-   la même définition d'image sur une piste */
-function autoLens(){
-  const auto = S.clips.filter(c => c.auto).sort((a, b) => (a.start||0)-(b.start||0) || a.name.localeCompare(b.name));
-  const lanes = [];
+/* fichiers sans nom DJI : une image 5:4 (640 x 512) vient de la caméra thermique ; une vidéo dont l'appareil est connu
+   (devName : marque et modèle lus dans le fichier) va sur la piste de cet appareil ("@iPhone_15_Pro"), les autres sur "?".
+   Deux fichiers qui se chevauchent ne viennent pas de la même caméra : ils vont sur des pistes distinctes ("?", "?2",
+   "@Pixel_7_2"...), en gardant si possible la même définition d'image sur une piste. Une vidéo produite par l'outil
+   (PROD_RE, sans heure réelle) garde la piste "?" pour elle seule. */
+function lanesFor(auto, baseOf, prod){
+  const out = new Map(), lanes = [];
+  if(prod) lanes.push({base:"?", lens:"?", end:Infinity, dim:""});
   auto.forEach(c => {
-    const base = c.w && c.h && Math.abs(c.w/c.h - 1.25) < 0.02 ? "T" : "?", dim = `${c.w}x${c.h}`;
-    c.lens = base;
-    if(c.start == null || !c.ok) return;
+    const base = baseOf(c), dim = `${c.w}x${c.h}`;
+    out.set(c, base);
+    if(c.start == null || !c.ok || (prod && PROD_RE.test(c.name))) return;
     const free = lanes.filter(l => l.base === base && l.end <= c.start + 0.5);
     const lane = free.find(l => l.dim === dim) || free[0];
-    if(lane){ lane.end = c.start + (c.dur || 0); lane.dim = dim; c.lens = lane.lens; return; }
+    if(lane){ lane.end = c.start + (c.dur || 0); lane.dim = dim; out.set(c, lane.lens); return; }
     const n = lanes.filter(l => l.base === base).length;
-    lanes.push({base:base, lens:n ? base + (n+1) : base, end:c.start + (c.dur || 0), dim:dim});
-    c.lens = lanes[lanes.length-1].lens;
+    lanes.push({base:base, lens:n ? base + (base.charAt(0) === "@" ? "_" : "") + (n+1) : base, end:c.start + (c.dur || 0), dim:dim});
+    out.set(c, lanes[lanes.length-1].lens);
+  });
+  return out;
+}
+function autoLens(){
+  const auto = S.clips.filter(c => c.auto).sort((a, b) => (a.start||0)-(b.start||0) || a.name.localeCompare(b.name));
+  const thermal = c => c.w && c.h && Math.abs(c.w/c.h - 1.25) < 0.02;
+  const now = lanesFor(auto, c => thermal(c) ? "T" : c.dev ? "@" + slug(c.dev) : "?", auto.some(c => PROD_RE.test(c.name)));
+  const old = lanesFor(auto, c => thermal(c) ? "T" : "?", false);      // pistes d'avant la v0.19, pour migrateCams
+  auto.forEach(c => { c.lens = now.get(c); c.oldLens = old.get(c); });
+}
+/* fiches d'avant la v0.19 (S.meta.pistes absent) : les caméras "?", "?2"... d'un passage, de ses retouches, du réel
+   et du calage désignent l'ancienne piste ; on les reporte une fois sur la piste où se trouve maintenant le même fichier */
+function migrateCams(){
+  const auto = S.clips.filter(c => c.auto);
+  if(!auto.some(c => c.oldLens !== c.lens)) return;
+  const conv = (cam, t) => {
+    if(cam == null || !/^[?T]\d*$/.test(cam)) return cam;
+    const c = auto.find(x => x.oldLens === cam && x.ok && t >= x.s - 0.5 && t <= x.e + 0.5);
+    return c ? c.lens : cam;
+  };
+  S.markers.forEach(m => {
+    const t = ((m.at + (m.to != null ? m.to : m.at)) / 2) - S.base;
+    m.cam = conv(m.cam, t);
+    if(m.fx) ["flous", "formes"].forEach(k => { (m.fx[k] || []).forEach(f => { f.cam = conv(f.cam, t); }); });
+  });
+  ((S.meta.reel || {}).items || []).forEach(it => { if(it.cam && it.a != null) it.cam = conv(it.cam, (it.a + (it.z != null ? it.z : it.a)) / 2); });
+}
+function migrateOffsets(){
+  const off = Object.assign({}, S.offsets);
+  Object.keys(off).forEach(k => {
+    if(!/^[?T]\d*$/.test(k)) return;
+    const to = S.clips.filter(c => c.auto && c.oldLens === k).map(c => c.lens).filter((l, i, a) => a.indexOf(l) === i);
+    if(to.length === 1 && to[0] !== k){ if(S.offsets[k] === off[k]) delete S.offsets[k]; S.offsets[to[0]] = off[k]; }
   });
 }
 function rebuild(){
@@ -1492,6 +1579,8 @@ function rebuild(){
   const timed = S.clips.filter(c => c.start != null);
   S.real = timed.length > 0;
   autoLens();
+  const mig = S.meta.pistes !== 2;      // migration des pistes d'avant la v0.19, une seule fois par intervention
+  if(mig) migrateOffsets();
   const groups = {};
   S.clips.forEach(c => { (groups[c.lens] = groups[c.lens] || []).push(c); });
   const lenses = Object.keys(groups).sort((a, b) => {
@@ -1514,9 +1603,14 @@ function rebuild(){
       c.e = c.s + (c.dur || 0);
       if(c.ok){ cursor = c.e; end = Math.max(end, c.e); }
     });
-    return {lens:l, name:l === "?" && prodSource() ? "Vidéo montée" : lensName(l), clips:clips};
+    const dev = l.charAt(0) === "@" && clips[0].dev, num = dev ? l.slice(slug(dev).length + 2) : "";
+    return {lens:l, name:clips.every(c => PROD_RE.test(c.name)) ? "Vidéo montée" : dev ? dev + (num ? ` ${num}` : "") : lensName(l), clips:clips};
   });
+  // avec une vidéo montée sur "?", les autres pistes "?N" sont renumérotées à partir de 1 pour l'affichage
+  const autres = S.tracks.filter(tr => /^\?\d*$/.test(tr.lens) && tr.name !== "Vidéo montée");
+  if(autres.length && S.tracks.some(tr => tr.lens === "?" && tr.name === "Vidéo montée")) autres.forEach((tr, i) => { tr.name = autres.length > 1 ? `${lensName("?")} ${i+1}` : lensName("?"); });
   S.dur = Math.max(end, 1);
+  if(mig){ migrateCams(); S.meta.pistes = 2; }
   let ai = S.tracks.findIndex(t => t.lens === activeLens);
   if(ai < 0){
     ai = S.tracks.findIndex(t => t.lens === "W");
@@ -1726,7 +1820,7 @@ function camSelect(m){
 }
 function setCam(m, lens){
   m.cam = lens; persist(); renderMarkers(); renderSummary(); inWinKey = "";
-  toast(`Passage ${sorted().indexOf(m)+1} : caméra ${lensName(lens).toLowerCase()} pour la compilation.`);
+  toast(`Passage ${sorted().indexOf(m)+1} : caméra ${camName(lens).toLowerCase()} pour la compilation.`);
 }
 document.addEventListener("change", e => {
   const c = e.target; if(c.dataset && c.dataset.cam){
@@ -1797,8 +1891,8 @@ function renderInWin(){
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
     key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}`;
     txt = m.to != null ? `Passage ${n}, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : `Repère ${n}`;
-    sub = label(m)+(ec ? `, compilé en ${lensName(ec).toLowerCase()}` : "");
-    if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(lensName(shown).toLowerCase())}</button>`;
+    sub = label(m)+(ec ? `, compilé en ${camName(ec).toLowerCase()}` : "");
+    if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(camName(shown).toLowerCase())}</button>`;
     if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button>`;
     btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Détails</button>`;
   } else if(w.after || w.before){
@@ -3611,7 +3705,7 @@ async function openRemote(name, src){
   clearFlight(); SRVD = name; SRVS = src || ""; clearTimeout(listT);
   S.clips = man.clips.map(m => {
     const p = parseName(m.nom);
-    return {id:uid(), remote:true, name:m.nom, size:Math.round(m.dur*1000), url:m.proxy, lens:p ? p.lens : "?", auto:!p, w:m.w || 0, h:m.h || 0,
+    return {id:uid(), remote:true, name:m.nom, size:Math.round(m.dur*1000), url:m.proxy, lens:p ? p.lens : "?", auto:!p, dev:p ? null : devName(m.appareil), w:m.w || 0, h:m.h || 0,
       start:PROD_RE.test(m.nom) ? null : p ? p.start : (m.cree || null), dur:m.dur, ok:m.dur > 0, media:null, thumbs:[], thumbsDone:true, sheet:m.thumbs};
   });
   rebuild();
