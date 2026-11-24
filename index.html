@@ -493,7 +493,8 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rstage{scroll-margin-top:64px;position:relative;background:var(--stage);border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
 .rstage canvas{display:block;max-width:100%;width:100%;height:auto;cursor:grab}
 .rstage canvas:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
-.rstage.v canvas{width:auto;height:min(62vh,640px);cursor:pointer}
+/* aperçu au format de sortie : --rar = largeur / hauteur (posé par rDraw), hauteur déduite du format du canevas */
+.rstage.v canvas{width:min(100%, calc(min(62vh,640px)*var(--rar,.5625)));height:auto;cursor:pointer}
 .rempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--onstage);padding:20px;font-weight:600;font-size:14px;background:rgba(0,0,0,.65)}
 .rtrans{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 .rplay{flex:none;width:48px;padding:0}
@@ -567,7 +568,7 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   .rmain{grid-column:1}
   .rside{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--top) + 12px);max-height:calc(100vh - var(--top) - 72px);max-height:calc(100dvh - var(--top) - 72px);overflow:auto;padding:10px 6px 0 0}
   .rside .rh:first-child{margin-top:0}
-  .rstage.v canvas{height:min(70vh,760px)}
+  .rstage.v canvas{width:min(100%, calc(min(70vh,760px)*var(--rar,.5625)))}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
 /* ---------- retouches d'un passage (dialogue #fx) : image en haut, réglages défilants dessous ; deux colonnes sur PC ---------- */
@@ -862,6 +863,11 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <div class="rside">
       <div id="rPaneMontage">
       <h3 class="rh">Montage</h3>
+      <div class="grp rfmt">
+        <span class="lbl" id="rFmtLbl">Format de la vidéo</span>
+        <div class="chips" id="rFmt" role="group" aria-labelledby="rFmtLbl"></div>
+        <p class="hint" id="rFmtHint"></p>
+      </div>
       <div class="rnone" id="rNone" hidden>
         <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
         <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
@@ -1069,7 +1075,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.17";
+const APP_VERSION = "0.18";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1086,7 +1092,7 @@ const PRESET_MORE = [["Vol",["Vue zone intervention"]],["Recherche",["Vérificat
 const SPEEDS = [1,2,4,8,16];
 /* vidéos produites par l'outil : reprises comme source (pour en extraire des morceaux), elles n'ont pas d'heure réelle
    et donnent d'office des extraits bruts, sans carton ni heure ni logo (cmpHab) */
-const PROD_RE = /^ESAM_(Compilation|Extraits|Reel|Story)/;
+const PROD_RE = /^ESAM_(Compilation|Extraits|Reel|Story|LinkedIn)/;
 function prodSource(){ return S.clips.length > 0 && S.clips.every(c => PROD_RE.test(c.name)); }
 
 const $ = id => document.getElementById(id);
@@ -1174,7 +1180,7 @@ function outName(prefix, suffix){
   return `ESAM_${prefix}_${pd ? pd[1] : isoDay(S.real ? new Date(S.base*1000) : new Date())}${S.meta.intervention ? `_${slug(S.meta.intervention)}` : ""}${suffix || ""}`;
 }
 /* nom de l'intervention repris du nom d'une vidéo produite : ESAM_Compilation_2026-09-12_Chien_egare.mp4 donne « Chien egare » */
-function prodMission(name){ const m = /^ESAM_[A-Za-z]+_\d{4}-\d{2}-\d{2}_(.+?)(?:_vertical|_\d+sur\d+|_\d\d(?:_[A-Za-z0-9_]*)?)?\.[A-Za-z0-9]+$/.exec(name); return m ? clean(m[1].replace(/_/g, " ")) : ""; }
+function prodMission(name){ const m = /^ESAM_[A-Za-z]+_\d{4}-\d{2}-\d{2}_(.+?)(?:_vertical|_carre|_\d+sur\d+|_\d\d(?:_[A-Za-z0-9_]*)?)?\.[A-Za-z0-9]+$/.exec(name); return m ? clean(m[1].replace(/_/g, " ")) : ""; }
 function ficheName(){ return outName("Derushage", ".md"); }
 function autoTarget(){ return pcOpen() ? (SRVS ? null : "pc") : (S.dirHandle ? "dir" : null); }      // pas de fiche pour des extraits : celle des rushs reste la seule
 function scheduleFiche(){
@@ -3786,16 +3792,36 @@ let PC = {
   reset:function(){ SRVD = null; SRVS = ""; refreshList(); }
 };
 let BACKEND = LOCAL;
-/* ---------- réel et story (vertical 9:16) ----------
-   Réglages dans S.meta.reel (voir reelData et docs/ARCHITECTURE.md). reelPlan() transforme le montage en segments avec
+/* ---------- réel et story (vertical 9:16), vidéo LinkedIn (4:5 ou carré) ----------
+   Réglages dans S.meta.reel (voir reelData et docs/ARCHITECTURE.md). Le format (r.fmt) fixe RW x RH : tout le reste
+   (cadre, aperçu, calques, rendu) suit ces deux valeurs ; la story n'existe qu'en 9:16. reelPlan() transforme le montage en segments avec
    leur position dans le réel ; rLayers() liste les calques (logo, accéléré, textes, éléments, titre) dessinés par drawLayers().
    Le même code dessine l'aperçu, le rendu navigateur (rRender) et les calques PNG envoyés au PC (runReelRemote). */
-const RW = 1080, RH = 1920, RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
+/* formats de sortie : taille, préfixe et suffixe du nom de fichier, libellés (miroir de REEL_FMTS dans server.py) */
+const RFMTS = {reel:{w:1080, h:1920, nom:"Reel", suf:"", lib:"Réel 9:16", quoi:"Réel"},
+               li:{w:1080, h:1350, nom:"LinkedIn", suf:"", lib:"LinkedIn 4:5", quoi:"Vidéo LinkedIn"},
+               carre:{w:1080, h:1080, nom:"LinkedIn", suf:"_carre", lib:"LinkedIn carré 1:1", quoi:"Vidéo LinkedIn"}};
+const RFMTK = ["reel","li","carre"];
+let RW = 1080, RH = 1920;
+const RFIN = 3, RSTORY = 60, RSPEEDS = [1,2,4,8], RZOOM = 0.08;
 const RTDURS = [3,5,8,0], RXDURS = [0,3,5,8], RPDURS = [2,3,4,5,6,8], RLOGOS = ["cartouche","logo","non"];
 /* places par défaut (centre en fraction de l'image, taille) : hors des zones couvertes par Instagram (haut, bas, bord droit).
    Le titre est ancré par le haut (haut:true, y = bord haut) juste sous le cartouche : il s'allonge vers le bas sans le recouvrir.
    Un titre enregistré auparavant (sans « haut ») garde son ancrage au centre, donc sa place. */
 const RBOX = {titre:{x:0.5, y:0.215, s:1, haut:true}, texte:{x:0.5, y:0.71, s:1}, cartouche:{x:0.27, y:0.155, s:1}, logo:{x:0.16, y:0.16, s:1}, el:{x:0.5, y:0.5, s:1}};
+/* en carré, l'image est moins haute : logo et cartouche remontent pour laisser le titre dessous, le texte descend */
+const RBOXF = {carre:{titre:{y:0.2}, texte:{y:0.76}, cartouche:{y:0.12}, logo:{y:0.13}}};
+/* place par défaut d'un élément pour un format (celui du réel en cours si fmt est absent) */
+function rBoxDef(key, fmt){
+  if(!fmt) fmt = S.meta.reel && S.meta.reel.fmt;
+  return Object.assign({}, RBOX[key], (RBOXF[fmt] || {})[key]);
+}
+/* changement de format : les éléments restés à leur place par défaut prennent celle du nouveau format */
+function rBoxesFmt(r, from, to){
+  function move(b, key){ if(!b) return; const o = rBoxDef(key, from); if(Math.abs(b.x - o.x) < 0.002 && Math.abs(b.y - o.y) < 0.002){ const n = rBoxDef(key, to); b.x = n.x; b.y = n.y; } }
+  move(r.titreBox, "titre"); if(r.logo.mode !== "non") move(r.logo, r.logo.mode);
+  r.items.forEach(it => { move(it.tBox, "texte"); });
+}
 /* couleurs de la charte pour textes et formes */
 const RCOLS = [["Blanc","#ffffff"],["Jaune","#F9DD10"],["Bleu","#A8C8FB"],["Rouge","#E20C0F"],["Noir","#171618"]];
 /* éléments libres posés sur le réel : {id, kind, a (début en s du réel), d (durée, 0 = jusqu'à la fin), x, y, s, rot, c, texte, fond} */
@@ -3814,12 +3840,14 @@ function reelData(){
   let r = S.meta.reel;
   if(!r || typeof r !== "object") r = S.meta.reel = {};
   if(!Array.isArray(r.items)) r.items = [];
+  if(!RFMTS[r.fmt]) r.fmt = "reel";
+  RW = RFMTS[r.fmt].w; RH = RFMTS[r.fmt].h;
   if(typeof r.titre !== "string") r.titre = "";
   if(!r.fin || typeof r.fin !== "object") r.fin = {on:true, texte:"Soutenez l'ESAM", sous:"esam-secours.fr"};
   if(!(r.musDebut >= 0)) r.musDebut = 0;
   if(!(r.titreDur >= 0)) r.titreDur = 3;
-  if(!r.titreBox || typeof r.titreBox !== "object") r.titreBox = Object.assign({}, RBOX.titre);
-  if(!r.logo || typeof r.logo !== "object" || RLOGOS.indexOf(r.logo.mode) < 0) r.logo = Object.assign({mode:"cartouche"}, RBOX.cartouche);
+  if(!r.titreBox || typeof r.titreBox !== "object") r.titreBox = rBoxDef("titre");
+  if(!r.logo || typeof r.logo !== "object" || RLOGOS.indexOf(r.logo.mode) < 0) r.logo = Object.assign({mode:"cartouche"}, rBoxDef("cartouche"));
   if(!Array.isArray(r.elems)) r.elems = [];
   r.items = r.items.filter(it => it.photo || S.markers.some(m => m.id === it.id));
   // réels d'avant la v0.17 : les flous d'un passage vidéo étaient rangés dans le réel ; ils rejoignent les retouches du
@@ -3834,7 +3862,7 @@ function reelData(){
 }
 function rMarker(it){ return it.photo ? null : S.markers.find(m => m.id === it.id); }
 function rLabel(it){ return it.photo ? `Photo ${phShort(it.photo)}` : label(rMarker(it)); }
-function rTBox(it){ if(!it.tBox || typeof it.tBox !== "object") it.tBox = Object.assign({}, RBOX.texte); return it.tBox; }
+function rTBox(it){ if(!it.tBox || typeof it.tBox !== "object") it.tBox = rBoxDef("texte"); return it.tBox; }
 function rItemDur(it){ return it.photo ? (it.dur || 4) : fxOutDur(rMarker(it), it.a, it.z, it.vit || 1); }      // vitesses du passage et accéléré du réel
 function rItem(id){ return reelData().items.find(it => it.id === id); }
 function rNew(m){
@@ -3913,9 +3941,11 @@ function rKeyPut(list, t, o, gap){
 /* cadrage : position horizontale du cadre (0 = bord gauche, 1 = bord droit) */
 function rX(it, t){ return rKeyAt(it.keys, t, "x", 0.5); }
 function rUpsert(it, t, x){ it.keys = rKeyPut(it.keys, t, {x:x}); }
+/* cadre au format de sortie (RW x RH) le plus grand possible dans l'image source (miroir de crop_box dans server.py) */
 function rCrop(sw, sh, x){
   let cw, ch;
-  if(sw/sh > 9/16){ ch = sh; cw = sh*9/16; } else { cw = sw; ch = sw*16/9; }
+  const ar = RW/RH;
+  if(sw/sh > ar){ ch = sh; cw = sh*ar; } else { cw = sw; ch = sw/ar; }
   return {sx:(sw - cw)*clamp(x, 0, 1), sy:(sh - ch)/2, cw:cw, ch:ch, free:sw - cw};
 }
 
@@ -3981,7 +4011,7 @@ function softBlur(ctx, x, y, w, h, forme, mode){
   tc.restore();
   ctx.drawImage(rTmpC, 0, 0, w, h, x, y, w, h);
 }
-/* source (vidéo) dessinée dans le cadre 9:16, flous compris ; t = instant de la timeline */
+/* source (vidéo) dessinée dans le cadre du format, flous compris ; t = instant de la timeline */
 function drawCropped(ctx, W, H, src, sw, sh, rot, x, sg, t){
   const cr = rCrop(sw, sh, x), k = H / cr.ch;
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
@@ -4102,7 +4132,7 @@ function drawShape(ctx, W, H, el){
 }
 function rElem(id){ return reelData().elems.find(e => e.id === id) || null; }
 function rElName(el){ const n = reelData().elems.filter(e => e.kind === el.kind).indexOf(el) + 1; return `${RKINDS[el.kind]} ${n}${el.kind === "texte" && el.texte ? ` : ${el.texte}` : ""}`; }
-/* photo cadrée en 9:16 ; zoom lent de RZOOM sur sa durée */
+/* photo cadrée au format ; zoom lent de RZOOM sur sa durée */
 function drawPhoto(ctx, W, H, im, it, t, dur){
   im = phBaked(im, it);
   const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, cr = rCrop(iw, ih, it.x != null ? it.x : 0.5);
@@ -4356,7 +4386,8 @@ function rLoop(){
 function rDraw(){
   const stage = $("rStage"), it = rSelItem();
   if(REEL.mode === "apercu"){
-    const W = 540, H = 960;
+    const W = 540, H = Math.round(540*RH/RW);
+    $("rStage").style.setProperty("--rar", (RW/RH).toFixed(4));
     if(rcv.width !== W || rcv.height !== H){ rcv.width = W; rcv.height = H; }
     stage.classList.add("v");stage.classList.remove("h");
     const pl = REEL.pl || (REEL.pl = reelPlan(false));
@@ -4397,7 +4428,7 @@ function rDraw(){
   const sel = rZoneSel(it);
   const t = REEL.t;
   function frame(sw, sh, x){
-    // cadre 9:16 sur l'image entière, avec les flous d'une photo ou les retouches d'un passage ; sw, sh = taille de l'image dessinée
+    // cadre du format sur l'image entière, avec les flous d'une photo ou les retouches d'un passage ; sw, sh = taille de l'image dessinée
     const cr = rCrop(sw, sh, x);
     (it.flous || []).forEach(z => { const r = rZone(z, it.photo ? 0 : t, sw, sh); softBlur(rctx, r.x, r.y, r.w, r.h, z.forme, z.mode); });
     if(!it.photo && REEL.cur && REEL.cur.clip) fxApply(rctx, rMarker(it), REEL.cur.clip.lens, t, {x0:0, y0:0, k:1, sw:sw, sh:sh});
@@ -4518,11 +4549,14 @@ function renderReel(){
   REEL.pl = pl;
   // en-tête
   const cuts = storyCuts(pl), nst = cuts.length - 1;
-  $("rDur").textContent = `Réel : ${pl.segs.length ? len(pl.total) : "vide"}`;
+  const F = RFMTS[r.fmt], story = r.fmt === "reel";
+  $("rDur").textContent = `${F.quoi} : ${pl.segs.length ? len(pl.total) : "vide"}`;
   const none = !S.markers.length && !r.items.length;
-  $("rInfo").textContent = pl.segs.length ? `1080 x 1920, ${pl.segs.length} passage${pl.segs.length > 1 ? "s" : ""}, story en ${nst} morceau${nst > 1 ? "x" : ""} de 60 s max` : none ? "Aucun passage marqué pour l'instant" : "Ajoutez des passages au montage";
+  $("rInfo").textContent = pl.segs.length ? `${RW} x ${RH}, ${pl.segs.length} passage${pl.segs.length > 1 ? "s" : ""}${story ? `, story en ${nst} morceau${nst > 1 ? "x" : ""} de 60 s max` : ""}` : none ? "Aucun passage marqué pour l'instant" : "Ajoutez des passages au montage";
   $("rNone").hidden = !none;
-  chipRow($("rMode"), ["Cadrage","Aperçu du réel"], (t, i) => (REEL.mode === "apercu") === !!i);
+  chipRow($("rMode"), ["Cadrage", story ? "Aperçu du réel" : "Aperçu de la vidéo"], (t, i) => (REEL.mode === "apercu") === !!i);
+  chipRow($("rFmt"), RFMTK.map(k => RFMTS[k].lib), (t, i) => r.fmt === RFMTK[i]);
+  $("rFmtHint").textContent = story ? "Instagram et Facebook : réel, ou story découpée en morceaux de 60 s." : r.fmt === "li" ? "Fil LinkedIn : vertical 4:5, la plus grande place sur téléphone sans être recadrée." : "Fil LinkedIn : carré, s'affiche en entier sur téléphone comme sur ordinateur.";
   // montage
   $("rList").innerHTML = r.items.map((x, i) => {
     const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, m = x.photo ? null : rMarker(x), nf = rNbFlous(x), sn = sensTxt(m);
@@ -4552,11 +4586,12 @@ function renderReel(){
   renderReelEdit();
   // export
   const empty = !pl.segs.length;
-  $("rGoReel").disabled = empty; $("rGoStory").disabled = empty;
+  $("rGoReel").disabled = empty; $("rGoStory").disabled = empty; $("rGoStory").hidden = !story;
+  $("rGoReel").textContent = story ? "Créer le réel" : "Créer la vidéo LinkedIn";
   $("rGoStory").textContent = `Créer la story${nst > 1 ? ` (${nst} morceaux)` : ""}`;
   const tips = [];
   if(pl.skipped) tips.push(`${pl.skipped} passage(s) sans image ignoré(s)`);
-  if(pl.total > 90) tips.push("au-delà d'une minute et demie, un réel est rarement regardé jusqu'au bout");
+  if(pl.total > 90) tips.push(`au-delà d'une minute et demie, ${story ? "un réel" : "une vidéo"} est rarement regardé${story ? "" : "e"} jusqu'au bout`);
   $("rEst").textContent = empty ? "Ajoutez au moins un passage." : (pcOpen() ? "Calcul sur le PC en pleine résolution, vidéo déposée dans le dossier de l'intervention." : "Calcul dans ce navigateur, garder l'onglet ouvert.")+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
   sensWarn($("rSensW"), empty ? [] : rSensLines(), "");
   // scène
@@ -4642,7 +4677,7 @@ function rElemsPanel(){
   h += `<div class="grp"><span class="lbl">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === k}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div><span class="lbl" style="margin-top:10px;display:block">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div></div>`;
   const box = k && rBoxOf(k);
   if(!box){
-    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Cet aperçu est allégé : la vidéo finale sera nette, en 1080 x 1920, tirée des rushs d'origine.</p>`;
+    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Cet aperçu est allégé : la vidéo finale sera nette, en ${RW} x ${RH}, tirée des rushs d'origine.</p>`;
   }
   const el = k.indexOf("el:") === 0 ? rElem(k.slice(3)) : null, isTxt = k === "titre" || k.indexOf("txt:") === 0 || (el && el.kind === "texte");
   const nm = k === "titre" ? "Titre d'accroche" : k === "logo" ? "Logo ESAM" : el ? rElName(el) : "Texte du passage";
@@ -4702,7 +4737,7 @@ function rBoxOf(key){
   const it = key.indexOf("txt:") === 0 ? rItem(key.slice(4)) : null;
   return it ? rTBox(it) : null;
 }
-function rDefBox(key){ return key === "titre" ? RBOX.titre : key === "logo" ? RBOX[reelData().logo.mode] || RBOX.cartouche : key.indexOf("el:") === 0 ? RBOX.el : RBOX.texte; }
+function rDefBox(key){ const lm = reelData().logo.mode; return rBoxDef(key === "titre" ? "titre" : key === "logo" ? (RBOX[lm] ? lm : "cartouche") : key.indexOf("el:") === 0 ? "el" : "texte"); }
 function rPlace(key){
   const pl = reelPlan(false), l = rLayers(pl).find(x => x.key === key);
   if(!l){ toast("Rien à placer : l'élément n'apparaît pas dans le réel."); return; }
@@ -4847,11 +4882,20 @@ $("rEdit").addEventListener("input", e => {
   if(had !== !!it.texte){ const pos = e.target.selectionStart; renderReelEdit(); const f = $("rTexte"); f.focus(); try { f.setSelectionRange(pos, pos); } catch(x){} }
 });
 $("rTitre").addEventListener("input", function(){ reelData().titre = clean(this.value); rSave(); if(REEL.mode === "apercu") rDraw(); });
+/* format de sortie : le cadrage (position horizontale) et les places des éléments, en fraction de l'image, restent valables */
+$("rFmt").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if(!b) return;
+  const r = reelData(), k = RFMTK[+b.dataset.k]; if(!k || k === r.fmt) return;
+  if(REEL.playing) rStop();
+  rBoxesFmt(r, r.fmt, k); r.fmt = k; reelData(); REEL.cur = null; REEL.pl = null;
+  rSave(); renderReel();
+  if(REEL.mode === "apercu") rSeekApercu(REEL.o, false); else { const it = rSelItem(); if(it) rSeekCadrage(it.photo ? 0 : clamp(REEL.t, it.a, it.z), false); }
+});
 $("rTitreDur").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; reelData().titreDur = RTDURS[+b.dataset.k]; rSave(); renderReel(); });
 $("rLogo").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
   const r = reelData(), mode = RLOGOS[+b.dataset.k];
-  if(mode !== r.logo.mode){ r.logo = Object.assign({mode:mode}, RBOX[mode] || RBOX.cartouche); if(REEL.lsel === "logo" && mode === "non") REEL.lsel = null; }
+  if(mode !== r.logo.mode){ r.logo = Object.assign({mode:mode}, rBoxDef(RBOX[mode] ? mode : "cartouche")); if(REEL.lsel === "logo" && mode === "non") REEL.lsel = null; }
   rSave(); renderReel();
 });
 $("reel").addEventListener("click", e => { const b = e.target.closest("#rTitrePlace, #rLogoPlace"); if(b) rPlace(b.id === "rTitrePlace" ? "titre" : "logo"); });
@@ -4907,7 +4951,7 @@ rcv.addEventListener("pointerdown", e => {
     if(it.photo) z.keys = [{t:0, x:REEL.drag.pos.x, y:REEL.drag.pos.y}]; else if(!REEL.playing) z.keys = rKeyPut(z.keys, REEL.t, REEL.drag.pos);
     rDraw(); return;
   }
-  const cr = rCrop(rcv.width, rcv.height, 0); if(cr.free < 2){ REEL.drag = null; toast("Cette image est déjà au format vertical : rien à cadrer."); return; }
+  const cr = rCrop(rcv.width, rcv.height, 0); if(cr.free < 2){ REEL.drag = null; toast("Cette image est déjà au format de la vidéo : rien à cadrer."); return; }
   REEL.drag = {px:e.clientX, x0:it.photo ? (it.x != null ? it.x : 0.5) : rX(it, REEL.t), x:null};
 });
 rcv.addEventListener("pointermove", e => {
@@ -5014,7 +5058,8 @@ document.addEventListener("keydown", e => {
 });
 
 /* ----- calcul : mode PC ----- */
-function rBaseName(story){ return outName(story ? "Story" : "Reel"); }
+function rBaseName(story){ const F = RFMTS[reelData().fmt]; return story ? outName("Story") : outName(F.nom, F.suf); }
+function rWhat(story){ return story ? "Story" : RFMTS[reelData().fmt].quoi; }
 function rCanvas(W, H){ const c = document.createElement("canvas"); c.width = W; c.height = H; return c; }
 async function runReelRemote(story){
   const pl = reelPlan(false); if(!pl.segs.length) return;
@@ -5042,12 +5087,12 @@ async function runReelRemote(story){
         });
   let fin = null;
   if(r.fin.on){ drawFin(ctx, RW, RH, r); fin = {image:cv.toDataURL("image/png"), duree:RFIN}; }
-  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", RW, RH, story ? "Story" : "Réel");
+  const pcv = jobRun("Le calcul se fait sur le PC. Vous pouvez fermer l'appli : la vidéo arrivera dans le dossier de l'intervention.", RW, RH, rWhat(story));
   ctx.fillStyle = "#222"; ctx.fillRect(0, 0, RW, RH);
   if(pl.segs[0].photo) drawPhoto(ctx, RW, RH, await phImage(pl.segs[0].photo), pl.segs[0].it, 0, pl.segs[0].dur);
   drawLayers(ctx, RW, RH, L, Math.min(1, pl.clips/2));
   pcv.getContext("2d").drawImage(cv, 0, 0, pcv.width, pcv.height);
-  const job = await api("api/reel", {d:SRVD, mode:story ? "story" : "reel", nom:rBaseName(story), titre_video:`ESAM - ${clean(S.meta.intervention || SRVD)}`,
+  const job = await api("api/reel", {d:SRVD, mode:story ? "story" : "reel", format:r.fmt, largeur:RW, hauteur:RH, nom:rBaseName(story), titre_video:`ESAM - ${clean(S.meta.intervention || SRVD)}`,
     segments:segs, sprites:fxSpritesOut(sprites), calques:calques, fin:fin, musique:r.musique && r.musique.fichier ? {fichier:r.musique.fichier, debut:r.musDebut || 0} : null, story_max:RSTORY});
   CMP.job = job.id; CMP.running = true;
   jobProgress(0, "Envoyé au PC");
@@ -5084,10 +5129,10 @@ async function runReelLocal(story){
   if(typeof VideoEncoder === "undefined" || typeof Mp4Muxer === "undefined"){ toast("Ce navigateur ne sait pas fabriquer de vidéo. Utilisez Chrome ou Edge à jour."); return; }
   for(let pi=0; pi<pl.segs.length; pi++){ if(pl.segs[pi].photo) await phImage(pl.segs[pi].photo); }
   const enc0 = await pickEncoder(RW, RH, 10000000, false);
-  if(!enc0) throw new Error("aucun encodeur vidéo disponible pour 1080 x 1920");
+  if(!enc0) throw new Error(`aucun encodeur vidéo disponible pour ${RW} x ${RH}`);
   await rFonts();
   const cuts = story ? storyCuts(pl) : [0, pl.total], n = cuts.length - 1;
-  const pcv = jobRun(LOCAL_RUN_MSG, RW, RH, story ? "Story" : "Réel");
+  const pcv = jobRun(LOCAL_RUN_MSG, RW, RH, rWhat(story));
   CMP.running = true; CMP.cancel = false;
   let pcm = null, aenc0 = null;
   if(REEL.music && REEL.music.file){
@@ -5108,9 +5153,9 @@ async function runReelLocal(story){
   const size = outs.reduce((t, o) => t + o.blob.size, 0);
   const sw = rSensLines();
   jobDone({url:REEL.url, onSave:rSaveAll, onBack:jobClose, saveLabel:n > 1 ? `Enregistrer les ${n} vidéos` : "Enregistrer la vidéo", files:outs.map(o => ({name:o.name})), where:n > 1 ? `${n} fichiers` : "Nom du fichier",
-    info:`${n > 1 ? `${n} vidéos de story` : story ? "Story" : "Réel"} : ${len(pl.total)}, 1080 x 1920, ${enc0.label}${pcm ? `, musique en ${aenc0.label}` : ", sans son"}, ${(size/1048576).toFixed(0)} Mo, calculé ${enDuree((performance.now() - t0)/1000)}.${sw.length ? ` Rappel : ${sw.join(" ; ")}.` : ""}${n > 1 ? " L'aperçu montre le premier morceau." : ""}${REEL.music && !aenc0 ? " Ce navigateur ne sait pas encoder le son : vidéo sans musique." : ""}${pcm && aenc0.mux === "opus" ? " Son en Opus : si Instagram refuse le fichier, passez par le mode PC." : ""}`});
+    info:`${n > 1 ? `${n} vidéos de story` : rWhat(story)} : ${len(pl.total)}, ${RW} x ${RH}, ${enc0.label}${pcm ? `, musique en ${aenc0.label}` : ", sans son"}, ${(size/1048576).toFixed(0)} Mo, calculé ${enDuree((performance.now() - t0)/1000)}.${sw.length ? ` Rappel : ${sw.join(" ; ")}.` : ""}${n > 1 ? " L'aperçu montre le premier morceau." : ""}${REEL.music && !aenc0 ? " Ce navigateur ne sait pas encoder le son : vidéo sans musique." : ""}${pcm && aenc0.mux === "opus" ? " Son en Opus : si Instagram refuse le fichier, passez par le mode PC." : ""}`});
   if(S.dirHandle){ rSaveOuts().catch(e => { toast(`Enregistrement dans le dossier impossible : ${e.message}`); }); }
-  toast(story ? "Story prête." : "Réel prêt.");
+  toast(story ? "Story prête." : pl.r.fmt === "reel" ? "Réel prêt." : "Vidéo LinkedIn prête.");
 }
 async function rRender(pl, A, B, enc0, aenc0, pcm, pcv, ci, n){
   const W = RW, H = RH;
@@ -5260,7 +5305,7 @@ async function rSaveOuts(){
 }
 function rGo(story){
   if(REEL.playing) rStop();
-  const what = story ? "La story" : "Le réel", e2 = story ? "e" : "";
+  const fm = reelData().fmt, what = story ? "La story" : fm === "reel" ? "Le réel" : "La vidéo LinkedIn", e2 = story || fm !== "reel" ? "e" : "";
   BACKEND.busy(true);
   BACKEND.reel(story).then(() => { BACKEND.busy(false); }, err => {
     BACKEND.busy(false); CMP.running = false;
@@ -5271,7 +5316,7 @@ function rGo(story){
   });
 }
 $("rGoReel").onclick = () => { rGo(false); };
-$("rGoStory").onclick = () => { rGo(true); };
+$("rGoStory").onclick = () => { if(reelData().fmt === "reel") rGo(true); };
 /* enregistrement des vidéos du réel ou de la story : dossier des rushs si ouvert, sinon téléchargement */
 async function rSaveAll(){
   if(!REEL.out) return;
@@ -5780,11 +5825,12 @@ srvInit().then(() => {
 
 renderQuick();
 /* crochets pour les tests : storyCuts sur un plan simulé (durées des segments et du carton de fin), lissage des points
-   de suivi (miroir de key_expr), état des marqueurs et de l'éditeur de retouches */
+   de suivi (miroir de key_expr), cadre d'un format (miroir de crop_box), état des marqueurs et de l'éditeur de retouches */
 window.ESAM_TEST = {storyCuts:(durs, fin) => {
   let pos = 0; const segs = durs.map(d => { const sg = {out0:pos, dur:d}; pos += d; return sg; });
   return storyCuts({segs:segs, clips:pos, fin:fin, total:pos + fin});
 }, keyAt:(keys, t, f) => rKeyAt(keys, t, f, 0.5),
+  crop:(fmt, sw, sh) => { const w = RW, h = RH; RW = RFMTS[fmt].w; RH = RFMTS[fmt].h; const c = rCrop(sw, sh, 1); RW = w; RH = h; return c; },
   etat:() => ({base:S.base, markers:JSON.parse(JSON.stringify(S.markers)), fx:{ouvert:!!FX.m, t:FX.t, lecture:FX.playing, suivi:!!FX.trk, choix:FX.sel}})};
 if(window.claude && typeof window.claude.use === "function"){
   window.claude.use("downloads").then(x => { dl = x; }, () => { dl = null; });

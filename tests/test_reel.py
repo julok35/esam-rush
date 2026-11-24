@@ -4,7 +4,7 @@ Usage : python tests/test_reel.py [--garder]
 Prérequis : ffmpeg, playwright (pip install playwright ; playwright install chromium).
 Fabrique de faux rushs, lance server.py (port 8798, config temporaire), pose trois marqueurs,
 monte un réel de plus de 60 s avec cadrage suivi, retouches (flou suivi, cercle, ralenti), accéléré, textes et musique, le fait calculer
-par le PC puis en story, et vérifie les fichiers produits (1080 x 1920, durée, piste son).
+par le PC puis en story, puis en vidéo LinkedIn 4:5, et vérifie les fichiers produits (1080 x 1920 ou 1080 x 1350, durée, piste son).
 Les captures d'écran sont écrites dans le dossier temporaire affiché.
 """
 import asyncio, json, os, subprocess, sys, tempfile, time, urllib.request
@@ -144,6 +144,19 @@ async def navigateur(tmp, iv):
             await pg.wait_for_selector("#cmpDone:not([hidden])", timeout=600000)
             print("résultat :", await pg.inner_text("#cmpInfo"))
             await pg.click("#cmpClose2")
+        # vidéo LinkedIn : même montage au format 4:5, pas de story ; puis aperçu en carré
+        await volet(0); await pg.click("#rFmt .chip >> nth=1"); await pg.wait_for_timeout(500)
+        assert await pg.is_hidden("#rGoStory") and "LinkedIn" in await pg.inner_text("#rGoReel")
+        await volet(1); await pg.wait_for_timeout(800)
+        await pg.screenshot(path=str(tmp / "r5_linkedin.png"))
+        await pg.click("#rGoReel")
+        await pg.wait_for_selector("#cmpDone:not([hidden])", timeout=600000)
+        print("résultat LinkedIn :", await pg.inner_text("#cmpInfo"))
+        await pg.click("#cmpClose2")
+        await volet(0); await pg.click("#rFmt .chip >> nth=2"); await volet(1); await pg.wait_for_timeout(800)
+        await pg.screenshot(path=str(tmp / "r6_carre.png"))
+        etat = api("api/etat?d=" + urllib.parse.quote(iv))
+        assert etat["meta"]["reel"]["fmt"] == "carre"
         pc = await b.new_page(viewport={"width": 1400, "height": 900})
         await pc.goto(f"http://127.0.0.1:{PORT}/"); await pc.wait_for_selector("[data-open]"); await pc.click("[data-open]")
         await pc.wait_for_selector("#view:not([hidden])"); await pc.click("#tabReel"); await pc.wait_for_timeout(1200)
@@ -179,8 +192,9 @@ def main():
             print(" ", n, ffprobe(d / n))
         assert any(n.startswith("ESAM_Reel_") for n in outs)
         assert sum(1 for n in outs if n.startswith("ESAM_Story_")) >= 2
+        assert any(n.startswith("ESAM_LinkedIn_") for n in outs)
         for n in outs:
-            i = ffprobe(d / n); assert (i["w"], i["h"]) == (1080, 1920) and i["audio"], (n, i)
+            i = ffprobe(d / n); assert (i["w"], i["h"]) == ((1080, 1350) if n.startswith("ESAM_LinkedIn_") else (1080, 1920)) and i["audio"], (n, i)
             if n.startswith("ESAM_Story_"): assert i["dur"] <= 61, (n, i)
         print("OK, captures dans", tmp)
     finally:

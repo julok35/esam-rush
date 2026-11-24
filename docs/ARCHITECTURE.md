@@ -4,7 +4,7 @@ Document pour un développeur qui découvre le projet. Le guide d'installation e
 
 ## 1. Vue d'ensemble
 
-L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication : fiche de dérushage, vidéo compilée, extraits bruts, réel ou story verticale, avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse).
+L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication : fiche de dérushage, vidéo compilée, extraits bruts, réel ou story verticale, vidéo LinkedIn (4:5 ou carrée), avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse).
 
 Deux fichiers de code, aucune étape de construction, aucune dépendance Python :
 
@@ -55,7 +55,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
-| réel et story | Montage vertical 9:16 : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`) | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote` |
+| réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`) | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote` |
 | éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
 
 Conventions du script :
@@ -135,7 +135,8 @@ Les retouches appartiennent au passage, pas à une vidéo produite : la vidéo c
 ### 3.4 Réglages du réel (`S.meta.reel`)
 
 ```js
-{items: [            // montage, dans l'ordre
+{fmt,                // format de sortie : "reel" (9:16, réel ou story), "li" (4:5) ou "carre" (1:1), voir RFMTS
+ items: [            // montage, dans l'ordre
    {id,              // id du marqueur ; "ph..." pour une photo
     a, z,            // plage en secondes de timeline (passage)
     cam, vit,        // caméra, accéléré du réel 1 à 8 (multiplie les vitesses des retouches du passage)
@@ -201,7 +202,7 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `GET /files/<dossier>/<chemin>` | | fichier des rushs (proxies, planches, musique), requêtes Range acceptées |
 | `POST /api/proxies` | `{d, src}` | le calcul créé ou déjà en cours (un par source) |
 | `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, habillage, separes, logo, ouverture: {image, duree}, sprites: {id: image}, passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [morceau]}]}` (images en data URL PNG). `habillage: false` : ni ouverture, ni cartons, ni logo ; `separes` : un fichier par passage | le calcul créé |
-| `POST /api/reel` | `{d, mode: "reel"|"story", nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x}]` (cadrage 9:16) | le calcul créé |
+| `POST /api/reel` | `{d, mode: "reel"|"story", format: "reel"|"li"|"carre", largeur, hauteur, nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x}]` (cadrage au format ; story seulement en 9:16) | le calcul créé |
 | `POST /api/annuler` | `{id}` | `{ok}` |
 | `POST /api/etat` | `{d, src, etat}` | `{ok}` |
 | `POST /api/fiche` | `{d, nom, md}` ; supprime les autres `ESAM_Derushage_*.md` du dossier | `{ok, fichier}` |
@@ -243,7 +244,7 @@ Dans le dossier de l'intervention (voir aussi le tableau de `LISEZMOI.md`) :
 | `ESAM_Compilation_<date>_<mission>[_vertical].mp4`, `.commentaires-ESAM.srt`, `_chapitres.txt` | `do_video` |
 | `ESAM_Extraits_<date>_<mission>[_vertical].mp4`, ou `..._<NN>_<passage>.mp4` par passage | `do_video` sans habillage |
 | `.derushage/etat-compil.json`, proxies de la vidéo compilée | source « compil » (`api/etat`, `do_proxies`) |
-| `ESAM_Reel_<date>_<mission>.mp4`, `ESAM_Story_<date>_<mission>[_NsurM].mp4` | `do_reel` |
+| `ESAM_Reel_<date>_<mission>.mp4`, `ESAM_Story_<date>_<mission>[_NsurM].mp4`, `ESAM_LinkedIn_<date>_<mission>[_carre].mp4` | `do_reel` |
 
 Le nom de base est construit par `outName()` côté appli (`ESAM_<préfixe>_<date du vol>[_<slug de la mission>]`) et nettoyé par `server.py` (caractères interdits sous Windows).
 
@@ -260,7 +261,8 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 | `fxApply` (place d'une forme) | `shape_chain` et ses `fx`, `fy` | position et taille d'une forme dans l'image mise au format |
 | nom des extraits dans `runCompile` | `do_video`, fichiers séparés | `<base>_<NN>_<nom du passage>.mp4` |
 | `PROD_RE` | `PROD`, `COMPIL` | noms des vidéos produites par l'outil |
-| `rCrop` | `crop_box` | cadre 9:16 dans l'image source |
+| `rCrop` | `crop_box` | cadre au format de sortie dans l'image source |
+| `RFMTS` | `REEL_FMTS` | tailles des formats du réel et de la vidéo LinkedIn |
 | `buildSrt` | bloc SRT de `do_video` | commentaires internes en sous-titres |
 | `outName` | nettoyage des noms dans `do_video`, `do_reel` | noms des fichiers produits |
 
@@ -281,9 +283,9 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 
 | Commande | Ce qu'elle fait | Durée |
 |---|---|---|
-| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr` (Playwright sur `index.html` en `file://`) | 10 s |
+| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr`, `rCrop` / `crop_box` (Playwright sur `index.html` en `file://`) | 10 s |
 | `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture | 1 min |
-| `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel puis story, contrôle des fichiers (1080 x 1920, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
+| `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5, contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
 | `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur ; en mode PC, flou suivi, formes, vitesses, vidéo compilée, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
 | `python tests/fabriquer_rushs.py DOSSIER [--vp9]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) | |
 | `python tests/fabriquer_longue.py DOSSIER` | intervention de 3 h sur 4 caméras, déjà préparée (planches seules), pour mesurer la mémoire | |
