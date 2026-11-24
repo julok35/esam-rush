@@ -225,21 +225,21 @@ textarea.field{min-height:70px;resize:vertical}
   .inwin .iwb:empty{display:none}
 }
 
-/* ---------- timeline ---------- */
-.tl{padding:8px 0 4px}
-.tlhead{display:flex;align-items:center;justify-content:space-between;padding:0 16px 6px;font-weight:700;font-size:13px}
-.tlhead .tp{font-weight:500;color:var(--muted);font-size:12px;margin-left:8px}
-.zoom{display:flex;align-items:center;gap:6px}
-.zoom .btn{min-height:44px;min-width:44px;padding:2px 8px}
-.zoom span{min-width:34px;text-align:center;font-size:13px}
+/* ---------- timeline ----------
+   Pas de rangée de titre : le zoom occupe le coin au-dessus des noms de pistes, à la hauteur de la règle (--rh). */
+.tl{--rh:44px;padding:8px 0 4px;position:relative}
+.tl .tp{margin:4px 16px 0;font-weight:500;color:var(--muted);font-size:12px}
+.tl .tp:empty{display:none}
+.zoom{display:flex;align-items:center;justify-content:center;gap:2px;height:var(--rh);border-bottom:1px solid var(--line)}
+.zoom .btn{min-height:44px;height:44px;min-width:44px;width:44px;padding:0;font-size:20px;line-height:1;border-color:transparent}
+.zoom .btn:disabled{opacity:.35;border-color:transparent;background:none}
 .tlgrid{display:grid;grid-template-columns:92px 1fr}
-.labels{border-right:1px solid var(--line)}
-.labels .rsp{height:40px}
+.tlcol{border-right:1px solid var(--line);min-width:0}
 .lab{height:var(--lh);display:flex;align-items:center;padding:0 8px 0 12px;font-size:12px;font-weight:600;border:0;background:none;width:100%;text-align:left;border-top:1px solid var(--line)}
 .lab[aria-pressed="true"]{background:var(--blue);color:var(--onblue);font-weight:700;box-shadow:inset 0 0 0 2px var(--onblue)}
 .scroller{overflow-x:auto;overflow-y:hidden;position:relative;-webkit-overflow-scrolling:touch}
 .inner{position:relative;min-width:100%}
-.ruler{position:relative;height:40px;touch-action:none;cursor:ew-resize;border-bottom:1px solid var(--line)}
+.ruler{position:relative;height:var(--rh);touch-action:none;cursor:ew-resize;border-bottom:1px solid var(--line)}
 .tick{position:absolute;top:0;height:100%;border-left:1px solid var(--line);font-size:12px;line-height:14px;padding:2px 0 0 3px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 /* pan-x pan-y : un balayage vertical parti d'une piste fait défiler la page ; le pincement reste à l'appli (pas de zoom du navigateur) */
 .lane{position:relative;height:var(--lh);border-top:1px solid var(--line);background:var(--soft);touch-action:pan-x pan-y}
@@ -248,16 +248,30 @@ textarea.field{min-height:70px;resize:vertical}
 .mlayer{position:absolute;inset:0;pointer-events:none}
 .mi{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--blue)}
 .mr{position:absolute;top:0;bottom:0;background:var(--band);border-left:2px solid var(--blue);border-right:2px solid var(--blue)}
+.mr.sel{border-color:var(--ink)}
 .mr.pend{border:2px dashed var(--ink);background:transparent}
-/* pastille dans la moitié basse de la règle (sous les heures) ; zone tactile de 44 px par ::before */
-.mh{position:absolute;top:17px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:0;z-index:3}
-.mh::before{content:"";position:absolute;left:-11px;right:-11px;top:-15px;bottom:-9px}
-.mh.sens{background:var(--yellow)}
-.eg{position:absolute;top:40px;bottom:0;width:22px;margin-left:-11px;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2}
-.eg::before{content:"";position:absolute;top:0;bottom:0;left:-11px;right:-11px}
-.eg.l{left:0}
-.eg.r{left:100%}
-.eg::after{content:"";position:absolute;left:8px;top:30%;bottom:30%;width:6px;border-radius:6px;background:var(--blue);border:1.5px solid var(--onblue)}
+/* pastille dans la moitié basse de la règle (sous les heures). renderMarkers les espace d'au moins 44 px (MH_GAP) :
+   la zone tactile (::before, 44 x 44) d'une pastille ne recouvre jamais celle d'une voisine. Les pastilles plus proches
+   sont regroupées (.mh.grp, « 3-6 ») : la toucher zoome jusqu'à les séparer, ou les liste (#mhPop) si elles restent collées. */
+.mh{position:absolute;top:18px;height:24px;min-width:24px;margin-left:-12px;border-radius:12px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:0 4px;z-index:3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mh::before{content:"";position:absolute;left:50%;width:max(44px,100%);transform:translateX(-50%);top:-18px;bottom:-2px}
+.mh.grp{background:var(--bg);color:var(--ink);border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.mh.sel{outline:3px solid var(--ink);outline-offset:1px}
+/* sensibilité : jaune ET forme carrée (comme les vignettes de la planche), jamais la couleur seule */
+.mh.sens{background:var(--yellow);color:var(--onblue);border-radius:4px}
+/* poignées de bord : 44 px de large, surtout à l'extérieur du passage (--in px à l'intérieur), pour qu'un passage étroit
+   garde deux poignées séparées ; renderMarkers n'affiche pas une poignée qui toucherait une autre */
+.eg{position:absolute;top:var(--rh);bottom:0;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2}
+.eg::after{content:"";position:absolute;top:28%;bottom:28%;width:8px;border-radius:6px;background:var(--blue);border:1.5px solid var(--onblue)}
+.eg.l::after{right:calc(var(--in) + 1px)}
+.eg.r::after{left:calc(var(--in) + 1px)}
+.mr.sel .eg::after{background:var(--ink);border-color:var(--bg)}
+.mhpop{position:absolute;z-index:30;left:8px;right:8px;top:calc(var(--rh) + 8px);max-width:420px;max-height:60vh;overflow:auto;background:var(--bg);border:2px solid var(--ink);border-radius:10px;padding:6px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.mhpop button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 8px;border:0;border-top:1px solid var(--line);background:none;text-align:left;font-size:14px;font-weight:600;color:var(--ink)}
+.mhpop button:first-child{border-top:0}
+.mhpop .n{flex:none;min-width:24px;height:24px;border-radius:12px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.mhpop .n.sens{background:var(--yellow);border-radius:4px}
+.mhpop small{display:block;font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
 .ph{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
 .ph::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:var(--ink)}
 .hov{position:fixed;z-index:40;background:var(--onblue);color:var(--onstage);border-radius:10px;padding:4px;pointer-events:none;font-size:12px;font-weight:600}
@@ -322,8 +336,8 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   .mbig{padding:8px 12px 8px 0}
   .mb{min-height:44px;flex-direction:row;gap:8px}
   .mb .ic{font-size:18px}
-  /* scène : ce qui reste de la hauteur après l'en-tête, la mission, les commandes, le bandeau, la tête de timeline et quatre pistes */
-  .stage{max-height:calc(100vh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh) - 40px);max-height:calc(100dvh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh) - 40px);min-height:240px}
+  /* scène : ce qui reste de la hauteur après l'en-tête, la mission, les commandes, le bandeau, la règle et quatre pistes */
+  .stage{max-height:calc(100vh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh));max-height:calc(100dvh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh));min-height:240px}
   .keys{display:block}
   .sidelist{display:block;padding:12px}
   .sidelist h3{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:0 0 8px}
@@ -454,21 +468,30 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 /* bouton « Enregistrer » toujours visible, même sous une vidéo verticale haute */
 #cmpSetup .sheetbtns, #cmpDone .sheetbtns{position:sticky;bottom:0;background:var(--bg);padding:10px 0;margin-top:8px;z-index:1}
 
-/* ---------- planche ---------- */
-.bhead{padding:14px 16px 6px;display:flex;flex-direction:column;gap:10px}
-.bhead h2,.srvh h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;line-height:1.1;margin:0}
-.bhead .hint{margin:0}
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:8px 16px 30px}
-.tile{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--soft);cursor:pointer}
+/* ---------- planche ----------
+   Une seule rangée avant les vignettes (piste, intervalle) ; l'explication est dans l'aide. Heure et bouton Repère
+   posés sur l'image : pas de barre sous chaque vignette. */
+.bhead{padding:10px 16px 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.srvh h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;line-height:1.1;margin:0}
+.bsel{flex:0 1 auto;min-width:0;display:flex}
+.bsel .namesel{min-height:44px;max-width:100%;font-size:14px}
+.bcount{font-size:12px;font-weight:600;color:var(--muted);margin-left:auto;white-space:nowrap}
+@media (max-width:520px){ .bcount{display:none} .bsel{flex:1 1 0} .bsel .namesel{width:100%} }
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:8px 16px 30px}
+.tile{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--stage);cursor:pointer}
 .tile .tgo{display:block;width:100%;padding:0;border:0;background:none;border-radius:0}
 .tile .tgo:focus-visible{outline-offset:-3px}
 .tile canvas{display:block;width:100%;aspect-ratio:16/9;background:var(--stage)}
-.tbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.tbar .btn{min-height:30px;padding:2px 8px;font-size:12px}
-.badges{position:absolute;top:6px;left:6px;display:flex;gap:4px}
-.badges b{width:22px;height:22px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;display:flex;align-items:center;justify-content:center}
-.badges b.sens{background:var(--yellow);border-radius:6px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
-@media (max-width:1099px){ .tbar .btn{min-height:44px;padding:4px 12px} }
+.tile .tck{position:absolute;left:4px;bottom:4px;background:var(--onblue);color:var(--onstage);border-radius:6px;padding:1px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+/* bouton « + Repère » : zone de 44 px de haut dans le coin haut droit, étiquette visible plus petite */
+.tile .tmk{position:absolute;top:0;right:0;min-width:44px;height:44px;padding:0;border:0;background:none;display:flex;align-items:flex-start;justify-content:flex-end}
+.tile .tmk span{margin:5px 5px 0 0;height:28px;padding:0 8px;border-radius:8px;background:var(--bg);color:var(--ink);border:1.5px solid var(--ink);font-size:12px;font-weight:700;line-height:1;display:flex;align-items:center;white-space:nowrap}
+.tile .tmk:hover span{background:var(--blue);color:var(--onblue)}
+.tile .tmk:focus-visible{outline-offset:-3px}
+.badges{position:absolute;top:6px;left:6px;right:84px;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
+.badges b{min-width:22px;height:22px;border-radius:11px;padding:0 4px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;display:flex;align-items:center;justify-content:center}
+.badges b.sens{background:var(--yellow);border-radius:4px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
+.badges b.more{background:var(--bg);color:var(--ink);border-color:var(--ink)}
 
 /* ---------- mode PC : liste des interventions ---------- */
 body.srv .empty{max-width:760px}
@@ -778,17 +801,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <div class="inwin" id="inWin"><span class="iwl" id="inWinTxt"></span><span class="iwb" id="inWinBtns"></span></div>
       </div>
 
-      <div class="tl">
-        <div class="tlhead">
-          <span>Pistes<span class="tp" id="thumbProg"></span></span>
-          <div class="zoom">
-            <button class="btn small ghost" id="zOut" aria-label="Dézoomer">-</button>
-            <span id="zLvl">x1</span>
-            <button class="btn small ghost" id="zIn" aria-label="Zoomer">+</button>
-          </div>
-        </div>
+      <div class="tl" role="group" aria-label="Pistes">
         <div class="tlgrid">
-          <div class="labels" id="labels"></div>
+          <div class="tlcol">
+            <div class="zoom">
+              <button class="btn small ghost" id="zOut" aria-label="Dézoomer" title="Dézoomer (revient au zoom d'avant un zoom automatique)">-</button>
+              <button class="btn small ghost" id="zIn" aria-label="Zoomer" title="Zoomer">+</button>
+              <span class="vh" id="zLvl" aria-live="polite">x1</span>
+            </div>
+            <div class="labels" id="labels"></div>
+          </div>
           <div class="scroller" id="scroller">
             <div class="inner" id="inner">
               <div class="ruler" id="ruler"></div>
@@ -798,6 +820,8 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
             </div>
           </div>
         </div>
+        <p class="tp" id="thumbProg"></p>
+        <div class="mhpop" id="mhPop" role="menu" aria-label="Marqueurs regroupés" hidden></div>
       </div>
     </div>
 
@@ -832,12 +856,11 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
   </section>
 
   <section id="board" hidden role="tabpanel" aria-labelledby="tabBoard">
-    <h2 class="vh">Planche</h2>
+    <h2 class="vh">Planche de vignettes</h2>
     <div class="bhead">
-      <h2>Planche de vignettes</h2>
-      <div class="chips" id="bTracks"></div>
-      <div class="chips" id="bStep"></div>
-      <p class="hint" id="bHint">Une vignette par intervalle sur toute la durée de l'intervention. Touchez une vignette pour y aller, ou Marquer pour poser un repère à cet instant. Les numéros renvoient aux marqueurs ; carré jaune : passage sensible.</p>
+      <label class="bsel"><span class="vh">Piste</span><select class="namesel" id="bTracks"></select></label>
+      <label class="bsel"><span class="vh">Intervalle entre deux vignettes</span><select class="namesel" id="bStep"></select></label>
+      <span class="bcount" id="bCount"></span>
     </div>
     <div class="bgrid" id="bGrid"></div>
   </section>
@@ -1006,12 +1029,13 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <h4>Visionner</h4>
     <ul>
       <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète (titre libre, sensibilité, texte du carton).</li>
-      <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer.</li>
+      <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer, ou touchez <b>+</b> et <b>-</b> au-dessus des noms de pistes.</li>
+      <li>Les numéros trop proches pour être touchés un par un sont regroupés (« 3-6 ») : touchez le groupe pour zoomer jusqu'à les séparer, ou choisir dans la liste s'ils sont presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus pour régler ses bords ; <b>-</b> ramène au zoom d'avant. Carré jaune : marqueur sensible.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
     </ul>
     <h4>Planche</h4>
-    <ul><li>Une vignette par intervalle sur la piste choisie. Touchez une vignette pour y aller dans Visionner, ou <b>Marquer</b> pour poser un repère à cet instant.</li></ul>
+    <ul><li>Une vignette par intervalle (10 s à 5 min) sur la piste choisie, sur toute la durée de l'intervention. Touchez une vignette pour y aller dans Visionner, ou <b>+ Repère</b> pour poser un repère à cet instant. Les numéros renvoient aux marqueurs (trois au plus, puis « +n ») ; carré jaune : marqueur sensible.</li></ul>
     <h4>Sommaire</h4>
     <ul>
       <li>Tous les marqueurs dans l'ordre : nom, caméra retenue pour la vidéo compilée et commentaire interne (jamais incrusté dans la vidéo) se règlent sur la carte ; <b>Modifier</b> ouvre le reste (sensibilité, intérêt, texte du carton).</li>
@@ -1769,9 +1793,12 @@ function tickStep(p){
 function renderTimeline(){
   const p = pps(), W = Math.max(S.dur * p, $("scroller").clientWidth);
   $("inner").style.width = `${W}px`;
-  $("zLvl").textContent = `x${S.zoom % 1 ? S.zoom.toFixed(1).replace(".", ",") : S.zoom}`;
+  const zl = S.zoom >= 10 || !(S.zoom % 1) ? Math.round(S.zoom) : S.zoom.toFixed(1).replace(".", ",");
+  $("zLvl").textContent = S.zoom > 1 ? `Zoom x${zl}` : "Toute l'intervention";
+  $("zOut").disabled = S.zoom <= 1; $("zIn").disabled = S.zoom >= zMax();
+  $("zOut").setAttribute("aria-label", S.zoom > 1 ? `Dézoomer (zoom x${zl})` : "Dézoomer");
   // labels
-  let lab = '<div class="rsp"></div>';
+  let lab = "";
   S.tracks.forEach((t, i) => { lab += `<button class="lab" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`; });
   $("labels").innerHTML = lab;
 
@@ -1863,22 +1890,140 @@ function renderSideList(){
   el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Modifier le ${kindName(m).toLowerCase()} ${i+1}" title="Modifier (nom libre, sensibilité, texte du carton)">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
 }
 function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
-/* position d'une pastille : jamais rognée par les bords de la timeline (11 px = demi-pastille) */
-function mhX(x){ const W = $("inner").offsetWidth || S.dur*pps(); return clamp(x, 11, Math.max(11, W - 11)); }
+/* ---------- pastilles et poignées des marqueurs ----------
+   Les pastilles numérotées sont espacées d'au moins MH_GAP px (zone tactile de 44 px) : celles qui seraient plus proches
+   forment un groupe (« 3-6 »). Toucher un groupe zoome assez pour les séparer (le zoom d'avant revient par -), ou, si même
+   le zoom maximal ne suffit pas, ouvre la liste #mhPop. Toucher une pastille ouvre la fiche ; si le passage est trop
+   étroit pour régler ses bords, la timeline zoome dessus en arrière-plan (TL.sel garde le marqueur visé). */
+const MH_GAP = 44, EG_OUT = 34, EG_IN = 10;
+const TL = {sel:null, back:null, auto:0};
+/* zoom maximal : x64, ou 30 px par seconde sur une longue intervention (un vol de 3 h doit pouvoir séparer deux repères à 2 s) */
+function zMax(){ const w = $("scroller").clientWidth || 300; return Math.max(64, Math.ceil(30*S.dur/w)); }
+/* position d'une pastille : jamais rognée par les bords de la timeline (demi-largeur w/2) */
+function mhX(x, w){ const h = (w || 24)/2, W = $("inner").offsetWidth || S.dur*pps(); return clamp(x, h, Math.max(h, W - h)); }
+function mhW(txt){ return Math.max(24, 10 + 7.5*String(txt).length); }
+/* regroupe les pastilles trop proches : liste triée -> [{a, b, x, w}] (indices a..b dans sorted()) */
+function mhLayout(list, p){
+  let g = list.map((m, i) => ({a:i, b:i, x0:(m.at - S.base)*p, x1:(m.at - S.base)*p}));
+  const lab = o => o.a === o.b ? `${o.a+1}` : `${o.a+1}-${o.b+1}`;
+  let merged = true;
+  while(merged){
+    merged = false;
+    const out = [];
+    g.forEach(o => {
+      const q = out[out.length-1];
+      if(q){
+        const cq = (q.x0 + q.x1)/2, co = (o.x0 + o.x1)/2, need = Math.max(MH_GAP, (mhW(lab(q)) + mhW(lab(o)))/2 + 6);
+        if(co - cq < need){ q.b = o.b; q.x1 = o.x1; merged = true; return; }
+      }
+      out.push(Object.assign({}, o));
+    });
+    g = out;
+  }
+  return g.map(o => { const t = lab(o); return {a:o.a, b:o.b, txt:t, w:mhW(t), x:(o.x0 + o.x1)/2}; });
+}
+/* poignées de bord : celle du marqueur visé d'abord, puis des passages les plus larges ; une poignée dont la zone toucherait
+   une poignée déjà posée n'est pas affichée (zone : EG_OUT px dehors, au plus EG_IN px dedans) */
+function egLayout(list, p){
+  const zones = [], keep = {};
+  const order = list.filter(m => m.to != null).sort((a, b) => (b.id === TL.sel) - (a.id === TL.sel) || (b.to - b.at) - (a.to - a.at));
+  order.forEach(m => {
+    const x = (m.at - S.base)*p, w = Math.max(0, (m.to - m.at)*p), inn = Math.min(EG_IN, Math.floor(w/2));
+    const zl = [x - EG_OUT, x + inn], zr = [x + w - inn, x + w + EG_OUT];
+    const free = z => !zones.some(o => z[0] < o[1] && z[1] > o[0]);
+    const k = {inn:inn};
+    if(free(zl)){ zones.push(zl); k.l = true; }
+    if(free(zr)){ zones.push(zr); k.r = true; }
+    keep[m.id] = k;
+  });
+  return keep;
+}
 function renderMarkers(){
-  const p = pps();
+  const p = pps(), list = sorted();
+  if(TL.sel && !S.markers.some(m => m.id === TL.sel)) TL.sel = null;
+  const eg = egLayout(list, p);
   let html = "";
-  sorted().forEach((m, i) => {
-    const x = (m.at - S.base)*p;
-    if(m.to != null) html += `<div class="mr" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px"><span class="eg l" data-id="${m.id}" data-edge="l" title="Glisser pour ajuster le début"></span><span class="eg r" data-id="${m.id}" data-edge="r" title="Glisser pour ajuster la fin"></span></div>`;
+  list.forEach(m => {
+    const x = (m.at - S.base)*p, sel = m.id === TL.sel ? " sel" : "";
+    if(m.to != null){
+      const k = eg[m.id], st = `--in:${k.inn}px;width:${EG_OUT + k.inn}px`;
+      html += `<div class="mr${sel}" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px">`
+        + (k.l ? `<span class="eg l" data-id="${m.id}" data-edge="l" style="left:-${EG_OUT}px;${st}" title="Glisser pour ajuster le début"></span>` : "")
+        + (k.r ? `<span class="eg r" data-id="${m.id}" data-edge="r" style="left:calc(100% - ${k.inn}px);${st}" title="Glisser pour ajuster la fin"></span>` : "")
+        + "</div>";
+    }
     else html += `<div class="mi" style="left:${x}px"></div>`;
-    html += `<button type="button" class="mh${isSens(m)?" sens":""}" data-id="${m.id}" style="left:${mhX(x)}px" aria-label="${kindName(m)} ${i+1} : ${esc(label(m))}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}">${i+1}</button>`;
+  });
+  mhLayout(list, p).forEach(g => {
+    const ms2 = list.slice(g.a, g.b + 1), sens = ms2.some(isSens) ? " sens" : "", st = `left:${mhX(g.x, g.w)}px;margin-left:-${g.w/2}px;width:${g.w}px`;
+    if(g.a === g.b){
+      const m = ms2[0];
+      html += `<button type="button" class="mh${sens}${m.id === TL.sel ? " sel" : ""}" data-id="${m.id}" style="${st}" aria-label="${kindName(m)} ${g.a+1} : ${esc(label(m))}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}">${g.txt}</button>`;
+    } else {
+      html += `<button type="button" class="mh grp${sens}" data-grp="${g.a}-${g.b}" style="${st}" aria-haspopup="menu" aria-label="Marqueurs ${g.a+1} à ${g.b+1}, ${clockAbs(ms2[0].at)} à ${clockAbs(ms2[ms2.length-1].at)}${sens ? ", dont sensible" : ""} : toucher pour les séparer">${g.txt}</button>`;
+    }
   });
   html += '<div class="mr pend" id="pendBand" hidden></div>';
   $("mlayer").innerHTML = html;
   if(S.pending) drawPending();
   $("count").textContent = S.markers.length;
   renderComp();inWinKey = "";if(S.clips.length) renderInWin();
+}
+/* zoom automatique : z (borné), centré sur l'instant t (secondes de timeline). Le zoom d'avant est gardé pour -. */
+function zoomTo(z, t){
+  z = clamp(z, 1, zMax());
+  if(z <= S.zoom*1.05){ const sc0 = $("scroller"); sc0.scrollLeft = Math.max(0, t*pps() - sc0.clientWidth/2); return; }
+  if(!TL.back || TL.auto !== S.zoom) TL.back = S.zoom;
+  S.zoom = z; TL.auto = z; renderTimeline();
+  const sc = $("scroller"); sc.scrollLeft = Math.max(0, t*pps() - sc.clientWidth/2);
+}
+/* groupe de pastilles : zoom qui le montre en entier (s'il est large), sinon qui sépare ses pastilles ; si le zoom maximal
+   ne suffit pas (marqueurs presque au même instant), liste à choisir */
+function openGroup(a, b){
+  hideGroupPop();
+  const list = sorted().slice(a, b + 1); if(!list.length) return;
+  const base = ($("scroller").clientWidth || 300)/S.dur;
+  let dmin = Infinity;
+  for(let i=1;i<list.length;i++) dmin = Math.min(dmin, list[i].at - list[i-1].at);
+  const t0 = list[0].at - S.base, t1 = list[list.length-1].at - S.base;
+  const need = (MH_GAP + 8)/Math.max(dmin, 1e-3)/base, fit = 0.8*($("scroller").clientWidth || 300)/Math.max(t1 - t0, 1e-3)/base;
+  // d'abord montrer tout le groupe (il se scinde en groupes plus petits), puis, quand il tient déjà dans la vue, séparer
+  const z0 = S.zoom, z = Math.min(zMax(), fit > z0*1.3 ? Math.min(fit, need*1.5) : need);
+  zoomTo(z, (t0 + t1)/2);
+  // zoom sans effet, ou zoom maximal atteint sans les séparer : liste à choisir
+  if(z <= z0*1.05 || (need > zMax() && z >= zMax())){ showGroupPop(list, grpBtn(a)); return; }
+  const f = $("mlayer").querySelector(`.mh[data-id="${list[0].id}"]`) || grpBtn(a); if(f) f.focus();
+}
+/* bouton du groupe qui contient la pastille d'indice a, après un nouveau rendu */
+function grpBtn(a){ return [...$("mlayer").querySelectorAll(".mh.grp")].find(b => { const r = b.dataset.grp.split("-"); return +r[0] <= a && a <= +r[1]; }) || null; }
+function showGroupPop(list, btn){
+  const all = sorted(), pop = $("mhPop");
+  pop.innerHTML = list.map(m => { const n = all.indexOf(m) + 1;
+    return `<button type="button" role="menuitem" data-id="${m.id}"><span class="n${isSens(m) ? " sens" : ""}">${n}</span><span>${esc(label(m))}<small>${kindName(m)}, ${clockAbs(m.at)}${m.to != null ? `, ${len(m.to - m.at)}` : ""}${isSens(m) ? ", sensible" : ""}</small></span></button>`; }).join("");
+  pop.hidden = false; MHPOP.btn = btn || null;
+  if(btn) btn.setAttribute("aria-expanded", "true");
+  pop.firstElementChild.focus();
+}
+const MHPOP = {btn:null};
+function hideGroupPop(focusBtn){
+  const pop = $("mhPop"); if(pop.hidden) return;
+  pop.hidden = true;
+  const b = MHPOP.btn && document.contains(MHPOP.btn) ? MHPOP.btn : null; MHPOP.btn = null;
+  if(b){ b.setAttribute("aria-expanded", "false"); if(focusBtn) b.focus(); }
+}
+/* pastille d'un marqueur : y aller, le viser (ses poignées passent devant), zoomer si le passage est trop étroit
+   pour régler ses bords (2 x 44 px), puis ouvrir sa fiche */
+function pickMarker(m){
+  hideGroupPop();
+  TL.sel = m.id;
+  seek(m.at - S.base, false);
+  const p = pps(), w = m.to != null ? (m.to - m.at)*p : 0;
+  if(m.to != null && w < 2*MH_GAP){
+    const base = ($("scroller").clientWidth || 300)/S.dur;
+    zoomTo(0.45*($("scroller").clientWidth || 300)/Math.max(m.to - m.at, 1)/base, (m.at + m.to)/2 - S.base);
+  }
+  renderMarkers();
+  openSheet(m, false);
 }
 let inWinKey = "";
 /* marqueur que l'on vient de poser (S.fresh = {id, t, named}) : le bandeau propose ses noms courants pendant 20 s,
@@ -2560,9 +2705,10 @@ document.addEventListener("pointerdown", e => { if(!$("spdPop").hidden && !e.tar
 })();
 $("r1").onclick = () => { hidePop(); setRate(1); };
 $("zIn").onclick = () => { setZoom(S.zoom*2); };
-$("zOut").onclick = () => { setZoom(S.zoom/2); };
+/* - après un zoom automatique (groupe de pastilles, passage étroit) : retour direct au zoom d'avant */
+$("zOut").onclick = () => { setZoom(TL.back != null && TL.auto === S.zoom ? TL.back : S.zoom/2); };
 function setZoom(z){
-  z = clamp(z, 1, 64); if(z === S.zoom) return;
+  z = clamp(z, 1, zMax()); TL.back = null; TL.auto = 0; hideGroupPop(); if(z === S.zoom) return;
   S.zoom = z; renderTimeline();
   const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
 }
@@ -2597,9 +2743,9 @@ $("scroller").addEventListener("pointermove", e => {
   if(pinch.raf) return;
   pinch.raf = requestAnimationFrame(() => {
     pinch.raf = 0;
-    const [a, b] = [...pinch.pts.values()], z = Math.round(clamp(pinch.z0*Math.abs(a - b)/pinch.d0, 1, 64)*100)/100;
+    const [a, b] = [...pinch.pts.values()], z = Math.round(clamp(pinch.z0*Math.abs(a - b)/pinch.d0, 1, zMax())*100)/100;
     if(Math.abs(z - S.zoom) < 0.02) return;
-    S.zoom = z; renderTimeline();
+    S.zoom = z; TL.back = null; TL.auto = 0; renderTimeline();
     const sc = $("scroller"); sc.scrollLeft = Math.max(0, pinch.t0*pps() - ((a + b)/2 - sc.getBoundingClientRect().left));
   });
 });
@@ -2663,16 +2809,33 @@ $("lanes").addEventListener("pointerleave", () => { $("hov").hidden = true; });
 
 $("mlayer").addEventListener("click", e => {
   const b = e.target.closest(".mh"); if(!b) return;
-  const m = S.markers.find(x => x.id === b.dataset.id); if(!m) return;
-  seek(m.at - S.base, false); openSheet(m, false);
+  if(b.dataset.grp){ const r = b.dataset.grp.split("-"); openGroup(+r[0], +r[1]); return; }
+  const m = S.markers.find(x => x.id === b.dataset.id); if(m) pickMarker(m);
 });
+$("mhPop").addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]"); if(!b) return;
+  const m = S.markers.find(x => x.id === b.dataset.id); if(m) pickMarker(m);
+});
+$("mhPop").addEventListener("keydown", e => {
+  const items = [...$("mhPop").querySelectorAll("button")], i = items.indexOf(document.activeElement);
+  let j = -1;
+  if(e.key === "ArrowDown") j = (i + 1) % items.length;
+  else if(e.key === "ArrowUp") j = (i - 1 + items.length) % items.length;
+  else if(e.key === "Home") j = 0;
+  else if(e.key === "End") j = items.length - 1;
+  else if(e.key === "Escape" || e.key === "Tab"){ e.preventDefault(); e.stopPropagation(); hideGroupPop(true); return; }
+  else if(e.key === "Enter" || e.key === " "){ e.stopPropagation(); return; }
+  else return;
+  e.preventDefault(); e.stopPropagation(); items[j].focus();
+});
+document.addEventListener("pointerdown", e => { if(!$("mhPop").hidden && !e.target.closest("#mhPop,.mh.grp")) hideGroupPop(); });
 $("mlayer").addEventListener("pointerdown", e => { if(e.target.closest(".mh")) e.stopPropagation(); });
 let edrag = null;
 $("mlayer").addEventListener("pointerdown", e => {
   const g = e.target.closest(".eg"); if(!g) return;
   e.stopPropagation(); e.preventDefault();
   const m = S.markers.find(x => x.id === g.dataset.id); if(!m) return;
-  v.pause(); g.setPointerCapture(e.pointerId);
+  v.pause(); g.setPointerCapture(e.pointerId); TL.sel = m.id;
   edrag = {m:m, edge:g.dataset.edge, old:{at:m.at, to:m.to}, band:g.parentNode, t:S.t};
 });
 $("mlayer").addEventListener("pointermove", e => {
@@ -2685,7 +2848,7 @@ $("mlayer").addEventListener("pointermove", e => {
   if(edrag.edge === "l") m.at = Math.min(abs, m.to - 1); else m.to = Math.max(abs, m.at + 1);
   t = (edrag.edge === "l" ? m.at : m.to) - S.base;edrag.t = t;
   const b = edrag.band;b.style.left = `${(m.at - S.base)*p}px`;b.style.width = `${Math.max(3, (m.to - m.at)*p)}px`;
-  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p)}px`;
+  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p, h.offsetWidth)}px`;
   S.t = t;
   const th = thumbAt(track(), t);
   if(th) showPrev(th); else hidePrev();
@@ -2769,12 +2932,14 @@ $("sideList").addEventListener("click", e => {
 /* ---------- planche ----------
    Grille d'une vignette par intervalle sur la piste active, dessinée à la demande (IntersectionObserver). */
 const BOARD = {step:0, vis:new Set(), obs:null};
-const BSTEPS = [10,30,60,300], BLABELS = ["10 s","30 s","1 min","5 min"];
+const BSTEPS = [10,30,60,300];
+const BSTEP_OPTS = ["Une toutes les 10 s","Une toutes les 30 s","Une par minute","Une toutes les 5 min"];
 function renderBoard(){
   const tr = track(); if(!tr) return;
-  $("bTracks").innerHTML = S.tracks.map((t, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`).join("");
+  $("bTracks").innerHTML = S.tracks.map((t, i) => `<option value="${i}"${i===S.active ? " selected" : ""}>${esc(t.name)}</option>`).join("");
+  $("bTracks").parentNode.hidden = S.tracks.length < 2;
   if(!BOARD.step){ BOARD.step = BSTEPS.find(x => S.dur/x <= 240) || 300; }
-  chipRow($("bStep"), BLABELS, (t, i) => BSTEPS[i] === BOARD.step);
+  $("bStep").innerHTML = BSTEPS.map((x, i) => `<option value="${x}"${x === BOARD.step ? " selected" : ""}>${BSTEP_OPTS[i]}</option>`).join("");
   const tiles = [], st = BOARD.step;
   for(let t = 0; t < S.dur; t += st){
     const c = clipAt(tr, t);
@@ -2782,13 +2947,17 @@ function renderBoard(){
     if(c) tt = t; else { const n = tr.clips.find(x => x.ok && x.s > t && x.s < t + st); if(n) tt = n.s + 0.05; }
     if(tt != null) tiles.push(tt);
   }
+  $("bCount").textContent = tiles.length ? `${tiles.length} vignette${tiles.length > 1 ? "s" : ""}` : "";
   const list = sorted();
   $("bGrid").innerHTML = tiles.map(tt => {
-    let b = "";
+    const ks = [];
     let say = "";
-    list.forEach((m, k) => { const a = m.at - S.base, z = m.to != null ? m.to - S.base : a; if(z >= tt - 0.01 && a < tt + st){ b += `<b class="${isSens(m)?"sens":""}">${k+1}</b>`; say += `, marqueur ${k+1}${isSens(m) ? " sensible" : ""}`; } });
+    list.forEach((m, k) => { const a = m.at - S.base, z = m.to != null ? m.to - S.base : a; if(z >= tt - 0.01 && a < tt + st){ ks.push(k); say += `, marqueur ${k+1}${isSens(m) ? " sensible" : ""}`; } });
+    // trois numéros au plus, les marqueurs sensibles d'abord ; « +n » pour le reste (tous restent dans l'étiquette vocale)
+    const shown = ks.filter(k => isSens(list[k])).concat(ks.filter(k => !isSens(list[k]))).slice(0, ks.length > 3 ? 2 : 3).sort((x, y) => x - y);
+    const b = shown.map(k => `<b class="${isSens(list[k]) ? "sens" : ""}">${k+1}</b>`).join("") + (ks.length > shown.length ? `<b class="more">+${ks.length - shown.length}</b>` : "");
     const ck = clockAbs(S.base+tt);
-    return `<div class="tile" data-t="${tt}"><button type="button" class="tgo" aria-label="Voir à ${ck}${say}"><canvas width="192" height="108"></canvas><span class="badges" aria-hidden="true">${b}</span></button><div class="tbar"><span>${ck}</span><button type="button" class="btn small ghost" data-mark="${tt}" aria-label="Marquer un repère à ${ck}">Marquer</button></div></div>`;
+    return `<div class="tile" data-t="${tt}"><button type="button" class="tgo" aria-label="Voir à ${ck}${say}"><canvas width="192" height="108"></canvas><span class="badges" aria-hidden="true">${b}</span><span class="tck" aria-hidden="true">${ck}</span></button><button type="button" class="tmk" data-mark="${tt}" aria-label="Marquer un repère à ${ck}" title="Poser un repère à ${ck}"><span aria-hidden="true">+ Repère</span></button></div>`;
   }).join("") || '<p class="emptylist">Aucune image sur cette piste.</p>';
   BOARD.vis.clear();
   if(BOARD.obs) BOARD.obs.disconnect();
@@ -2806,8 +2975,8 @@ function drawTile(el){
   drawThumb(ctx, th, (192-dw)/2, (108-dh)/2, dw, dh); el.dataset.ok = "1";
 }
 function refreshBoard(){ if($("board").hidden) return; BOARD.vis.forEach(drawTile); }
-$("bTracks").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; S.active = +b.dataset.i; S.cur = null; seek(S.t, false); renderBoard(); });
-$("bStep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; BOARD.step = BSTEPS[+b.dataset.k]; renderBoard(); });
+$("bTracks").addEventListener("change", e => { S.active = +e.target.value; S.cur = null; seek(S.t, false); renderBoard(); });
+$("bStep").addEventListener("change", e => { BOARD.step = +e.target.value; renderBoard(); });
 $("bGrid").addEventListener("click", e => {
   const mk = e.target.closest("[data-mark]"), tile = e.target.closest(".tile"); if(!tile) return;
   const t = +tile.dataset.t;
