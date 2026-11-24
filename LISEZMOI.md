@@ -1,8 +1,8 @@
 ---
 titre: Dérushage drone ESAM - installation sur le PC de traitement
 statut: brouillon
-version: 0.17
-date_maj: 2026-11-23
+version: 0.18
+date_maj: 2026-11-24
 ---
 
 # Dérushage drone ESAM - installation sur le PC de traitement
@@ -99,6 +99,7 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 | `.derushage/etat-compil.json` | Marqueurs posés sur une vidéo compilée rouverte pour en extraire des morceaux (à part de ceux des rushs) |
 | `ESAM_Reel_<date>_<mission>.mp4` | Réel vertical 1080 x 1920 (onglet Réel) |
 | `ESAM_Story_<date>_<mission>_1sur2.mp4`... | Story découpée en morceaux de 60 s maximum |
+| `ESAM_LinkedIn_<date>_<mission>.mp4`, `..._carre.mp4` | Vidéo LinkedIn 1080 x 1350 (4:5) ou 1080 x 1080 (carré) |
 | `.derushage/musique.mp3` | Musique choisie pour le réel |
 | `ESAM_Compilation_<date>_<mission>_chapitres.txt` | Liste des chapitres au format YouTube (à coller dans la description) |
 
@@ -148,9 +149,15 @@ Pour reprendre quelques moments sans reparcourir tous les rushs, repartez de la 
 
 Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans le Sommaire. L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
 
-## Réel et story (onglet Réel)
+## Réel, story et vidéo LinkedIn (onglet Réel)
 
-L'onglet Réel monte une vidéo verticale 1080 x 1920 pour Instagram et Facebook à partir des passages marqués.
+L'onglet Réel monte une vidéo courte à partir des passages marqués. « Format de la vidéo », en tête du montage, choisit sa forme :
+
+- **Réel 9:16** (1080 x 1920) : réel ou story pour Instagram et Facebook ;
+- **LinkedIn 4:5** (1080 x 1350) : la plus grande place dans le fil LinkedIn sur téléphone ;
+- **LinkedIn carré 1:1** (1080 x 1080) : s'affiche en entier sur téléphone comme sur ordinateur.
+
+Le cadre bleu du cadrage et l'aperçu prennent la forme choisie ; le montage, le cadrage, les retouches et l'habillage sont les mêmes pour les trois formats, on peut donc fabriquer le réel puis la vidéo LinkedIn sans rien refaire. Après un changement de format, vérifiez dans l'aperçu la place du titre et du logo. Une vidéo produite par l'outil n'a pas de sous-titres : ne joignez jamais le fichier `.commentaires-ESAM.srt` à un post, il contient les commentaires internes.
 
 1. **Montage** : « Ajouter des passages » liste les marqueurs. Chaque passage ajouté reprend le passage du marqueur (6 s autour d'un repère), dans l'ordre chronologique ; les flèches changent l'ordre, la croix le retire. « Ajouter des photos » propose les photos JPEG : en mode PC, celles du dossier de l'intervention et de son sous-dossier `Photos` ; en mode navigateur, celles choisies avec les vidéos, trouvées dans le dossier des rushs ou ajoutées par « Choisir des photos JPEG ». Une photo dure 2 à 8 s (4 s par défaut), avec un zoom lent qu'on peut couper, et se cadre comme un passage.
 2. **Passage** (cadrage) : touchez un passage, ou « Cadrer » dans le message qui suit un ajout. Sur téléphone, l'onglet se parcourt par trois volets : Montage, Passage, Habillage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra, la vitesse dans le réel (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
@@ -158,7 +165,7 @@ L'onglet Réel monte une vidéo verticale 1080 x 1920 pour Instagram et Facebook
 3. **Habillage** : titre d'accroche (3, 5 ou 8 s, ou tout le réel), logo ESAM (cartouche avec le nom, logo seul cerclé de blanc, ou aucun), carton de fin ESAM (logo, texte, site), musique (envoyée sur le PC en mode PC, avec le moment où elle démarre, fondu de fin automatique).
 4. **Aperçu du réel** : lecture du montage complet en vertical, sur une version allégée des vidéos, avec textes et musique. La liste « Sur l'image », sous l'aperçu, donne tout ce qui est posé sur la vidéo (titre, logo, textes des passages, éléments ajoutés) : touchez-en un, dans la liste ou sur l'image, pour l'amener à l'écran et le sélectionner. Glissez-le pour le déplacer ; tirez le rond bleu, la molette ou le curseur « Taille » pour changer sa taille ; choisissez sa couleur (blanc, jaune, bleu, rouge, noir) et, pour un texte, avec ou sans bandeau. « Remettre à sa place » revient à la position d'origine. Les boutons « Placer, taille et couleur » (Habillage, texte d'un passage) y mènent aussi.
    **Textes libres et formes** : « + Texte », « + Flèche », « + Cercle », « + Cadre » ajoutent un élément au moment affiché dans l'aperçu. Réglez sa place, sa taille, sa couleur, son orientation (formes), son début (« Commencer à ») et sa durée (2 à 8 s ou jusqu'à la fin). Les éléments suivent le temps du réel : si vous changez le montage, revérifiez leur moment.
-5. **Créer le réel** ou **Créer la story** : le PC calcule à partir des rushs d'origine. Un passage marqué sensible (visage, plaque, animal blessé, lieu) porte une pastille jaune dans le montage ; s'il n'a aucun flou, un rappel s'affiche au-dessus des boutons. Le rappel n'empêche pas de créer la vidéo. La story est découpée en morceaux de 60 s maximum, de préférence entre deux passages.
+5. **Créer le réel** ou **Créer la story** (en 9:16), **Créer la vidéo LinkedIn** (en 4:5 ou 1:1) : le PC calcule à partir des rushs d'origine. Un passage marqué sensible (visage, plaque, animal blessé, lieu) porte une pastille jaune dans le montage ; s'il n'a aucun flou, un rappel s'affiche au-dessus des boutons. Le rappel n'empêche pas de créer la vidéo. La story est découpée en morceaux de 60 s maximum, de préférence entre deux passages.
 
 Par défaut, les textes et le logo sont placés à l'écart du bas de l'image et du bord droit, où Instagram affiche la légende et ses boutons. Le réglage du réel est enregistré avec la fiche. Musique : uniquement une musique libre de droits ou dont l'ESAM a les droits ; sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.
 
@@ -187,6 +194,7 @@ Le bandeau indique toujours la caméra réellement compilée (« compilée en zo
 
 | Version | Date | Changement |
 |---|---|---|
+| 0.18 | 2026-11-24 | Onglet Réel : format « LinkedIn 4:5 » ou « LinkedIn carré 1:1 » en plus du réel 9:16, avec le même montage, cadrage et habillage ; bouton « Créer la vidéo LinkedIn ». |
 | 0.17 | 2026-11-23 | Retouches d'un passage (bouton « Retoucher ») : flous ovales ou rectangles, doux ou pixelisés, qui suivent un visage ou une plaque (suivi automatique ou au doigt) ; flèches et cercles « au crayon » qui suivent l'animal ; ralenti et accéléré à partir d'un instant. Elles valent pour la vidéo compilée, les extraits et le réel. Extraits bruts : habillage « Aucun » (ni carton, ni heure, ni logo), en une vidéo ou un fichier par passage, choisi d'office quand on repart d'une vidéo compilée ; en mode PC, la vidéo compilée d'une intervention se rouvre depuis la liste pour en extraire des morceaux. Les messages s'affichent aussi par-dessus un dialogue ouvert. |
 | 0.16 | 2026-11-22 | Lecteur : l'image ne reste plus figée sur une vignette après un glissement sur la règle ou sur le bord d'un passage (l'aperçu se referme toujours, et il occupe la même taille que la vidéo) ; après « Voir » un passage, un saut plus loin ne met plus la lecture en pause ; après une coupure de connexion, « Lire » reprend la vidéo. Pistes : « Écran » passe en première ligne (la caméra choisie par défaut pour la vidéo compilée et le réel ne change pas). |
 | 0.15 | 2026-11-22 | Ergonomie revue de bout en bout. Sécurité : supprimer un marqueur s'annule (le passage revient aussi dans le réel) ; un passage sensible est rappelé en jaune avant de créer un réel ou une vidéo ; avertissement si l'on ferme l'onglet pendant un calcul dans le navigateur. Téléphone : fiche de marqueur plus courte avec Enregistrer toujours visible, boutons et pistes qui ne bougent plus pendant la lecture, paysage utilisable, cibles de 44 px, plus de zoom automatique à la saisie. Réel : volets Montage, Passage, Habillage, « Cadrer » après un ajout, titre qui ne recouvre plus le cartouche ESAM, nom du fichier produit en fin de calcul. Sommaire remis d'aplomb et en deux colonnes sur PC ; retour à la liste des interventions par le logo ; aide dans l'appli (bouton Aide) ; filtre dans la liste des interventions. Clavier, focus et contrastes lisibles au soleil ; thème automatique, clair ou sombre (Plus d'options). Vocabulaire unifié : intervention, passage, repère. |

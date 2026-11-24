@@ -33,6 +33,9 @@ def test_crop_box():
     assert server.crop_box(1920, 1080) == (606, 1080, 1314, 0)       # 16:9 : cadre plein hauteur, course horizontale
     assert server.crop_box(1080, 1920) == (1080, 1920, 0, 0)        # déjà vertical
     assert server.crop_box(1000, 1000) == (562, 1000, 438, 0)        # carré : cadre plein hauteur, course de 438 px
+    assert server.crop_box(1920, 1080, 1080, 1350) == (864, 1080, 1056, 0)   # LinkedIn 4:5 dans du 16:9
+    assert server.crop_box(1920, 1080, 1080, 1080) == (1080, 1080, 840, 0)   # LinkedIn carré dans du 16:9
+    assert server.crop_box(1080, 1920, 1080, 1350) == (1080, 1350, 0, 285)   # 4:5 dans une vidéo de téléphone : cadre centré
 
 def test_key_expr():
     assert server.key_expr([], "x") == "(0.5000)"
@@ -56,7 +59,7 @@ def test_sources():
     assert server.is_source("DJI_20260912143005_0001_W.MP4") and not server.is_source("ESAM_Compilation_2026-09-12_Test.mp4")
     assert not server.is_source("ESAM_Extraits_2026-09-12_Test_01_Bonne_piste.mp4") and not server.is_source("notes.txt")
     assert server.is_source("ESAM_Compilation_2026-09-12_Test.mp4", "compil") and server.is_source("ESAM_Extraits_x.mp4", "compil")
-    assert not server.is_source("ESAM_Reel_2026-09-12_Test.mp4", "compil") and not server.is_source("DJI_20260912143005_0001_W.MP4", "compil")
+    assert not server.is_source("ESAM_Reel_2026-09-12_Test.mp4", "compil") and not server.is_source("ESAM_LinkedIn_2026-09-12_Test_carre.mp4") and not server.is_source("DJI_20260912143005_0001_W.MP4", "compil")
     d = TMP / "rushs" / "2026-09-12 Test"; d.mkdir(parents=True, exist_ok=True)
     assert server.etat_file(d).name == "etat.json" and server.etat_file(d, "compil").name == "etat-compil.json"
 
@@ -104,6 +107,22 @@ def test_miroir_lissage():
             for t in temps:
                 js = pg.evaluate("([k, t, f]) => window.ESAM_TEST.keyAt(k, t, f)", [keys, t, f])
                 assert abs(js - ffexpr(e, t)) < 0.0006, (f, t, js, ffexpr(e, t))
+        b.close()
+
+def test_miroir_cadre():
+    """rCrop (index.html) et crop_box (server.py) donnent le même cadre pour chaque format (à l'arrondi pair près)."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  (Playwright absent : miroir rCrop non vérifié)"); return
+    with sync_playwright() as p:
+        b = p.chromium.launch(); pg = b.new_page()
+        pg.goto((RACINE / "index.html").as_uri())
+        for fmt, (rw, rh) in server.REEL_FMTS.items():
+            for sw, sh in ((1920, 1080), (3840, 2160), (640, 512), (1080, 1920), (1000, 1000)):
+                js = pg.evaluate("([f, w, h]) => window.ESAM_TEST.crop(f, w, h)", [fmt, sw, sh])
+                cw, ch, course, y = server.crop_box(sw, sh, rw, rh)
+                assert abs(js["cw"] - cw) <= 2 and abs(js["ch"] - ch) <= 2 and abs(js["free"] - course) <= 2 and abs(js["sy"] - y) <= 1, (fmt, sw, sh, js, (cw, ch, course, y))
         b.close()
 
 def test_miroir_story_cuts():

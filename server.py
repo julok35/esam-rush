@@ -13,7 +13,7 @@ from datetime import datetime
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-VERSION = "0.17"
+VERSION = "0.18"
 HERE = Path(__file__).resolve().parent
 CFG_PATH = Path(os.environ.get("ESAM_CONFIG") or HERE / "config.json")  # ESAM_CONFIG : tests
 if not CFG_PATH.exists() and (HERE / "config.exemple.json").exists():
@@ -153,7 +153,7 @@ def folder(name):
     if not p.is_dir(): raise ValueError("dossier introuvable : " + name)
     return p
 
-PROD = ("ESAM_Compilation", "ESAM_Extraits", "ESAM_Reel", "ESAM_Story")     # vidéos produites par l'outil : jamais des rushs
+PROD = ("ESAM_Compilation", "ESAM_Extraits", "ESAM_Reel", "ESAM_Story", "ESAM_LinkedIn")     # vidéos produites par l'outil : jamais des rushs
 COMPIL = ("ESAM_Compilation", "ESAM_Extraits")                             # celles dont on peut tirer des extraits (source « compil »)
 
 def is_source(name, src=None):
@@ -549,17 +549,20 @@ def do_video(job):
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
-# ---------------------------------------------------------------- réel et story (1080 x 1920)
+# ---------------------------------------------------------------- réel et story (1080 x 1920), vidéo LinkedIn (4:5 ou carré)
 RW, RH = 1080, 1920
+# formats de sortie de l'onglet Réel : largeur, hauteur (miroir de RFMTS dans index.html) ; la story n'existe qu'en 9:16
+REEL_FMTS = {"reel": (1080, 1920), "li": (1080, 1350), "carre": (1080, 1080)}
 PHOTO_ZOOM = 0.08      # zoom lent sur les photos : +8 % sur la durée de la photo
 MUSIC_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac"}
 
-def crop_box(w, h):
-    """Cadre 9:16 le plus grand possible dans l'image source : (largeur, hauteur, course horizontale, y)."""
-    if w / h > 9 / 16:
-        ch = h - h % 2; cw = int(ch * 9 / 16) // 2 * 2
+def crop_box(w, h, rw=9, rh=16):
+    """Cadre au format rw:rh (9:16 par défaut) le plus grand possible dans l'image source : (largeur, hauteur, course
+    horizontale, y). Miroir de rCrop dans index.html."""
+    if w * rh > h * rw:
+        ch = h - h % 2; cw = ch * rw // rh // 2 * 2
         return cw, ch, max(0, w - cw), (h - ch) // 2
-    cw = w - w % 2; ch = min(h, int(cw * 16 / 9)) // 2 * 2
+    cw = w - w % 2; ch = min(h, cw * rh // rw) // 2 * 2
     return cw, ch, 0, (h - ch) // 2
 
 def key_expr(keys, f, default=0.5):
@@ -665,9 +668,13 @@ def png_from(data, path):
     return path
 
 def do_reel(job):
-    """Calcul « reel » : passages recadrés en 1080 x 1920 avec flous et cadrage animés, photos, calques PNG, carton de fin, musique ; story découpée sans réencodage."""
+    """Calcul « reel » : passages recadrés au format choisi (1080 x 1920, ou 1080 x 1350 et 1080 x 1080 pour LinkedIn) avec
+    flous et cadrage animés, photos, calques PNG, carton de fin, musique ; story (9:16 seulement) découpée sans réencodage."""
     d = folder(job["dossier"]); pl = job["_payload"]
-    story = pl.get("mode") == "story"
+    fmt = pl.get("format") or "reel"
+    if fmt not in REEL_FMTS: raise ValueError("format inconnu : " + clean(str(fmt)))
+    RW, RH = REEL_FMTS[fmt]
+    story = pl.get("mode") == "story" and fmt == "reel"
     segs_in = pl.get("segments") or []
     if not segs_in: raise ValueError("aucun passage")
     srcs = {}
@@ -755,10 +762,10 @@ def do_reel(job):
                         fc = "[0:v]scale=%d:%d,setsar=1,fps=30[b]" % (RW, RH)
                 else:
                     info = srcs[pc["fichier"]]
-                    cw, ch, course, y = crop_box(info["w"], info["h"])
+                    cw, ch, course, y = crop_box(info["w"], info["h"], RW, RH)
                     bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
                     xe = x_expr(pc.get("cles"), course)
-                    # formes suivies : leur place dans l'image source, ramenée au cadre 9:16 qui se déplace
+                    # formes suivies : leur place dans l'image source, ramenée au cadre qui se déplace
                     sargs, sfc = shape_chain(pc.get("formes"), sprites, 1 + len(bargs) // 4,
                                              lambda e: "(%s*%d-(%s))*%.5f" % (e, info["w"], xe, RW / cw), lambda e: "(%s*%d-%d)*%.5f" % (e, info["h"], y, RH / ch), info["h"] * RH / ch)
                     fc = bfc + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1" % (cw, ch, xe, y, RW, RH)) + sfc + ",setpts=(PTS-STARTPTS)/%g,fps=30[b]" % vit
