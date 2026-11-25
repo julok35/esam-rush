@@ -5,7 +5,7 @@ Sans dépendance pour la partie serveur ; la comparaison storyCuts (index.html) 
 demande Playwright (pip install playwright ; playwright install chromium) et est sautée sinon.
 Le serveur est importé avec une configuration temporaire (variable ESAM_CONFIG) : config.json n'est pas touché.
 """
-import json, os, struct, sys, tempfile
+import json, os, shutil, struct, subprocess, sys, tempfile
 from pathlib import Path
 
 ICI = Path(__file__).resolve().parent; RACINE = ICI.parent
@@ -30,12 +30,45 @@ def test_folder_refuse_les_chemins():
         raise AssertionError("accepté : %r" % mauvais)
 
 def test_crop_box():
-    assert server.crop_box(1920, 1080) == (606, 1080, 1314, 0)       # 16:9 : cadre plein hauteur, course horizontale
+    # (largeur, hauteur, course horizontale, course verticale) ; zoom 1 : le plus grand cadre au format dans l'image
+    assert server.crop_box(1920, 1080) == (608, 1080, 1312, 0)       # 16:9 : cadre plein hauteur, course horizontale
     assert server.crop_box(1080, 1920) == (1080, 1920, 0, 0)        # déjà vertical
     assert server.crop_box(1000, 1000) == (562, 1000, 438, 0)        # carré : cadre plein hauteur, course de 438 px
     assert server.crop_box(1920, 1080, 1080, 1350) == (864, 1080, 1056, 0)   # LinkedIn 4:5 dans du 16:9
     assert server.crop_box(1920, 1080, 1080, 1080) == (1080, 1080, 840, 0)   # LinkedIn carré dans du 16:9
-    assert server.crop_box(1080, 1920, 1080, 1350) == (1080, 1350, 0, 285)   # 4:5 dans une vidéo de téléphone : cadre centré
+    assert server.crop_box(1080, 1920, 1080, 1350) == (1080, 1350, 0, 570)   # 4:5 dans une vidéo de téléphone : course verticale
+    # cadre libre : zoom (cadre plus petit, course dans les deux sens), image entière (cadre plus grand que l'image : course négative)
+    assert server.crop_box(1080, 1920, 1080, 1350, 2) == (540, 676, 540, 1244)
+    assert server.crop_box(1080, 1920, 1080, 1350, 9) == server.crop_box(1080, 1920, 1080, 1350, 4)      # zoom 4 au plus
+    assert server.crop_box(1920, 1080, 9, 16, 0) == (1920, 3414, 0, -2334)       # image entière d'un 16:9 en 9:16
+    assert server.crop_box(1080, 1920, 1080, 1080, 0) == (1920, 1920, -840, 0)   # image entière d'un téléphone en carré
+
+def test_frame_chain():
+    """Mise au format d'un morceau : un filtre que ffmpeg accepte dans les trois cas (zoom fixe, débord, zoom qui varie),
+    avec ou sans points d'avant le cadre libre ({t, x} seuls)."""
+    cas = [([{"t": 0, "x": 0.2}, {"t": 1, "x": 0.8}], "crop=w=608:h=1080"),
+           ([{"t": 0, "x": 0.5, "y": 0.2, "z": 1.5}], "crop=w="),
+           ([{"t": 0, "x": 0.5, "y": 0.5, "z": 0}], "overlay=x="),
+           ([{"t": 0, "x": 0.5, "y": 0.5, "z": 0.4}, {"t": 1, "x": 0.3, "y": 0.6, "z": 3}], "zoompan=")]
+    for cles, attendu in cas:
+        mise, fx, fy, hs = server.frame_chain(1920, 1080, cles, 1080, 1920, 1.5)
+        assert attendu in mise, (cles, mise[:200])
+        assert hs > 0 and "*" in fx("(0.5)") and "*" in fy("(0.5)")
+    mise = server.frame_chain(1920, 1080, [], 1080, 1920, 1)[0]
+    assert mise.startswith("crop=w=608:h=1080:x='(0.5000)*(1312)':y='0'"), mise       # sans cadrage : cadre centré, comme avant
+    if not shutil.which("ffmpeg"):
+        print("  (ffmpeg absent : filtres de cadrage non lancés)"); return
+    src = TMP / "portrait.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=180x320:rate=30:duration=1.5", "-pix_fmt", "yuv420p", str(src)], check=True)
+    for fmt in ("li", "carre"):
+        rw, rh = server.REEL_FMTS[fmt]
+        for cles, _ in cas:
+            mise, fx, fy, hs = server.frame_chain(180, 320, cles, rw, rh, 1.5)
+            out = TMP / "cadre.mp4"
+            r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-filter_complex", "[0:v]" + mise + ",setpts=PTS-STARTPTS,fps=30[v]",
+                                "-map", "[v]", "-t", "1.5", "-c:v", "libx264", "-preset", "ultrafast", str(out)], capture_output=True, text=True)
+            assert r.returncode == 0, (fmt, cles, r.stderr[-500:])
+            i = server.probe(out); assert (i["w"], i["h"]) == (rw, rh), (fmt, cles, i)
 
 def test_key_expr():
     assert server.key_expr([], "x") == "(0.5000)"
@@ -91,6 +124,14 @@ def test_jpeg_orientation():
     p = TMP / "sans.jpg"; p.write_bytes(b"\xff\xd8\xff\xda"); assert server.jpeg_orientation(p) == 1
     p = TMP / "pas.jpg"; p.write_bytes(b"PNG"); assert server.jpeg_orientation(p) == 1
 
+def test_key_at():
+    """key_at (lissage côté serveur, pour la toile du zoom) suit key_expr ; un point sans le champ prend la valeur par défaut."""
+    keys = [{"t": 0.5, "x": 0.2, "z": 1}, {"t": 2.0, "x": 0.9, "z": 3}, {"t": 3.0, "x": 0.4}]
+    for t in (0, 0.5, 1.1, 2.0, 2.4, 3.0, 5):
+        assert abs(server.key_at(keys, t, "x") - ffexpr(server.key_expr(keys, "x"), t)) < 0.0006, t
+        assert abs(server.key_at(keys, t, "z", 1) - ffexpr(server.key_expr(keys, "z", 1, "t", 0, 4), t)) < 0.0006, t
+    assert "it-(" in server.key_expr(keys, "x", 0.5, "it")
+
 def test_miroir_lissage():
     """rKeyAt (index.html) et key_expr (server.py) donnent la même position entre les points de suivi."""
     try:
@@ -110,7 +151,8 @@ def test_miroir_lissage():
         b.close()
 
 def test_miroir_cadre():
-    """rCrop (index.html) et crop_box (server.py) donnent le même cadre pour chaque format (à l'arrondi pair près)."""
+    """rCrop (index.html) et crop_box (server.py) donnent le même cadre pour chaque format (à l'arrondi pair près),
+    au zoom 1 comme en cadre libre : vidéo de téléphone en portrait, zoom, image entière, place verticale."""
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -120,9 +162,12 @@ def test_miroir_cadre():
         pg.goto((RACINE / "index.html").as_uri())
         for fmt, (rw, rh) in server.REEL_FMTS.items():
             for sw, sh in ((1920, 1080), (3840, 2160), (640, 512), (1080, 1920), (1000, 1000)):
-                js = pg.evaluate("([f, w, h]) => window.ESAM_TEST.crop(f, w, h)", [fmt, sw, sh])
-                cw, ch, course, y = server.crop_box(sw, sh, rw, rh)
-                assert abs(js["cw"] - cw) <= 2 and abs(js["ch"] - ch) <= 2 and abs(js["free"] - course) <= 2 and abs(js["sy"] - y) <= 1, (fmt, sw, sh, js, (cw, ch, course, y))
+                for x, y, z in ((1, 0.5, 1), (0.3, 0.2, 2.5), (0.5, 0.9, 1.4), (0.5, 0.5, 0), (0.1, 0.7, 0.6), (0, 1, 9)):
+                    js = pg.evaluate("([f, w, h, x, y, z]) => window.ESAM_TEST.crop(f, w, h, x, y, z)", [fmt, sw, sh, x, y, z])
+                    cw, ch, cx, cy = server.crop_box(sw, sh, rw, rh, z)
+                    ok = (abs(js["cw"] - cw) <= 2 and abs(js["ch"] - ch) <= 2 and abs(js["free"] - cx) <= 2 and abs(js["freeY"] - cy) <= 2
+                          and abs(js["sx"] - cx * x) <= 2 and abs(js["sy"] - cy * y) <= 2)
+                    assert ok, (fmt, sw, sh, x, y, z, js, (cw, ch, cx, cy))
         b.close()
 
 def test_miroir_story_cuts():

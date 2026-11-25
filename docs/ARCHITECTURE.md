@@ -55,7 +55,7 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
-| réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`). Sur téléphone, trois volets (`#reel[data-pane]`) liés au mode de l'image (`REEL.mode`) : Montage, Passage = cadrage, Habillage = titre puis aperçu ; `rPane` règle le mode, `rSetMode` le volet | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote`, `renderReel`, `rPane`, `rSetMode` |
+| réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`). Cadre libre (`rCam`, `rCamPut`, `rCrop`, fond « image entière » `rBackdrop`), plan dupliqué (`rDuplicate`), gabarit par format (`rGab`, `rGabGo`, localStorage `esam-gabarit`), grille et aimantation de l'aperçu (`rDrawGrid`, `rSnap`, `RSAFE`, guides jamais rendus dans la vidéo). Sur téléphone, trois volets (`#reel[data-pane]`) liés au mode de l'image (`REEL.mode`) : Montage, Passage = cadrage, Habillage = titre puis aperçu ; `rPane` règle le mode, `rSetMode` le volet | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote`, `renderReel`, `rPane`, `rSetMode` |
 | éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
 
 Conventions du script :
@@ -138,21 +138,28 @@ Les retouches appartiennent au passage, pas à une vidéo produite : la vidéo c
 ```js
 {fmt,                // format de sortie : "reel" (9:16, réel ou story), "li" (4:5) ou "carre" (1:1), voir RFMTS
  items: [            // montage, dans l'ordre
-   {id,              // id du marqueur ; "ph..." pour une photo
+   {id,              // identifiant de l'élément ("r..." ; "ph..." pour une photo ; id du marqueur pour un élément d'avant la v0.22)
+    mk,              // id du marqueur (passage) ; un passage peut figurer plusieurs fois (plans dupliqués, rDuplicate)
     a, z,            // plage en secondes de timeline (passage)
     cam, vit,        // caméra, accéléré du réel 1 à 8 (multiplie les vitesses des retouches du passage)
-    keys: [{t, x}],  // cadrage : position horizontale du cadre (0 à 1) par instant, lissée (rKeyAt)
-    photo, dur, x, zoom,         // photo : chemin relatif, durée, cadrage, zoom lent
-    texte, tBox: {x, y, s, c, fond}, tDur,   // texte du passage, sa boîte, sa durée (0 = tout le passage)
+    keys: [{t, x, y, z}],  // cadrage par instant, lissé (rKeyAt, rCam) : place du cadre dans sa course (x, y de 0 à 1)
+                     //   et zoom z (1 : le plus grand cadre au format dans l'image ; jusqu'à 4 ; moins de 1 : le cadre déborde,
+                     //   jusqu'à « image entière », le reste du format reçoit l'image floutée). {t, x} seuls (réels plus anciens) : y 0,5, z 1
+    photo, dur, x, y, z, zoom,   // photo : chemin relatif, durée, cadrage (comme une clé), zoom lent
+    texte, tDur,     // texte du passage, sa durée (0 = tout le passage)
+    tPropre, tBox: {x, y, s, c, fond},   // place propre à ce passage ; sinon le texte prend r.texteBox
     flous: [{id, s, keys: [{t, x, y}]}]}],   // photo seulement : zones de flou, en fraction de l'image (passage vidéo : m.fx)
  titre, titreDur, titreBox: {x, y, s, c, haut},   // haut : y est le bord haut du titre (sinon son centre, réels plus anciens)
+ texteBox: {x, y, s, c, fond},                    // place commune des textes de passage
  elems: [{id, kind: "texte"|"fleche"|"cercle"|"cadre", a, d, x, y, s, rot, c, texte, fond}],  // temps du réel
  logo: {mode: "cartouche"|"logo"|"non", x, y, s},
  fin: {on, texte, sous},
  musique: {nom, fichier}, musDebut}
 ```
 
-Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de taille, `c` une couleur de `RCOLS`. `reelData()` complète les champs manquants, ce qui permet d'ajouter un réglage sans migration.
+Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de taille, `c` une couleur de `RCOLS`. `reelData()` complète les champs manquants, ce qui permet d'ajouter un réglage sans migration. Elle reprend aussi les réels plus anciens : `mk` pris dans `id`, `texteBox` prise du premier texte (les textes placés ailleurs gardent leur place, `tPropre`), clés de cadrage complétées (`y` 0,5, `z` 1).
+
+Les places par défaut (`rBoxDef`) sont celles du gabarit du format quand il existe : localStorage `esam-gabarit` = `{reel|li|carre: {titre, logo: {mode, x, y, s}, texte}}`, appliqué d'office à un nouveau réel et par « Appliquer le gabarit ».
 
 ### 3.5 Persistance
 
@@ -161,6 +168,8 @@ Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de
 | localStorage `esam-derush:<clé>` | `{markers, meta, offsets}` | à chaque `persist()` |
 | localStorage `esam-auteur` | auteur des commentaires | à la saisie |
 | localStorage `esam-theme` | thème choisi (`light` ou `dark`, absent : automatique) | au réglage (Plus d'options) |
+| localStorage `esam-gabarit` | gabarit du réel par format (places, tailles, couleurs du titre, du logo, des textes) | « Enregistrer comme gabarit » |
+| localStorage `esam-grille` | grille de l'aperçu du réel affichée (`1`) ou non | bouton « Grille » |
 | `.derushage/etat.json` (mode PC) | `{markers, meta, offsets}` | `persist()`, 0,7 s après la dernière modification |
 | `.derushage/etat-compil.json` (mode PC) | la même chose pour une vidéo compilée rouverte comme source (`SRVS = "compil"`), sans fiche | idem |
 | `ESAM_Derushage_<date>_<mission>.md` | fiche lisible + bloc `<!-- derushage-data {...} -->` | 1,5 s après la dernière modification (PC ou dossier ouvert) |
@@ -203,7 +212,7 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `GET /files/<dossier>/<chemin>` | | fichier des rushs (proxies, planches, musique), requêtes Range acceptées |
 | `POST /api/proxies` | `{d, src}` | le calcul créé ou déjà en cours (un par source) |
 | `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, habillage, separes, logo, ouverture: {image, duree}, sprites: {id: image}, passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [morceau]}]}` (images en data URL PNG). `habillage: false` : ni ouverture, ni cartons, ni logo ; `separes` : un fichier par passage | le calcul créé |
-| `POST /api/reel` | `{d, mode: "reel"|"story", format: "reel"|"li"|"carre", largeur, hauteur, nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x}]` (cadrage au format ; story seulement en 9:16) | le calcul créé |
+| `POST /api/reel` | `{d, mode: "reel"|"story", format: "reel"|"li"|"carre", largeur, hauteur, nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x, y, z}]` (cadrage au format, voir 3.4 ; `{t, x}` seuls acceptés : y 0,5, z 1 ; story seulement en 9:16) | le calcul créé |
 | `POST /api/annuler` | `{id}` | `{ok}` |
 | `POST /api/etat` | `{d, src, etat}` | `{ok}` |
 | `POST /api/fiche` | `{d, nom, md}` ; supprime les autres `ESAM_Derushage_*.md` du dossier | `{ok, fichier}` |
@@ -218,7 +227,7 @@ Un morceau est un extrait d'un fichier à vitesse constante, avec les retouches 
  "formes": [{"image": "<id de sprites>", "ref": 2160, "ax": 310.5, "ay": 120, "cles": [...], "debut": 0, "fin": null}]}
 ```
 
-Ordre des filtres ffmpeg d'un morceau : flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre 9:16), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
+Ordre des filtres ffmpeg d'un morceau : flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre du réel : `frame_chain`), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). `frame_chain` a trois cas : zoom constant et cadre dans l'image, `crop` qui suit x et y (le seul cas d'avant le cadre libre) ; zoom constant et cadre qui déborde, image réduite posée par `overlay` sur le fond flouté (`reel_backdrop`) ; zoom qui varie, `zoompan` (temps `it`) sur une toile au format qui contient tous les cadres du morceau (image sur fond transparent), posée sur le fond flouté. Dans ce dernier cas, la taille des formes suivies reste celle du début du morceau. Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
 
 Un calcul (`travaux.json`, 30 derniers conservés) :
 
@@ -262,7 +271,10 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 | `fxApply` (place d'une forme) | `shape_chain` et ses `fx`, `fy` | position et taille d'une forme dans l'image mise au format |
 | nom des extraits dans `runCompile` | `do_video`, fichiers séparés | `<base>_<NN>_<nom du passage>.mp4` |
 | `PROD_RE` | `PROD`, `COMPIL` | noms des vidéos produites par l'outil |
-| `rCrop` | `crop_box` | cadre au format de sortie dans l'image source |
+| `rCrop` | `crop_box` | cadre au format de sortie dans l'image source (place, zoom, image entière) |
+| `rKeyAt` | `key_at` | lissage des points, côté serveur pour la toile d'un zoom qui varie |
+| `rBackdrop` | `reel_backdrop` | fond « image entière » : image réduite au 1/8, floutée, assombrie |
+| `RZMAX` | `REEL_ZMAX` | zoom maximal du cadre |
 | `RFMTS` | `REEL_FMTS` | tailles des formats du réel et de la vidéo LinkedIn |
 | `buildSrt` | bloc SRT de `do_video` | commentaires internes en sous-titres |
 | `outName` | nettoyage des noms dans `do_video`, `do_reel` | noms des fichiers produits |
@@ -284,9 +296,9 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 
 | Commande | Ce qu'elle fait | Durée |
 |---|---|---|
-| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr`, `rCrop` / `crop_box` (Playwright sur `index.html` en `file://`) | 10 s |
+| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr` / `key_at`, `rCrop` / `crop_box` (portrait, zoom, image entière ; Playwright sur `index.html` en `file://`), filtres de `frame_chain` lancés dans ffmpeg | 15 s |
 | `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture | 1 min |
-| `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5, contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
+| `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5 (passage sur la vidéo de téléphone en portrait, cadre zoomé et remonté, plan dupliqué), contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
 | `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur ; en mode PC, flou suivi, formes, vitesses, vidéo compilée, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
 | `python tests/fabriquer_rushs.py DOSSIER [--vp9]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) | |
 | `python tests/fabriquer_longue.py DOSSIER` | intervention de 3 h sur 4 caméras, déjà préparée (planches seules), pour mesurer la mémoire | |
@@ -312,6 +324,7 @@ La mémoire restante est le cache des planches décodées, que le navigateur peu
 - Pas de son dans la vidéo compilée ; heure incrustée en mode navigateur seulement (elle figure sur les cartons en mode PC).
 - Suivi automatique : comparaison de motifs, sans reconnaissance de visage ; il décroche sur un sujet masqué ou une zone uniforme. Un ralenti répète les images (pas d'interpolation).
 - Les formes suivies n'ont pas de fondu d'apparition ; les éléments libres de l'aperçu du réel (`elems`) restent fixes à l'écran.
+- Réel en mode PC, zoom qui varie pendant un morceau : les formes suivies gardent la taille du début du morceau (dans le navigateur, elles suivent le zoom) ; au-delà d'un rapport de 10 entre le plus grand et le plus petit cadre d'un morceau, `zoompan` est limité à 10.
 - Lecture à x16 limitée par le débit montant de la connexion du PC.
 - Idée : télémétrie des `.SRT` du M30T (GPS, altitudes, focale) pour afficher altitude, vitesse et distance, avec incrustation optionnelle.
 - Question ouverte : durée d'affichage des commentaires internes dans le `.srt` (tout le passage ou quelques secondes).
