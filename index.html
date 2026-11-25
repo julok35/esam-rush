@@ -684,15 +684,28 @@ dialog.sheet.fx{max-width:1180px;height:96vh;height:96dvh;max-height:96vh;max-he
 .rbar .sp.lent{background:repeating-linear-gradient(90deg,var(--yellow) 0 3px,var(--onblue) 3px 6px)}
 /* dans les retouches, le toast se pose au-dessus du bouton Terminé : il ne masque pas l'image que l'on règle */
 #fx .toast{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+/* couleurs du passage : bloc repliable, état en résumé ; curseurs serrés */
+.fxcol{border-top:1px solid var(--line);padding-top:4px}
+.fxcol>summary{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-height:44px;cursor:pointer}
+.fxcol>summary::before{content:"";flex:none;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin:0 2px 0 4px}
+.fxcol[open]>summary::before{transform:rotate(45deg)}
+.fxcol .lbl{font-weight:700;font-size:13px;display:block}
+.fxcol>summary .lbl{display:inline;font-size:14px;margin:0}
+.fxcolsum{font-size:13px;font-weight:600;color:var(--muted)}
+.fxcol .hint{margin:2px 0 6px}
+.fxcolrow{margin:4px 0 6px}
+.fxcolrow .lbl{margin-bottom:0}
 .cmplist li{display:flex;align-items:center}
 .cmplist li label{flex:1;min-width:0}
 .cmplist li .btn{flex:none;margin-right:8px}
 .iv .ivx{grid-column:1 / -1}
 @media (min-width:1100px){
+  /* sur PC, le dialogue prend presque tout l'écran : l'image est limitée par la largeur de sa colonne, pas par la hauteur */
+  dialog.sheet.fx{max-width:min(1640px, calc(100vw - 32px))}
   .fxgrid{flex-direction:row;gap:24px}
   .fxmain{flex:1;min-width:0}
-  .fxside{flex:none;width:400px;border-top:0}
-  .fxstage canvas{max-height:66vh;max-height:66dvh}
+  .fxside{flex:none;width:380px;border-top:0}
+  .fxstage canvas{max-height:calc(96vh - 200px);max-height:calc(96dvh - 200px)}
 }
 /* ---------- fondations : focus, contrastes, cibles tactiles, thème ----------
    Règles transversales regroupées ici. Celles qui visent un composant d'une autre partie de la feuille
@@ -1662,7 +1675,7 @@ function migrateCams(){
   S.markers.forEach(m => {
     const t = ((m.at + (m.to != null ? m.to : m.at)) / 2) - S.base;
     m.cam = conv(m.cam, t);
-    if(m.fx) ["flous", "formes"].forEach(k => { (m.fx[k] || []).forEach(f => { f.cam = conv(f.cam, t); }); });
+    if(m.fx) ["flous", "formes", "couleurs"].forEach(k => { (m.fx[k] || []).forEach(f => { f.cam = conv(f.cam, t); }); });
   });
   ((S.meta.reel || {}).items || []).forEach(it => { if(it.cam && it.a != null) it.cam = conv(it.cam, (it.a + (it.z != null ? it.z : it.a)) / 2); });
 }
@@ -2261,7 +2274,7 @@ function renderSummary(){
     if(m.note) h += `<div class="note">Texte du carton : ${esc(m.note)}</div>`;
     h += `<label class="icom"><span class="vh">Commentaire interne ESAM du ${kindName(m).toLowerCase()} ${i+1} (sous-titre, jamais publié)</span><textarea class="field" rows="1" data-com="${m.id}" placeholder="Commentaire interne (jamais publié)">${esc(m.comment || "")}</textarea></label>`;
     h += '<div class="cams">';
-    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>`;
+    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse, couleurs">Retoucher</button>`;
     h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
   $("list").innerHTML = h;
@@ -3229,13 +3242,14 @@ async function captureLocal(tr, t){
 }
 $("cap").onclick = () => { v.pause(); captureAt(track(), S.t); };
 
-/* ---------- retouches d'un passage (flous suivis, flèches et cercles, vitesse) ----------
-   Les retouches appartiennent au passage (marqueur) : m.fx = {flous, formes, vits}. Flous et formes sont posés sur l'image
+/* ---------- retouches d'un passage (flous suivis, flèches et cercles, vitesse, couleurs) ----------
+   Les retouches appartiennent au passage (marqueur) : m.fx = {flous, formes, vits, couleurs}. Flous et formes sont posés sur l'image
    source d'une caméra (cam) et suivent leur sujet par des points {t, x, y} (t en secondes de timeline, x et y en fraction de
    l'image), lissés par rKeyAt. Toutes les vidéos tirées du passage les reçoivent : vidéo compilée, extraits, réel et story.
    fxApply() les dessine (aperçus et rendu navigateur), fxPayload() les décrit au PC, fxSplit() découpe un passage aux
-   changements de vitesse. L'éditeur (dialogue #fx, fxOpen) et le suivi automatique (fxTrackStart) sont plus bas. */
-const FX_SPEEDS = [0.25, 0.5, 1, 2, 4, 8], FX_REF = 2160, FX_NONE = {flous:[], formes:[], vits:[]};
+   changements de vitesse. Les couleurs (une par caméra) sont appliquées à l'image source avant les flous (fxColor).
+   L'éditeur (dialogue #fx, fxOpen) et le suivi automatique (fxTrackStart) sont plus bas. */
+const FX_SPEEDS = [0.25, 0.5, 1, 2, 4, 8], FX_REF = 2160, FX_NONE = {flous:[], formes:[], vits:[], couleurs:[]};
 /* les temps des retouches sont en secondes de timeline : fx.t0 garde l'heure absolue de l'origine (S.base) au moment où ils
    ont été écrits. Si l'origine change (un fichier plus ancien est ajouté, fiche reprise sur d'autres fichiers), ils sont
    recalés une fois : un flou ne doit jamais glisser dans le temps. */
@@ -3248,10 +3262,10 @@ function fxNorm(f){
   (f.vits || []).forEach(sh);
   f.t0 = S.base;
 }
-function fxGet(m){ const f = m && m.fx; if(!f || typeof f !== "object") return FX_NONE; fxNorm(f); return {flous:f.flous || [], formes:f.formes || [], vits:f.vits || []}; }
+function fxGet(m){ const f = m && m.fx; if(!f || typeof f !== "object") return FX_NONE; fxNorm(f); return {flous:f.flous || [], formes:f.formes || [], vits:f.vits || [], couleurs:f.couleurs || []}; }
 function fxMake(m){
   if(!m.fx || typeof m.fx !== "object") m.fx = {};
-  ["flous","formes","vits"].forEach(k => { if(!Array.isArray(m.fx[k])) m.fx[k] = []; });
+  ["flous","formes","vits","couleurs"].forEach(k => { if(!Array.isArray(m.fx[k])) m.fx[k] = []; });
   fxNorm(m.fx);
   return m.fx;
 }
@@ -3302,9 +3316,82 @@ function fxSummary(m){
   if(nfl) out.push(`${nfl} flèche${nfl > 1 ? "s" : ""}`);
   if(nce) out.push(`${nce} cercle${nce > 1 ? "s" : ""}`);
   if(f.vits.length) out.push("vitesse modifiée");
+  if(f.couleurs.some(fxColOn)) out.push("couleurs retouchées");
   return out.join(", ");
 }
-function fxCount(m){ const f = fxGet(m); return f.flous.length + f.formes.length + (f.vits.length ? 1 : 0); }
+function fxCount(m){ const f = fxGet(m); return f.flous.length + f.formes.length + (f.vits.length ? 1 : 0) + (f.couleurs.some(fxColOn) ? 1 : 0); }
+
+/* ----- couleurs d'un passage, par caméra : m.fx.couleurs = [{cam, lum, con, sat, temp}], réglages de -100 à 100 ; absent ou
+   à zéro = image inchangée. Modèle commun à l'appli et au PC, appliqué à chaque canal (valeurs de 0 à 1), dans cet ordre :
+   gains de température, luminosité (multiplication), contraste (autour de 0,5), saturation (matrice de saturate() en CSS),
+   chaque étape bornée à 0..1. Le navigateur le fait par ctx.filter (ou pixel par pixel sans ctx.filter), le PC par lutrgb
+   et colorchannelmixer (color_chain dans server.py). ----- */
+const FX_COLK = ["lum", "con", "sat", "temp"];
+const FX_COLPRE = {neige:{lum:20, con:-15, sat:10, temp:5}};    // neige ou contre-jour : ombres relevées, blancs gardés, un peu plus chaud
+function fxColOn(c){ return !!c && FX_COLK.some(k => Math.round(+c[k] || 0) !== 0); }
+function fxColOf(m, lens){ const c = fxGet(m).couleurs.find(q => q.cam === lens); return fxColOn(c) ? c : null; }
+/* réglages vers paramètres du modèle : miroir de color_params dans server.py (mêmes formules, mêmes arrondis) */
+function fxColParams(c){
+  const v = k => clamp(Math.round(+(c && c[k]) || 0), -100, 100), r3 = x => Math.round(x*1000)/1000, t = v("temp")/100, a = Math.abs(t);
+  return {b:r3(1 + v("lum")/200), c:r3(1 + v("con")/200), s:r3(1 + v("sat")/100),
+    gr:r3(t < 0 ? 1 - 0.2*a : 1), gg:r3(1 - 0.06*a), gb:r3(t > 0 ? 1 - 0.2*a : 1)};
+}
+/* un pixel (0 à 255) passé par le modèle : traitement sans ctx.filter, et référence des tests ; miroir de color_chain dans server.py */
+function fxColPix(p, r, g, b){
+  const cl = x => x < 0 ? 0 : x > 1 ? 1 : x, ch = (x, gn) => cl((cl(cl(x/255*gn)*p.b) - 0.5)*p.c + 0.5);
+  r = ch(r, p.gr); g = ch(g, p.gg); b = ch(b, p.gb);
+  const s = p.s;
+  if(s !== 1){
+    const R = (0.213 + 0.787*s)*r + (0.715 - 0.715*s)*g + (0.072 - 0.072*s)*b, G = (0.213 - 0.213*s)*r + (0.715 + 0.285*s)*g + (0.072 - 0.072*s)*b,
+      B = (0.213 - 0.213*s)*r + (0.715 - 0.715*s)*g + (0.072 + 0.928*s)*b;
+    r = cl(R); g = cl(G); b = cl(B);
+  }
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+let fxFilterOk = null;
+/* ctx.filter réellement appliqué (Chromium, Firefox, Safari 18) : vérifié une fois sur un pixel */
+function fxHasFilter(){
+  if(fxFilterOk != null) return fxFilterOk;
+  fxFilterOk = false;
+  try {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 2;
+    const c = cv.getContext("2d"); c.filter = "brightness(0.5)"; c.fillStyle = "#fff"; c.fillRect(0, 0, 2, 2);
+    const d = c.getImageData(0, 0, 1, 1).data[0]; fxFilterOk = d > 100 && d < 160;
+  } catch(e){}
+  return fxFilterOk;
+}
+/* couleurs c appliquées sur place à la zone x, y, w, h du canevas (coordonnées du contexte, échelle et décalage compris) ;
+   miroir de color_chain dans server.py (même modèle, mêmes bornes) */
+function fxColor(ctx, c, x, y, w, h){
+  if(!fxColOn(c)) return;
+  const p = fxColParams(c), cv = ctx.canvas, tf = ctx.getTransform ? ctx.getTransform() : null;
+  let x1 = x, y1 = y, x2 = x + w, y2 = y + h;
+  if(tf){ x1 = tf.a*x + tf.e; y1 = tf.d*y + tf.f; x2 = tf.a*(x + w) + tf.e; y2 = tf.d*(y + h) + tf.f; }
+  const X = Math.max(0, Math.floor(Math.min(x1, x2))), Y = Math.max(0, Math.floor(Math.min(y1, y2)));
+  const W = Math.min(cv.width, Math.ceil(Math.max(x1, x2))) - X, H = Math.min(cv.height, Math.ceil(Math.max(y1, y2))) - Y;
+  if(W <= 0 || H <= 0) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  if(fxHasFilter()){
+    if(p.gr !== 1 || p.gg !== 1 || p.gb !== 1){
+      ctx.globalCompositeOperation = "multiply"; ctx.fillStyle = `rgb(${p.gr*255},${p.gg*255},${p.gb*255})`; ctx.fillRect(X, Y, W, H);
+    }
+    if(p.b !== 1 || p.c !== 1 || p.s !== 1){
+      // l'image source est opaque : redessinée par-dessus elle-même, elle se remplace (pas de « copy », qui viderait le reste du canevas)
+      ctx.globalCompositeOperation = "source-over"; ctx.beginPath(); ctx.rect(X, Y, W, H); ctx.clip();
+      ctx.filter = `brightness(${p.b}) contrast(${p.c}) saturate(${p.s})`;
+      ctx.drawImage(cv, X, Y, W, H, X, Y, W, H);
+    }
+  } else {
+    const im = ctx.getImageData(X, Y, W, H), d = im.data, memo = new Map();
+    for(let i=0; i<d.length; i+=4){
+      const key = d[i] << 16 | d[i+1] << 8 | d[i+2];
+      let o = memo.get(key); if(!o){ o = fxColPix(p, d[i], d[i+1], d[i+2]); if(memo.size < 200000) memo.set(key, o); }
+      d[i] = o[0]; d[i+1] = o[1]; d[i+2] = o[2];
+    }
+    ctx.putImageData(im, X, Y);
+  }
+  ctx.restore();
+}
 
 /* ----- flèche et cercle « au crayon » (comme dans esam-picture) : tracé tremblé, toujours le même pour une forme donnée ----- */
 function fxSeed(s){ s = String(s); let h = 2166136261; for(let i=0; i<s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -3355,6 +3442,7 @@ function fxVisible(f, t){ return (f.a == null || t >= f.a - 0.001) && (f.z == nu
    de l'image source (sw x sh) dans le canevas. Les flous d'abord, les formes par-dessus. */
 function fxApply(ctx, m, lens, t, g){
   if(!m || !m.fx) return;
+  fxColor(ctx, fxColOf(m, lens), g.x0, g.y0, g.sw*g.k, g.sh*g.k);          // couleurs sur l'image source, avant flous et formes
   fxFlous(m, lens).forEach(z => { const r = rZone(z, t, g.sw, g.sh); softBlur(ctx, g.x0 + r.x*g.k, g.y0 + r.y*g.k, r.w*g.k, r.h*g.k, z.forme, z.mode); });
   fxFormes(m, lens).forEach(f => {
     if(fxVisible(f, t)) drawFxShape(ctx, f, g.x0 + rKeyAt(f.keys, t, "x", 0.5)*g.sw*g.k, g.y0 + rKeyAt(f.keys, t, "y", 0.5)*g.sh*g.k, g.sh*g.k/1080*(f.s || 1));
@@ -3382,10 +3470,12 @@ function fxSprite(f){
   drawFxShape(cv.getContext("2d"), f, ax, ay, u);
   return {image:cv.toDataURL("image/png"), ax:Math.round(ax*10)/10, ay:Math.round(ay*10)/10, ref:ref};
 }
-/* retouches du morceau p (flous et formes de la caméra lens) ; sprites reçoit les dessins de formes, une fois chacun */
+/* retouches du morceau p (couleurs, flous et formes de la caméra lens) ; sprites reçoit les dessins de formes, une fois chacun */
 function fxPayload(m, lens, p, sprites){
   const a = p.c.s + p.from, z = p.c.s + p.to, o = {};
   if(!m || !m.fx) return o;
+  const col = fxColOf(m, lens);
+  if(col){ o.couleur = {}; FX_COLK.forEach(k => { o.couleur[k] = clamp(Math.round(+col[k] || 0), -100, 100); }); }
   const fl = fxFlous(m, lens), fo = fxFormes(m, lens).filter(f => (f.a == null || f.a < z) && (f.z == null || f.z > a));
   if(fl.length) o.flous = fl.map(q => ({s:q.s || 0.2, ar:q.ar || 1, forme:q.forme || "ellipse", mode:q.mode || "doux", cles:fxRel(q.keys, a, z, ["x","y"])}));
   if(fo.length) o.formes = fo.map(f => {
@@ -5791,7 +5881,7 @@ async function rSaveAll(){
    formes ; on choisit un élément, on le glisse (en pause : un point de suivi à cet instant ; pendant la lecture : il suit
    le doigt), on tire son coin pour la taille. fxTrackStart() le fait suivre tout seul. Les vitesses se posent à l'instant
    affiché. Tout est enregistré dans m.fx au fil de l'eau (fxSave). */
-const FX = {m:null, lens:null, t:0, cur:null, playing:false, stopAt:0, sel:null, drag:null, raf:0, trk:null, onClose:null, saveT:0};
+const FX = {m:null, lens:null, t:0, cur:null, playing:false, stopAt:0, sel:null, drag:null, raf:0, trk:null, onClose:null, saveT:0, colOpen:false, colOff:false, colBusy:false};
 const fv = document.createElement("video");fv.muted = true;fv.playsInline = true;fv.preload = "auto";fv.setAttribute("playsinline", "");
 const fcv = $("fxCv"), fctx = fcv.getContext("2d");
 function fxTrack(){ const i = trackIdx(FX.lens); return i >= 0 ? S.tracks[i] : null; }
@@ -5816,7 +5906,8 @@ function fxOpen(m, lens, onClose){
   lens = lens || effCam(m);
   if(lens == null || trackIdx(lens) < 0){ toast("Aucune image pour ce passage : rien à retoucher."); return; }
   v.pause(); if(REEL.playing) rStop();
-  FX.m = m; FX.lens = lens; FX.sel = null; FX.drag = null; FX.trk = null; FX.cur = null; FX.playing = false; FX.onClose = onClose || null;
+  FX.m = m; FX.lens = lens; FX.sel = null; FX.drag = null; FX.trk = null; FX.cur = null; FX.playing = false; FX.onClose = onClose || null; FX.colOff = false;
+  FX.colOpen = !!fxColOf(m, lens);
   $("fxTitle").textContent = `Retouches : ${label(m)}`;
   const d = $("fx"); if(!d.open){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", ""); }
   fxPanel(); fxSeek(fxRange().a, false); fxBar(); fxTime(); fxPlayBtn();
@@ -5925,7 +6016,7 @@ function fxDraw(){
   const c = FX.cur, em = $("fxEmpty");
   em.hidden = !!c;
   if(!c){ em.textContent = "Pas d'image à cet instant sur cette caméra."; return; }
-  if(fv.readyState >= 2) fctx.drawImage(fv, 0, 0, CW, CH);
+  if(fv.readyState >= 2){ fctx.drawImage(fv, 0, 0, CW, CH); if(!FX.colOff) fxColor(fctx, fxColOf(FX.m, FX.lens), 0, 0, CW, CH); }
   const g = fxGeom(), t = FX.t, sel = fxSel(), objs = fxObjs(), rg = fxRange();
   objs.forEach(x => { if(x.k === "flou"){ const b = fxBoxOf(x, g); softBlur(fctx, b.x, b.y, b.w, b.h, x.o.forme, x.o.mode); } });
   objs.forEach(x => {
@@ -6007,6 +6098,81 @@ function fxVitCtl(){
   const lst = vs.map(p => `${fxRelT(p.t)} ${fxVitLbl(p.v).toLowerCase()}`).join(" ; ");
   return `<div class="grp fxvit"><span class="lbl">Vitesse à partir de <span id="fxVitT">${fxRelT(FX.t)}</span></span><div class="chips">${FX_SPEEDS.map(s => `<button type="button" class="chip" data-fxvit="${s}" aria-pressed="${cur === s}">${s === 1 ? "Normale" : `x${String(s).replace(".", ",")}`}</button>`).join("")}</div><p class="hint">${vs.length ? `Changements : ${esc(lst)}. Ce passage dure ${len(fxOutDur(m, rg.a, rg.z))} dans la vidéo, au lieu de ${len(rg.z - rg.a)}.` : "Placez la lecture là où la vitesse doit changer, puis choisissez : ralenti (x0,25 et x0,5) ou accéléré (x2 à x8). Au début du passage, le choix vaut pour tout le passage."}</p>${vs.length ? '<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-fxvit="clear">Vitesse normale partout</button></div>' : ""}</div>`;
 }
+/* couleurs de la caméra affichée : réglages de -100 à 100, préréglage, mesure automatique, copie vers les autres passages */
+const FX_COLUI = [["lum", "Luminosité"], ["con", "Contraste"], ["sat", "Saturation"], ["temp", "Température (froid à chaud)"]];
+function fxColNum(v){ v = Math.round(+v || 0); return v > 0 ? `+${v}` : String(v); }
+function fxColSum(c){
+  if(!fxColOn(c)) return "inchangées";
+  return FX_COLUI.filter(q => Math.round(+c[q[0]] || 0)).map(q => q[0] === "temp" ? `${c.temp > 0 ? "plus chaud" : "plus froid"} (${fxColNum(c.temp)})` : `${q[1].toLowerCase()} ${fxColNum(c[q[0]])}`).join(", ");
+}
+function fxColCtl(){
+  const c = fxColOf(FX.m, FX.lens) || {}, tr = fxTrack(), nm = tr ? tr.name.toLowerCase() : "cette caméra", on = fxColOn(c);
+  let h = `<details class="grp fxcol" id="fxColBox"${FX.colOpen ? " open" : ""}><summary><span class="lbl">Couleurs</span> <span class="fxcolsum" id="fxColSum">${esc(fxColSum(c))}</span></summary>`;
+  h += `<p class="hint">Pour ${esc(nm)} dans ce passage : vidéo compilée, extraits, réel, story et LinkedIn.${FX.colBusy ? " Mesure en cours..." : ""}</p>`;
+  h += FX_COLUI.map(q => `<div class="fxcolrow"><label class="lbl" for="fxCol_${q[0]}">${q[1]} : <span id="fxColV_${q[0]}">${fxColNum(c[q[0]])}</span></label><input type="range" class="rrange" id="fxCol_${q[0]}" data-fxcolk="${q[0]}" min="-100" max="100" step="5" value="${Math.round(+c[q[0]] || 0)}"></div>`).join("");
+  h += `<div class="rbtns"><button type="button" class="btn small" data-fxcolact="auto"${FX.colBusy ? " disabled" : ""} title="Étire les niveaux mesurés sur cinq images du passage">Automatique</button><button type="button" class="btn small ghost" data-fxcolact="neige" title="Ombres relevées, blancs gardés, un peu plus chaud">Neige / contre-jour</button><button type="button" class="btn small ghost" data-fxcolact="zero"${on ? "" : " disabled"}>Remettre à zéro</button><button type="button" class="btn small ghost" data-fxcolact="orig" aria-pressed="${FX.colOff}"${on ? "" : " disabled"}>Voir l'original</button><button type="button" class="btn small ghost" data-fxcolact="tous">Appliquer à tous les passages</button></div></details>`;
+  return h;
+}
+/* réglage k de la caméra lens du passage m ; une caméra revenue à zéro n'a plus d'entrée (image inchangée) */
+function fxColSet(m, lens, vals){
+  const fx = fxMake(m);
+  let c = fx.couleurs.find(q => q.cam === lens);
+  if(!c){ c = {cam:lens, lum:0, con:0, sat:0, temp:0}; fx.couleurs.push(c); }
+  Object.keys(vals).forEach(k => { c[k] = clamp(Math.round(+vals[k] || 0), -100, 100); });
+  if(!fxColOn(c)) fx.couleurs.splice(fx.couleurs.indexOf(c), 1);
+}
+function fxColCopy(m){ return JSON.parse(JSON.stringify(fxGet(m).couleurs)); }
+function fxColBack(m, arr){ fxMake(m).couleurs = arr; }
+/* attend que l'image de l'instant t soit affichée par la vidéo de l'éditeur */
+function fxSeekWait(t){
+  fxSeek(t, false);
+  const c = FX.cur;
+  return new Promise(res => {
+    let n = 0;
+    const chk = () => {
+      if(!FX.m || !c){ res(false); return; }
+      const ok = fv.getAttribute("data-u") === c.url && !fv.seeking && fv.readyState >= 2 && Math.abs(fv.currentTime - (t - c.s)) < 0.1;
+      if(ok || ++n > 60) res(ok); else setTimeout(chk, 50);
+    };
+    setTimeout(chk, 30);
+  });
+}
+/* réglage automatique : niveaux mesurés sur cinq images du passage (1 % et 99 % de la luminance), étirés vers 4 % et 96 %
+   par la luminosité et le contraste ; saturation et température restent comme elles sont */
+async function fxColAuto(){
+  const m = FX.m, lens = FX.lens, tr = fxTrack(), rg = fxRange(), t0 = FX.t;
+  if(!m || FX.colBusy) return;
+  if(FX.playing) fxStop();
+  const ts = [];
+  for(let i=0; i<5; i++){ const t = rg.a + (rg.z - rg.a)*(i + 0.5)/5; if(clipAt(tr, t)) ts.push(t); }
+  if(!ts.length){ toast("Pas d'image à mesurer dans ce passage."); return; }
+  FX.colBusy = true; fxPanel();
+  const cv = document.createElement("canvas"); cv.width = 160; cv.height = 90;
+  const cx = cv.getContext("2d", {willReadFrequently:true}), hist = new Float64Array(256);
+  let n = 0;
+  try {
+    for(const t of ts){
+      if(!(await fxSeekWait(t)) || FX.m !== m) continue;
+      cx.drawImage(fv, 0, 0, 160, 90);
+      const d = cx.getImageData(0, 0, 160, 90).data;
+      for(let i=0; i<d.length; i+=4){ hist[Math.round(0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2])]++; n++; }
+    }
+  } catch(e){ n = 0; }
+  FX.colBusy = false;
+  if(FX.m !== m) return;
+  fxSeek(t0, false);
+  const pct = q => { let acc = 0; for(let i=0; i<256; i++){ acc += hist[i]; if(acc >= q*n) return i/255; } return 1; };
+  const lo = n ? pct(0.01) : 0, hi = n ? pct(0.99) : 0;
+  if(!n || hi - lo < 0.08){ fxPanel(); toast(n ? "Image trop uniforme : réglage automatique impossible." : "Images illisibles : réglage automatique impossible."); return; }
+  const L0 = 0.04, H0 = 0.96, bc = (H0 - L0)/(hi - lo);
+  let c = clamp(2*(lo*bc + 0.5 - L0), 0.5, 1.5), b = bc/c;
+  if(c === 0.5 || c === 1.5) b = 0.5/((lo + hi)/2);          // contraste en butée : le milieu des niveaux revient au gris moyen
+  b = clamp(b, 0.5, 1.5);
+  const r5 = x => Math.round(x/5)*5, before = fxColCopy(m), lum = r5((b - 1)*200), con = r5((c - 1)*200);
+  fxColSet(m, lens, {lum:lum, con:con});
+  FX.colOpen = true; FX.colOff = false; fxSave(); fxRefresh();
+  toast(lum || con ? `Automatique : luminosité ${fxColNum(lum)}, contraste ${fxColNum(con)}.` : "Automatique : l'image est déjà bien étalée, rien à changer.", "Annuler", () => { fxColBack(m, before); fxSave(); if(FX.m === m) fxRefresh(); });
+}
 function fxPanel(){
   const m = FX.m; if(!m) return;
   const objs = fxObjs(), x = fxSel(), rg = fxRange(), cams = S.tracks.filter(tr => tr.clips.some(c => c.ok && c.s < rg.z && c.e > rg.a));
@@ -6014,6 +6180,7 @@ function fxPanel(){
   if(cams.length > 1) h += `<div class="grp"><span class="lbl">Caméra retouchée</span><div class="chips">${cams.map(tr => `<button type="button" class="chip" data-fxcam="${esc(tr.lens)}" aria-pressed="${tr.lens === FX.lens}">${esc(tr.name)}</button>`).join("")}</div></div>`;
   if(x) h += x.k === "flou" ? fxFlouCtl(x) : fxFormeCtl(x);
   h += fxVitCtl();
+  h += fxColCtl();
   $("fxPanel").innerHTML = h;
   fcv.setAttribute("aria-label", `Image du passage. ${x ? `Flèches : déplacer ${fxName(x).toLowerCase()}, plus et moins : sa taille.` : "Choisissez un élément pour le déplacer."}`);
 }
@@ -6022,6 +6189,23 @@ $("fxPanel").addEventListener("click", e => {
   const d = b.dataset, x = fxSel();
   if(d.fxtrack){ if(FX.trk) fxTrackStop(); else fxTrackStart(); return; }
   if(FX.trk) fxTrackStop();
+  if(d.fxcolact){
+    const lens = FX.lens, cur = fxColOf(m, lens), before = fxColCopy(m), a = d.fxcolact;
+    if(a === "auto"){ fxColAuto(); return; }
+    if(a === "orig"){ FX.colOff = !FX.colOff; fxPanel(); if(!FX.playing) fxDraw(); return; }
+    FX.colOff = false;
+    if(a === "neige") fxColSet(m, lens, FX_COLPRE.neige);
+    else if(a === "zero"){ fxColSet(m, lens, {lum:0, con:0, sat:0, temp:0}); toast("Couleurs remises à zéro.", "Annuler", () => { fxColBack(m, before); fxSave(); if(FX.m === m) fxRefresh(); }); }
+    else if(a === "tous"){
+      // même réglage pour cette caméra dans tous les autres passages (annulable d'un coup)
+      const others = S.markers.filter(q => q !== m), saved = others.map(q => [q, q.fx && q.fx.couleurs ? fxColCopy(q) : null]);
+      others.forEach(q => { if(cur || fxColOf(q, lens)) fxColSet(q, lens, cur ? {lum:cur.lum, con:cur.con, sat:cur.sat, temp:cur.temp} : {lum:0, con:0, sat:0, temp:0}); });
+      const tr = fxTrack(), nm = tr ? tr.name.toLowerCase() : "cette caméra";
+      toast(others.length ? `Couleurs de ${nm} ${cur ? "appliquées" : "remises à zéro"} dans ${others.length} autre${others.length > 1 ? "s" : ""} passage${others.length > 1 ? "s" : ""}.` : "Il n'y a pas d'autre passage.",
+        others.length ? "Annuler" : undefined, others.length ? () => { saved.forEach(q => { if(q[1]) fxColBack(q[0], q[1]); else if(q[0].fx) q[0].fx.couleurs = []; }); fxSave(); if(FX.m) fxRefresh(); } : undefined);
+    }
+    fxSave(); fxRefresh(); return;
+  }
   if(d.fxsel){ FX.sel = FX.sel === d.fxsel ? null : d.fxsel; fxRefresh(); return; }
   if(d.fxunsel){ FX.sel = null; fxRefresh(); return; }
   if(d.fxcam){ if(FX.playing) fxStop(); FX.lens = d.fxcam; FX.sel = null; fxSeek(FX.t, false); fxRefresh(); return; }
@@ -6065,6 +6249,15 @@ $("fxPanel").addEventListener("click", e => {
   fxSave(); fxRefresh();
 });
 $("fxPanel").addEventListener("input", e => {
+  const k = e.target.dataset && e.target.dataset.fxcolk;
+  if(k && FX.m){
+    // aperçu en direct pendant le glissement
+    fxColSet(FX.m, FX.lens, {[k]:+e.target.value}); FX.colOff = false;
+    const on = !!fxColOf(FX.m, FX.lens);
+    $(`fxColV_${k}`).textContent = fxColNum(e.target.value); $("fxColSum").textContent = fxColSum(fxColOf(FX.m, FX.lens) || {});
+    $("fxPanel").querySelectorAll('[data-fxcolact="zero"], [data-fxcolact="orig"]').forEach(b => { b.disabled = !on; if(b.dataset.fxcolact === "orig") b.setAttribute("aria-pressed", "false"); });
+    fxSave(); if(!FX.playing) fxDraw(); return;
+  }
   const x = fxSel(), id = e.target.id, val = +e.target.value; if(!x) return;
   if(id === "fxSize"){ x.o.s = val/100; $("fxSizeV").textContent = `${val} %`; }
   else if(id === "fxAr"){ x.o.ar = val/100; $("fxArV").textContent = `${val} %`; }
@@ -6072,6 +6265,8 @@ $("fxPanel").addEventListener("input", e => {
   else return;
   fxSave(); if(!FX.playing) fxDraw();
 });
+
+$("fxPanel").addEventListener("toggle", e => { if(e.target.id === "fxColBox") FX.colOpen = e.target.open; }, true);
 
 /* ----- glisser sur l'image ----- */
 function fxPt(e){ const rc = fcv.getBoundingClientRect(); return {x:(e.clientX - rc.left)/rc.width, y:(e.clientY - rc.top)/rc.height, rc:rc}; }
@@ -6292,6 +6487,16 @@ window.ESAM_TEST = {storyCuts:(durs, fin) => {
   return storyCuts({segs:segs, clips:pos, fin:fin, total:pos + fin});
 }, keyAt:(keys, t, f) => rKeyAt(keys, t, f, 0.5),
   crop:(fmt, sw, sh) => { const w = RW, h = RH; RW = RFMTS[fmt].w; RH = RFMTS[fmt].h; const c = rCrop(sw, sh, 1); RW = w; RH = h; return c; },
+  colParams:c => fxColParams(c), colPix:(c, px) => px.map(q => fxColPix(fxColParams(c), q[0], q[1], q[2])),
+  // pixels [r, g, b] posés sur un canevas puis passés par fxColor (ctx.filter, ou le calcul pixel par pixel si pix)
+  colCanvas:(c, px, pix, from) => {
+    const cv = document.createElement("canvas"); cv.width = px.length; cv.height = 1;
+    const ctx = cv.getContext("2d"), im = ctx.createImageData(px.length, 1);
+    px.forEach((q, i) => { im.data.set([q[0], q[1], q[2], 255], i*4); }); ctx.putImageData(im, 0, 0);
+    const was = fxFilterOk; if(pix) fxFilterOk = false;
+    fxColor(ctx, c, from || 0, 0, px.length - (from || 0), 1); fxFilterOk = was;
+    const d = ctx.getImageData(0, 0, px.length, 1).data; return px.map((q, i) => [d[i*4], d[i*4+1], d[i*4+2], d[i*4+3]]);
+  },
   etat:() => ({base:S.base, markers:JSON.parse(JSON.stringify(S.markers)), fx:{ouvert:!!FX.m, t:FX.t, lecture:FX.playing, suivi:!!FX.trk, choix:FX.sel}})};
 if(window.claude && typeof window.claude.use === "function"){
   window.claude.use("downloads").then(x => { dl = x; }, () => { dl = null; });

@@ -125,6 +125,78 @@ def test_miroir_cadre():
                 assert abs(js["cw"] - cw) <= 2 and abs(js["ch"] - ch) <= 2 and abs(js["free"] - course) <= 2 and abs(js["sy"] - y) <= 1, (fmt, sw, sh, js, (cw, ch, course, y))
         b.close()
 
+COULEURS = [{}, {"lum": 20}, {"con": -40}, {"sat": 60}, {"sat": -100}, {"temp": 50}, {"temp": -70},
+            {"lum": 20, "con": -15, "sat": 10, "temp": 5}, {"lum": -35, "con": 80, "sat": -30, "temp": -100},
+            {"lum": 100, "con": 100, "sat": 100, "temp": 100}, {"lum": "12.5", "con": None, "sat": 300}]
+PIXELS = [[0, 0, 0], [255, 255, 255], [128, 128, 128], [30, 30, 30], [220, 220, 220], [200, 40, 30], [20, 160, 60],
+          [40, 70, 210], [250, 240, 30], [90, 120, 140], [180, 150, 120], [10, 200, 250], [64, 64, 200], [127, 128, 129]]
+
+def ref_pix(p, q):
+    """Modèle des couleurs écrit à part (fxColPix dans index.html, color_chain dans server.py) : un pixel de 0 à 255."""
+    cl = lambda x: min(1.0, max(0.0, x))
+    r, g, b = (cl((cl(cl(v / 255 * gn) * p["b"]) - 0.5) * p["c"] + 0.5) for v, gn in zip(q, (p["gr"], p["gg"], p["gb"])))
+    s = p["s"]
+    r, g, b = (cl((0.213 + 0.787 * s) * r + (0.715 - 0.715 * s) * g + (0.072 - 0.072 * s) * b),
+               cl((0.213 - 0.213 * s) * r + (0.715 + 0.285 * s) * g + (0.072 - 0.072 * s) * b),
+               cl((0.213 - 0.213 * s) * r + (0.715 - 0.715 * s) * g + (0.072 + 0.928 * s) * b))
+    return [round(r * 255), round(g * 255), round(b * 255)]
+
+def ffmpeg_pix(c, px):
+    """Pixels passés par le filtre de color_chain dans ffmpeg (image RGB d'une ligne, sans passage par le YUV)."""
+    import subprocess
+    f = server.color_chain(c) or "null"
+    raw = bytes(v for q in px for v in q)
+    out = subprocess.run(["ffmpeg", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "%dx1" % len(px), "-i", "-",
+                          "-vf", f, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], input=raw, capture_output=True, check=True).stdout
+    return [list(out[i * 3:i * 3 + 3]) for i in range(len(px))]
+
+def test_couleurs_serveur():
+    assert server.color_chain({}) == "" and server.color_chain(None) == "" and server.color_chain({"lum": 0.4}) == ""
+    assert server.color_params({"lum": 20, "con": -15, "sat": 10, "temp": 5}) == {"b": 1.1, "c": 0.925, "s": 1.1, "gr": 1, "gg": 0.997, "gb": 0.99}
+    assert "colorchannelmixer" not in server.color_chain({"lum": 30}) and "colorchannelmixer" in server.color_chain({"sat": 30})
+    args, fc = server.blur_chain([], 1920, 1080, TMP, 1, {"lum": 30})
+    assert args == [] and fc.startswith("[0:v]format=gbrp,lutrgb=") and fc.endswith("[cc];[cc]"), fc
+    assert server.blur_chain([], 1920, 1080, TMP, 1, {}) == ([], "[0:v]")
+    # retour au YUV avec la matrice de la source : une vidéo BT.709 presque inchangée garde ses teintes
+    import re, subprocess
+    src = TMP / "bt709.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=320x180:d=0.2", "-vf", "scale=out_color_matrix=bt709,format=yuv420p",
+                    "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-c:v", "libx264", "-qp", "0", str(src)], check=True)
+    info = server.probe(src); assert info["matrice"] == "bt709", info
+    _, fc = server.blur_chain([], info["w"], info["h"], TMP, 1, {"lum": 1}, info)
+    assert "out_color_matrix=bt709:out_range=tv" in fc, fc
+    r = subprocess.run(["ffmpeg", "-i", str(src), "-i", str(src), "-filter_complex", fc + "null[o];[o][1:v]psnr", "-f", "null", "-"], capture_output=True, text=True).stderr
+    psnr = float(re.findall(r"average:([0-9.]+)", r)[-1]); assert psnr > 35, psnr
+    for c in COULEURS:            # le filtre ffmpeg suit le modèle à l'arrondi près
+        p = server.color_params(c)
+        for q, o in zip(PIXELS, ffmpeg_pix(c, PIXELS)):
+            assert max(abs(a - b) for a, b in zip(o, ref_pix(p, q))) <= 2, (c, q, o, ref_pix(p, q))
+
+def test_miroir_couleurs():
+    """fxColParams (index.html) et color_params (server.py) donnent les mêmes paramètres ; le canevas (ctx.filter, et le
+    calcul pixel par pixel des navigateurs sans ctx.filter) donne les mêmes pixels que ffmpeg."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  (Playwright absent : miroir des couleurs non vérifié)"); return
+    with sync_playwright() as p:
+        b = p.chromium.launch(); pg = b.new_page()
+        pg.goto((RACINE / "index.html").as_uri())
+        for c in COULEURS:
+            js = pg.evaluate("c => window.ESAM_TEST.colParams(c)", c)
+            assert js == server.color_params(c), (c, js, server.color_params(c))
+            ff = ffmpeg_pix(c, PIXELS)
+            for pix in (False, True):
+                cv = pg.evaluate("([c, px, pix]) => window.ESAM_TEST.colCanvas(c, px, pix)", [c, PIXELS, pix])
+                for q, o, f in zip(PIXELS, cv, ff):
+                    assert max(abs(a - b) for a, b in zip(o, f)) <= 3 and o[3] == 255, (c, pix, q, o, f)
+        # seule l'image source change : une bande (ici les 3 premiers pixels) reste telle quelle et opaque
+        for pix in (False, True):
+            cv = pg.evaluate("([c, px, pix]) => window.ESAM_TEST.colCanvas(c, px, pix, 3)", [COULEURS[-2], PIXELS, pix])
+            assert [o for o in cv[:3]] == [q + [255] for q in PIXELS[:3]], (pix, cv[:3])
+            assert all(o[3] == 255 for o in cv) and cv[5][:3] != PIXELS[5], cv
+        b.close()
+
 def test_miroir_story_cuts():
     """storyCuts (index.html) et story_cuts (server.py) coupent aux mêmes instants sur les mêmes plans."""
     try:

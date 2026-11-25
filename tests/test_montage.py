@@ -4,10 +4,11 @@ Usage : python tests/test_montage.py
 Prérequis : ffmpeg, playwright (pip install playwright ; playwright install chromium).
 
 1. Mode navigateur : une vidéo où un motif se déplace sur un fond bruité ; un flou est posé dessus et suivi
-   automatiquement (l'écart entre le suivi et la vraie trajectoire est mesuré), puis des extraits bruts sont
-   calculés dans le navigateur avec un accéléré (durée vérifiée).
+   automatiquement (l'écart entre le suivi et la vraie trajectoire est mesuré), la luminosité est relevée, puis des
+   extraits bruts sont calculés dans le navigateur avec un accéléré (durée vérifiée, image plus claire que la source).
 2. Mode PC (port 8797, config temporaire) : flou suivi du doigt, flèche, cercle et changement de vitesse sur un
-   passage ; vidéo compilée avec habillage, puis extraits bruts en un fichier par passage (durées vérifiées) ;
+   passage, couleurs assombries sur l'autre (« Appliquer à tous les passages » essayé puis annulé) ; vidéo compilée
+   avec habillage, puis extraits bruts en un fichier par passage (durées vérifiées, second extrait plus sombre que la source) ;
    enfin la vidéo compilée est rouverte comme source et un morceau en est extrait, sans carton ni logo.
 Les captures d'écran sont écrites dans le dossier temporaire affiché.
 """
@@ -24,6 +25,12 @@ def api(path, body=None):
 def duree(p):
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(p)], capture_output=True, text=True)
     return float(out.stdout.strip())
+
+def luma(p, debut=None, duree_=None):
+    """Luminance moyenne (0 à 255) d'une vidéo ou d'une plage de la vidéo, sur des images réduites."""
+    cmd = ["ffmpeg", "-v", "error"] + (["-ss", str(debut), "-t", str(duree_)] if debut is not None else []) + ["-i", str(p), "-vf", "fps=5,scale=64:36,format=gray", "-f", "rawvideo", "-"]
+    raw = subprocess.run(cmd, capture_output=True, check=True).stdout
+    return sum(raw) / max(1, len(raw))
 
 def cible(t):
     """Centre du motif mobile de la vidéo de suivi, en fraction de l'image, à l'instant t."""
@@ -76,6 +83,9 @@ async def navigateur(p, tmp):
         # accéléré x4 à partir du milieu : 10 s de passage deviennent 3 + 7/4 s
         await curseur(pg, "#fxSlider", 400)
         await pg.click('#fxPanel [data-fxvit="4"]'); await pg.wait_for_timeout(300)
+        # couleurs : luminosité relevée sur ce passage (aperçu en direct, état dans le résumé du bloc)
+        await pg.click("#fxColBox summary"); await curseur(pg, "#fxCol_lum", 60)
+        assert "luminosité +60" in await pg.inner_text("#fxColSum")
         await pg.screenshot(path=str(tmp / "m1_suivi.png"))
         await pg.click("#fxDone"); await pg.wait_for_timeout(300)
         await pg.click("#cmpOpen"); await pg.wait_for_timeout(400)
@@ -90,6 +100,10 @@ async def navigateur(p, tmp):
         attendu = (v["t"] - 1) + (11 - v["t"]) / 4
         print("extraits du navigateur :", out.name, round(duree(out), 2), "s, attendu", round(attendu, 2))
         assert abs(duree(out) - attendu) < 0.4, (duree(out), attendu)       # ni carton ni noir de fin : la durée est celle des passages
+        assert etat["markers"][0]["fx"]["couleurs"] == [{"cam": "W", "lum": 60, "con": 0, "sat": 0, "temp": 0}], etat["markers"][0]["fx"]
+        ls, lo = luma(video, 1, 10), luma(out)
+        print("luminance moyenne : source", round(ls, 1), "extraits", round(lo, 1))
+        assert lo > ls * 1.15, (ls, lo)                                     # luminosité +60 : image nettement plus claire
         assert not erreurs, erreurs
         await b.close()
     finally:
@@ -127,7 +141,19 @@ async def pc(p, tmp, iv):
     await curseur(pg, "#fxSlider", 500); await pg.click('#fxPanel [data-fxvit="4"]'); await pg.wait_for_timeout(200)      # accéléré ensuite
     await pg.screenshot(path=str(tmp / "m3_retouches.png"))
     await pg.click("#fxDone"); await pg.wait_for_timeout(500)
+    # passage 2 : couleurs assombries ; « Appliquer à tous les passages » puis Annuler laisse le passage 1 sans couleurs
+    await pg.click("#list [data-fx] >> nth=1"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1000)
+    await pg.click("#fxColBox summary"); await curseur(pg, "#fxCol_lum", -60)
+    await pg.click('#fxPanel [data-fxcolact="tous"]'); await pg.wait_for_timeout(200)
+    tous = await pg.evaluate("window.ESAM_TEST.etat()")
+    assert all(any(c["lum"] == -60 for c in (m.get("fx") or {}).get("couleurs", [])) for m in tous["markers"]), tous["markers"]
+    await pg.click("#toast button"); await pg.wait_for_timeout(200)
+    await pg.locator("#fxColBox").scroll_into_view_if_needed()
+    await pg.screenshot(path=str(tmp / "m3b_couleurs.png"))
+    await pg.click("#fxDone"); await pg.wait_for_timeout(800)
+    assert "couleurs retouchées" in await pg.inner_text("#list .card >> nth=1")
     etat = api("api/etat?d=" + urllib.parse.quote(iv)); m1, m2 = sorted(etat["markers"], key=lambda m: m["at"])
+    assert not m1["fx"].get("couleurs") and [c["lum"] for c in m2["fx"]["couleurs"]] == [-60], (m1["fx"].get("couleurs"), m2["fx"])
     fx = m1["fx"]
     print("retouches :", [(f["forme"], len(f["keys"])) for f in fx["flous"]], [(f["kind"], f.get("a")) for f in fx["formes"]], fx["vits"])
     assert fx["flous"][0]["forme"] == "rect" and len(fx["flous"][0]["keys"]) >= 2 and len(fx["formes"]) == 2 and [v["v"] for v in fx["vits"]] == [0.5, 4]
@@ -152,6 +178,10 @@ async def pc(p, tmp, iv):
     print("extraits :", [(f.name, round(duree(f), 2)) for f in ex])
     assert len(ex) == 2 and "_01" in ex[0].name and "_02" in ex[1].name
     assert abs(duree(ex[0]) - d1) < 0.5 and abs(duree(ex[1]) - d2) < 0.5, (duree(ex[0]), d1, duree(ex[1]), d2)
+    src2 = d / ("DJI_20260912143005_0001_%s.MP4" % m2["fx"]["couleurs"][0]["cam"])
+    ls, lo = luma(src2, m2["at"] - base, d2), luma(ex[1])
+    print("luminance moyenne du passage 2 : source", round(ls, 1), "extrait", round(lo, 1))
+    assert lo < ls * 0.85, (ls, lo)                                     # luminosité -60 : image nettement plus sombre
     await pg.click("#cmpClose2")
     # reprise de la vidéo compilée comme source : préparation, ouverture, un morceau extrait sans habillage
     await pg.click("#home"); await pg.wait_for_selector("[data-openc]", timeout=15000)
