@@ -4,14 +4,14 @@ Document pour un développeur qui découvre le projet. Le guide d'installation e
 
 ## 1. Vue d'ensemble
 
-L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication : fiche de dérushage, vidéo compilée, extraits bruts, réel ou story verticale, vidéo LinkedIn (4:5 ou carrée), avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse).
+L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication, en quatre étapes après l'import (Sélection, Compilation, Réseaux, Export) : fiche de dérushage, liste des plans pour un storyboard, vidéo compilée, extraits bruts, réel ou story verticale, vidéo LinkedIn (4:5 ou carrée), avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse, couleurs).
 
 Deux fichiers de code, aucune étape de construction, aucune dépendance Python :
 
 | Fichier | Rôle | Taille |
 |---|---|---|
-| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 5 800 lignes |
-| `server.py` | Serveur HTTP du PC de traitement (bibliothèque standard, `ThreadingHTTPServer`), calculs ffmpeg, veille. | environ 1 020 lignes |
+| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 7 100 lignes |
+| `server.py` | Serveur HTTP du PC de traitement (bibliothèque standard, `ThreadingHTTPServer`), calculs ffmpeg, veille. | environ 1 200 lignes |
 | `vendor/` | mp4box 0.5.3 (lecture des en-têtes MP4), mp4-muxer 5.2.1 (écriture MP4), polices Anton et Montserrat. Servis en local, repli sur jsDelivr si un fichier manque. | 290 Ko |
 | `tests/` | Fabrique de faux rushs, tests de bout en bout (Playwright), tests unitaires. | |
 
@@ -32,7 +32,7 @@ Le même `index.html` sert les deux modes. Ce qui diffère est isolé dans un ob
 
 ## 2. Carte de `index.html`
 
-Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par onglet dans `<main>`, cinq `<dialog>` (fiche de marqueur `#sheet`, fiche à copier `#fallback`, aide `#help`, retouches `#fx`, calcul `#cmp`)), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
+Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `prefers-color-scheme` ou par le réglage de thème, qui pose `data-theme` sur `<html>`), puis le HTML (une `<section role="tabpanel">` par étape dans `<main>` : `#view` Sélection, `#sum` Compilation, `#reel` Réseaux, `#expo` Export ; l'import est l'accueil `#empty` ; cinq `<dialog>` (fiche de marqueur `#sheet`, fiche à copier `#fallback`, aide `#help`, retouches `#fx`, calcul `#cmp`)), puis le script. Le CSS se termine par un bloc « fondations » : variables transversales (`--ctl`, `--ring`, `--tap`, `--stage`...), anneau de focus, désactivé, appui, cibles tactiles, et les règles transversales qui visent un composant d'une autre partie. Chaque section du script porte un commentaire d'en-tête `/* ---------- nom ---------- */` ; voici l'index.
 
 | Section | Rôle | Fonctions d'entrée |
 |---|---|---|
@@ -40,23 +40,25 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | storage, fiche | localStorage, fiche Markdown enregistrée automatiquement | `persist`, `writeFiche`, `restore` |
 | loading | Lecture des fichiers choisis, timeline commune | `addFiles`, `parseName`, `rebuild` |
 | media | En-têtes MP4 (mp4box), lecture d'échantillons, vignettes WebCodecs | `parseMedia`, `Reader`, `genThumbs`, `canDecode` |
-| playback | Lecture du clip de la piste active ; `seek` recharge le fichier après une erreur de lecture | `seek`, `togglePlay`, `setTrack` |
-| drawing | Timeline, pistes, marqueurs, en-tête, sommaire, chronologie RETEX. Pas de rangée de titre au-dessus des pistes : `-` et `+` occupent le coin au-dessus des noms de pistes, à la hauteur de la règle (`--rh`, 44 px). Pastilles numérotées espacées d'au moins `MH_GAP` (44 px, leur zone tactile) : `mhLayout` regroupe les plus proches (`.mh.grp`, « 3-6 »), `openGroup` zoome pour montrer le groupe puis le séparer, ou ouvre la liste `#mhPop` quand le zoom maximal (`zMax`, 30 px par seconde sur un long vol) ne suffit pas. `pickMarker` vise un marqueur (`TL.sel`), zoome sur un passage trop étroit pour ses bords, ouvre la fiche. `egLayout` n'affiche que des poignées de bord dont les zones (44 px, surtout hors du passage) ne se touchent pas, celles du marqueur visé d'abord. `zoomTo` garde le zoom d'avant (`TL.back`), que `-` rétablit d'un toucher | `renderTimeline`, `drawStrips`, `renderMarkers`, `mhLayout`, `egLayout`, `openGroup`, `pickMarker`, `zoomTo`, `renderSummary`, `chrono` |
-| markers | Création et édition des marqueurs (dialogue `#sheet` : sensibilité, caméra et intérêt dépliés, moment, nom (noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`) et thèmes, carton, commentaire repliés avec leur état en résumé (`sheetSums`) ; la fiche édite une copie `draft` que toute fermeture enregistre (`commitSheet` : Terminé `#shSave`, Échap, appui à côté), sauf Supprimer (`closeSheet`), avec Annuler dans le message) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, marqueur que l'on vient de poser et ses noms courants à toucher (`S.fresh`), passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `commitSheet`, `renderInWin`, `freshMarker`, `nameMarker` |
-| export / import | Fiche Markdown et sa reprise | `buildMarkdown`, `parseFiche`, `applyFiche` |
+| playback | Lecture du clip de la piste active ; `seek` recharge le fichier après une erreur de lecture. En fin de fichier, la lecture passe au fichier suivant de la piste ; si plus aucune piste n'a d'image à cet instant et qu'une autre piste reprend avant, elle passe sur cette piste | `seek`, `togglePlay`, `setTrack` |
+| échelle de la timeline | Conversion unique entre secondes de timeline et position dans `#inner` : `tlX(t)` et `tlT(x)`, sur les segments de `tlLayout()` (image à `p` px par seconde, ou coupure). Temps morts repliés (`TLC`, localStorage `esam-tl-echelle`) : une période sans image sur aucune piste de plus de `CUT_MIN` (20 s, `tlGaps`) devient une coupure hachurée de `CUT_W` px (52) quel que soit le zoom, plus étroite seulement si la période l'est à l'échelle ou si les coupures prendraient plus de la moitié de la largeur au zoom 1. Au zoom 1, `p1` (`tlBase`) est choisi pour que tout tienne dans la largeur. `tlSpan` mesure une durée d'image (coupures exclues) pour les zooms automatiques ; `seekBy` fait sauter -5 s, +5 s et les flèches au bord d'une coupure ; `setCompact` bascule (bouton `#tlCut` sous les noms de pistes, affiché seulement s'il y a des temps morts) | `tlLayout`, `tlX`, `tlT`, `tlShow`, `seekBy`, `setCompact` |
+| drawing | Timeline, pistes, marqueurs, en-tête, bande des durées (`renderComp` : plans et leur durée `plansDur`, vidéo compilée estimée par `buildPlan`, montage réseaux `reelTotal`), cartes de l'étape Compilation. Taille de l'image : `fitStage` donne au cadre la forme de la vidéo affichée (`--ar`, portrait compris) et la hauteur qui reste sous l'en-tête, la mission, les commandes, la règle et deux pistes (téléphone) ou quatre (PC) (`--stmax`) ; en paysage, la hauteur sous la mission. Pas de rangée de titre au-dessus des pistes : Toute position passe par `tlX` / `tlT` (règle et graduations par segment, heure de reprise après une coupure, bandes de vignettes, pastilles, poignées, défilement qui suit la lecture). `-` et `+` occupent le coin au-dessus des noms de pistes, à la hauteur de la règle (`--rh`, 44 px). Pastilles numérotées espacées d'au moins `MH_GAP` (44 px, leur zone tactile) : `mhLayout` regroupe les plus proches (`.mh.grp`, « 3-6 »), `openGroup` zoome pour montrer le groupe puis le séparer, ou ouvre la liste `#mhPop` quand le zoom maximal (`zMax`, 30 px par seconde sur un long vol) ne suffit pas. `pickMarker` vise un marqueur (`TL.sel`), zoome sur un passage trop étroit pour ses bords, ouvre la fiche. `egLayout` n'affiche que des poignées de bord dont les zones (44 px, surtout hors du passage) ne se touchent pas, celles du marqueur visé d'abord. `zoomTo` garde le zoom d'avant (`TL.back`), que `-` rétablit d'un toucher | `renderTimeline`, `drawStrips`, `renderMarkers`, `mhLayout`, `egLayout`, `openGroup`, `pickMarker`, `zoomTo`, `renderComp`, `renderSummary`, `fitStage` |
+| markers | Création et édition des marqueurs (dialogue `#sheet` : sensibilité, caméra et intérêt dépliés, moment, nom (noms courants `PRESET_MAIN`, autres noms `PRESET_MORE`), ce qu'on voit (`desc`) et thèmes, carton, commentaire repliés avec leur état en résumé (`sheetSums`) ; la fiche édite une copie `draft` que toute fermeture enregistre (`commitSheet` : Terminé `#shSave`, Échap, appui à côté), sauf Supprimer (`closeSheet`), avec Annuler dans le message) ; suppression annulable, qui rétablit aussi l'élément du réel ; bandeau `#inWin` à hauteur fixe (passage en cours, marqueur que l'on vient de poser et ses noms courants à toucher (`S.fresh`), passage ou repère sous la tête de lecture) | `addMarker`, `markStart`, `markEnd`, `openSheet`, `commitSheet`, `renderInWin`, `freshMarker`, `nameMarker` |
+| export / import | Fiche Markdown et sa reprise (une fiche ancienne avec sa section « Chronologie RETEX » se reprend : seul le bloc `derushage-data` est lu) ; téléchargement d'un texte (`downloadText`, repli `copyDialog`) | `buildMarkdown`, `parseFiche`, `applyFiche`, `downloadText` |
+| liste des plans | Markdown pour bâtir un storyboard avec Claude : en-tête, un bloc par plan (heure, durée, caméra `effCam`, nom, thèmes, intérêt, sensibilité, `desc`, carton), ordre du montage réseaux ; commentaires internes seulement sur demande. `saveText` l'écrit aussi dans le dossier (PC par `api/fiche`, ou dossier ouvert) | `buildPlans`, `plansName`, `saveText` |
+| étape Export | Une carte par sortie avec durée et état ; les boutons appellent les fonctions des autres étapes (`cmpShow(hab)` ouvre le dialogue de calcul avec l'habillage voulu, `xSoc` passe à Réseaux et y touche « Créer ») | `renderExport`, `cmpShow`, `xSoc` |
 | dossier de travail | Import récursif d'un dossier (sauf `proxies` et dossiers cachés) et reprise de sa fiche ; écriture et reprise d'un clic (IndexedDB) avec `showDirectoryPicker` (Chrome, Edge sur ordinateur), lecture seule avec `<input webkitdirectory>` ailleurs (téléphone) | `openDir`, `walkDir`, `importFolder` |
-| events | Transport, zoom et pincement, glissement sur la règle et des bords (aperçu de vignette `#scrubPrev`, ouvert et fermé par `showPrev`, `hidePrev`, `releasePrev` seulement), raccourcis clavier, onglets, retour à la liste ou à l'accueil (`#home`) | `setZoom`, `setTab`, `keydown`, `goHome` |
+| events | Transport, zoom et pincement, glissement sur la règle et des bords (positions converties par `tlT`, aperçu de vignette `#scrubPrev`, ouvert et fermé par `showPrev`, `hidePrev`, `releasePrev` seulement), raccourcis clavier, étapes (`STEPS` : panneau et onglet de chacune ; l'appli rouvre sur Compilation ou Export si on les avait quittées), retour à la liste ou à l'accueil (`#home`) | `setZoom`, `setTab`, `keydown`, `goHome` |
 | clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
-| planche | Grille de vignettes : une rangée avant la grille (piste et intervalle en listes `#bTracks`, `#bStep`), heure et bouton « + Repère » posés sur l'image, trois numéros de marqueur au plus par vignette (« +n » ensuite) ; l'explication est dans l'aide | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
-| retouches | Flous suivis, flèches et cercles, vitesses d'un passage (`m.fx`) : dessin, découpe par vitesse, description pour le PC | `fxGet`, `fxMake`, `fxApply`, `fxSplit`, `fxVitAt`, `fxPayload`, `fxSprite`, `drawFxShape` |
+| retouches | Flous suivis, flèches et cercles, vitesses, couleurs d'un passage (`m.fx`) : dessin, découpe par vitesse, couleurs de l'image source, description pour le PC | `fxGet`, `fxMake`, `fxApply`, `fxSplit`, `fxVitAt`, `fxPayload`, `fxSprite`, `drawFxShape`, `fxColor`, `fxColParams` |
 | compilation | Plan de la vidéo compilée ou des extraits bruts (`cmpHab`) et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
 | mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
-| réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`). Sur téléphone, trois volets (`#reel[data-pane]`) liés au mode de l'image (`REEL.mode`) : Montage, Passage = cadrage, Habillage = titre puis aperçu ; `rPane` règle le mode, `rSetMode` le volet | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote`, `renderReel`, `rPane`, `rSetMode` |
-| éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
+| réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`). Cadre libre (`rCam`, `rCamPut`, `rCrop`, fond « image entière » `rBackdrop`), plan dupliqué (`rDuplicate`), gabarit par format (`rGab`, `rGabGo`, localStorage `esam-gabarit`), grille et aimantation de l'aperçu (`rDrawGrid`, `rSnap`, `RSAFE`, guides jamais rendus dans la vidéo). Sur téléphone, trois volets (`#reel[data-pane]`) liés au mode de l'image (`REEL.mode`) : Montage, Passage = cadrage, Habillage = titre puis aperçu ; `rPane` règle le mode, `rSetMode` le volet | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote`, `renderReel`, `rPane`, `rSetMode` |
+| éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses, bloc « Couleurs » (curseurs, Automatique, Neige / contre-jour, Appliquer à tous les passages) ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxColCtl`, `fxColAuto`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
 
 Conventions du script :
 
@@ -102,9 +104,10 @@ Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W gra
  interest: 0,         // 0 à 3 (INTEREST)
  sens: ["Aucune"],    // SENS : sensibilités avant diffusion
  note: "",            // texte du carton, visible dans la vidéo compilée
+ desc: "",            // « ce qu'on voit » : description courte du plan, pour la liste des plans (facultatif, absent des anciennes fiches)
  comment: "",         // commentaire interne, jamais incrusté : fichier .srt à part
  cam: "W",            // caméra souhaitée pour la compilation ; effCam(m) rend la caméra réellement utilisée
- fx: {flous, formes, vits}}   // retouches du passage, absentes tant qu'il n'y en a pas : voir 3.3
+ fx: {flous, formes, vits, couleurs}}   // retouches du passage, absentes tant qu'il n'y en a pas : voir 3.3
 ```
 
 ### 3.3 Retouches d'un passage (`m.fx`)
@@ -122,14 +125,16 @@ Les retouches appartiennent au passage, pas à une vidéo produite : la vidéo c
            a, z,                     // plage d'affichage (absents : tout le passage)
            keys: [{t, x, y}]}],      // point visé par la pointe de la flèche, centre du cercle
  vits: [{t, v}],                    // changements de vitesse : v (0.25 à 8) à partir de t, jusqu'au changement suivant
+ couleurs: [{cam, lum, con, sat, temp}],   // une entrée par caméra, réglages entiers de -100 à 100 ; absente = image inchangée
  t0}                                 // heure absolue de l'origine de la timeline (S.base) quand ces temps ont été écrits
 ```
 
 - `fxGet` et `fxMake` passent par `fxNorm` : si `S.base` a changé depuis l'écriture (fichier plus ancien ajouté, fiche reprise sur d'autres fichiers), tous les temps sont recalés une fois. Un flou ne doit jamais glisser dans le temps.
 
-- `fxApply(ctx, m, lens, t, g)` dessine flous puis formes sur un canevas où l'image source occupe `g = {x0, y0, k, sw, sh}` : aperçus, rendu navigateur de la compilation (`drawFrame`) et du réel (`drawCropped`).
+- `fxApply(ctx, m, lens, t, g)` applique les couleurs puis dessine flous et formes sur un canevas où l'image source occupe `g = {x0, y0, k, sw, sh}` : aperçus, rendu navigateur de la compilation (`drawFrame`) et du réel (`drawCropped`).
+- Couleurs (`fxColor`) : un modèle par canal, sur des valeurs de 0 à 1, chaque étape bornée à 0..1 : gains de température (`gr`, `gg`, `gb`, au plus 1 : le chaud baisse le bleu, le froid le rouge, un peu le vert dans les deux cas), luminosité `b` (multiplication, 0,5 à 1,5), contraste `c` (autour de 0,5, de 0,5 à 1,5), puis saturation `s` (0 à 2, matrice de `saturate()` en CSS). `fxColParams` convertit les réglages en paramètres. Le navigateur applique ce modèle sur place à la zone de l'image source, avant les flous : composition `multiply` pour les gains, puis le canevas redessiné sur lui-même avec `ctx.filter = "brightness() contrast() saturate()"` ; sans `ctx.filter` (Safari avant la version 18, vérifié une fois par `fxHasFilter`), pixel par pixel (`fxColPix`). Le PC fait la même chose avec `lutrgb` et `colorchannelmixer` (`color_chain`), puis revient au YUV avec la matrice de la source (`probe` : `matrice`, `plage`), faute de quoi les teintes d'une vidéo BT.709 seraient faussées. « Automatique » (`fxColAuto`) lit cinq images du passage dans la vidéo de l'éditeur, prend les luminances à 1 % et 99 % et les amène à 4 % et 96 % par la luminosité et le contraste.
 - `fxSplit(m, morceaux, mult)` recoupe les morceaux d'un passage (un par fichier) aux changements de vitesse ; chaque morceau porte `vit`. La compilation (`planFor`) et le réel (`reelPlan`, où `mult` est l'accéléré du réel) rendent donc un morceau à vitesse constante. Un changement posé au début du passage vaut aussi pour la marge qui le précède (`fxVitAt`).
-- `fxPayload(m, lens, morceau, sprites)` décrit au PC les flous et les formes d'un morceau, points de suivi ramenés au début du morceau. Une forme est dessinée une fois par l'appli (`fxSprite`, PNG transparent prévu pour une image source de `ref` pixels de haut) : le tracé « au crayon » est ainsi le même dans le navigateur et sur le PC.
+- `fxPayload(m, lens, morceau, sprites)` décrit au PC les couleurs, les flous et les formes d'un morceau, points de suivi ramenés au début du morceau. Une forme est dessinée une fois par l'appli (`fxSprite`, PNG transparent prévu pour une image source de `ref` pixels de haut) : le tracé « au crayon » est ainsi le même dans le navigateur et sur le PC.
 - Suivi automatique (`fxTrackStart`) : la vidéo est lue à vitesse normale ; à chaque image présentée (`requestVideoFrameCallback`), le motif en niveaux de gris de la zone est recherché autour de sa position précédente dans une copie de 640 px de large (écart moyen, moyennes retirées), le motif s'adapte doucement, et un point est posé tous les 0,2 s. Dix images sans retrouver le motif arrêtent le suivi. À la fin, `fxSimplify` ne garde que les points qui changent la trajectoire lissée.
 - Les flous d'une photo du réel restent sur l'élément du réel (`it.flous`, même format sans `cam`). Les réels d'avant la v0.17 rangeaient aussi là les flous des passages vidéo : `reelData()` les déplace dans `m.fx`.
 
@@ -138,21 +143,28 @@ Les retouches appartiennent au passage, pas à une vidéo produite : la vidéo c
 ```js
 {fmt,                // format de sortie : "reel" (9:16, réel ou story), "li" (4:5) ou "carre" (1:1), voir RFMTS
  items: [            // montage, dans l'ordre
-   {id,              // id du marqueur ; "ph..." pour une photo
+   {id,              // identifiant de l'élément ("r..." ; "ph..." pour une photo ; id du marqueur pour un élément d'avant la v0.22)
+    mk,              // id du marqueur (passage) ; un passage peut figurer plusieurs fois (plans dupliqués, rDuplicate)
     a, z,            // plage en secondes de timeline (passage)
     cam, vit,        // caméra, accéléré du réel 1 à 8 (multiplie les vitesses des retouches du passage)
-    keys: [{t, x}],  // cadrage : position horizontale du cadre (0 à 1) par instant, lissée (rKeyAt)
-    photo, dur, x, zoom,         // photo : chemin relatif, durée, cadrage, zoom lent
-    texte, tBox: {x, y, s, c, fond}, tDur,   // texte du passage, sa boîte, sa durée (0 = tout le passage)
+    keys: [{t, x, y, z}],  // cadrage par instant, lissé (rKeyAt, rCam) : place du cadre dans sa course (x, y de 0 à 1)
+                     //   et zoom z (1 : le plus grand cadre au format dans l'image ; jusqu'à 4 ; moins de 1 : le cadre déborde,
+                     //   jusqu'à « image entière », le reste du format reçoit l'image floutée). {t, x} seuls (réels plus anciens) : y 0,5, z 1
+    photo, dur, x, y, z, zoom,   // photo : chemin relatif, durée, cadrage (comme une clé), zoom lent
+    texte, tDur,     // texte du passage, sa durée (0 = tout le passage)
+    tPropre, tBox: {x, y, s, c, fond},   // place propre à ce passage ; sinon le texte prend r.texteBox
     flous: [{id, s, keys: [{t, x, y}]}]}],   // photo seulement : zones de flou, en fraction de l'image (passage vidéo : m.fx)
  titre, titreDur, titreBox: {x, y, s, c, haut},   // haut : y est le bord haut du titre (sinon son centre, réels plus anciens)
+ texteBox: {x, y, s, c, fond},                    // place commune des textes de passage
  elems: [{id, kind: "texte"|"fleche"|"cercle"|"cadre", a, d, x, y, s, rot, c, texte, fond}],  // temps du réel
  logo: {mode: "cartouche"|"logo"|"non", x, y, s},
  fin: {on, texte, sous},
  musique: {nom, fichier}, musDebut}
 ```
 
-Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de taille, `c` une couleur de `RCOLS`. `reelData()` complète les champs manquants, ce qui permet d'ajouter un réglage sans migration.
+Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de taille, `c` une couleur de `RCOLS`. `reelData()` complète les champs manquants, ce qui permet d'ajouter un réglage sans migration. Elle reprend aussi les réels plus anciens : `mk` pris dans `id`, `texteBox` prise du premier texte (les textes placés ailleurs gardent leur place, `tPropre`), clés de cadrage complétées (`y` 0,5, `z` 1).
+
+Les places par défaut (`rBoxDef`) sont celles du gabarit du format quand il existe : localStorage `esam-gabarit` = `{reel|li|carre: {titre, logo: {mode, x, y, s}, texte}}`, appliqué d'office à un nouveau réel et par « Appliquer le gabarit ».
 
 ### 3.5 Persistance
 
@@ -161,9 +173,13 @@ Les positions `x`, `y` sont des fractions de l'image (0 à 1), `s` un facteur de
 | localStorage `esam-derush:<clé>` | `{markers, meta, offsets}` | à chaque `persist()` |
 | localStorage `esam-auteur` | auteur des commentaires | à la saisie |
 | localStorage `esam-theme` | thème choisi (`light` ou `dark`, absent : automatique) | au réglage (Plus d'options) |
+| localStorage `esam-tl-echelle` | `reelle` : timeline à l'échelle réelle ; absent : temps morts repliés | au toucher de « Replier les temps morts » |
+| localStorage `esam-gabarit` | gabarit du réel par format (places, tailles, couleurs du titre, du logo, des textes) | « Enregistrer comme gabarit » |
+| localStorage `esam-grille` | grille de l'aperçu du réel affichée (`1`) ou non | bouton « Grille » |
 | `.derushage/etat.json` (mode PC) | `{markers, meta, offsets}` | `persist()`, 0,7 s après la dernière modification |
 | `.derushage/etat-compil.json` (mode PC) | la même chose pour une vidéo compilée rouverte comme source (`SRVS = "compil"`), sans fiche | idem |
 | `ESAM_Derushage_<date>_<mission>.md` | fiche lisible + bloc `<!-- derushage-data {...} -->` | 1,5 s après la dernière modification (PC ou dossier ouvert) |
+| `ESAM_Plans_<date>_<mission>.md` | liste des plans (étape Export) | à la demande, « Télécharger .md » (PC ou dossier ouvert, en plus du téléchargement) |
 
 Reprendre une fiche remplace les marqueurs (pas de fusion) ; l'opération est annulable par le toast. Le bloc `derushage-data` contient `{app, v, base, real, meta, offsets, markers, files}`.
 
@@ -203,10 +219,10 @@ Toutes les réponses sont en JSON sauf les fichiers. Une erreur de validation re
 | `GET /files/<dossier>/<chemin>` | | fichier des rushs (proxies, planches, musique), requêtes Range acceptées |
 | `POST /api/proxies` | `{d, src}` | le calcul créé ou déjà en cours (un par source) |
 | `POST /api/video` | `{d, format: "h"|"v", nom, titre, auteur, habillage, separes, logo, ouverture: {image, duree}, sprites: {id: image}, passages: [{image, duree, titre, nom_passage, commentaire, morceaux: [morceau]}]}` (images en data URL PNG). `habillage: false` : ni ouverture, ni cartons, ni logo ; `separes` : un fichier par passage | le calcul créé |
-| `POST /api/reel` | `{d, mode: "reel"|"story", format: "reel"|"li"|"carre", largeur, hauteur, nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x}]` (cadrage au format ; story seulement en 9:16) | le calcul créé |
+| `POST /api/reel` | `{d, mode: "reel"|"story", format: "reel"|"li"|"carre", largeur, hauteur, nom, titre_video, segments: [...], sprites, calques: [{image, debut, fin, fi, fo}], fin: {image, duree} ou null, musique: {fichier, debut} ou null, story_max}` ; un segment est `{type: "photo", image, duree, zoom, nom}` ou `{type: "video", nom, morceaux: [morceau]}`, où un morceau porte en plus `cles: [{t, x, y, z}]` (cadrage au format, voir 3.4 ; `{t, x}` seuls acceptés : y 0,5, z 1 ; story seulement en 9:16) | le calcul créé |
 | `POST /api/annuler` | `{id}` | `{ok}` |
 | `POST /api/etat` | `{d, src, etat}` | `{ok}` |
-| `POST /api/fiche` | `{d, nom, md}` ; supprime les autres `ESAM_Derushage_*.md` du dossier | `{ok, fichier}` |
+| `POST /api/fiche` | `{d, nom, md}`, `nom` en `.md` ; pour une fiche (`ESAM_Derushage_...`), supprime les autres `ESAM_Derushage_*.md` du dossier ; sert aussi à la liste des plans (`ESAM_Plans_...`) | `{ok, fichier}` |
 | `POST /api/photo` | `{d, fichier, t}` | `{ok, fichier: "Photos/..."}` |
 | `POST /api/musique?d=&nom=` | corps brut (60 Mo au plus, mp3, m4a, aac, wav, ogg, flac) | `{ok, fichier: "musique.<ext>"}` |
 
@@ -214,11 +230,12 @@ Un morceau est un extrait d'un fichier à vitesse constante, avec les retouches 
 
 ```json
 {"fichier": "DJI_..._W.MP4", "debut": 12.5, "fin": 20.0, "vitesse": 0.5,
+ "couleur": {"lum": 20, "con": -15, "sat": 10, "temp": 5},
  "flous": [{"s": 0.2, "ar": 1, "forme": "ellipse|rect", "mode": "doux|pixel", "cles": [{"t": 0, "x": 0.4, "y": 0.5}]}],
  "formes": [{"image": "<id de sprites>", "ref": 2160, "ax": 310.5, "ay": 120, "cles": [...], "debut": 0, "fin": null}]}
 ```
 
-Ordre des filtres ffmpeg d'un morceau : flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre 9:16), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
+`couleur` est absent quand l'image reste inchangée. Ordre des filtres ffmpeg d'un morceau : couleurs (`color_chain`) puis flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre du réel : `frame_chain`), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). `frame_chain` a trois cas : zoom constant et cadre dans l'image, `crop` qui suit x et y (le seul cas d'avant le cadre libre) ; zoom constant et cadre qui déborde, image réduite posée par `overlay` sur le fond flouté (`reel_backdrop`) ; zoom qui varie, `zoompan` (temps `it`) sur une toile au format qui contient tous les cadres du morceau (image sur fond transparent), posée sur le fond flouté. Dans ce dernier cas, la taille des formes suivies reste celle du début du morceau. Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
 
 Un calcul (`travaux.json`, 30 derniers conservés) :
 
@@ -241,6 +258,7 @@ Dans le dossier de l'intervention (voir aussi le tableau de `LISEZMOI.md`) :
 | `proxies/photos/` | copies redressées des photos (`photo_copy`) |
 | `.derushage/etat.json`, `.derushage/musique.<ext>` | `api/etat`, `api/musique` |
 | `ESAM_Derushage_<date>_<mission>.md` | `api/fiche` (ou le dossier des rushs en mode navigateur) |
+| `ESAM_Plans_<date>_<mission>.md` | `api/fiche` (ou le dossier des rushs), depuis l'étape Export |
 | `Photos/ESAM_<rush>_<instant>.jpg` | `api/photo` |
 | `ESAM_Compilation_<date>_<mission>[_vertical].mp4`, `.commentaires-ESAM.srt`, `_chapitres.txt` | `do_video` |
 | `ESAM_Extraits_<date>_<mission>[_vertical].mp4`, ou `..._<NN>_<passage>.mp4` par passage | `do_video` sans habillage |
@@ -251,7 +269,7 @@ Le nom de base est construit par `outName()` côté appli (`ESAM_<préfixe>_<dat
 
 ## 7. Ce qui existe en double, à dessein
 
-Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un commentaire qui nomme son jumeau ; `tests/test_unitaire.py` vérifie que les découpes de story et le lissage des points coïncident.
+Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un commentaire qui nomme son jumeau ; `tests/test_unitaire.py` vérifie que les découpes de story, le lissage des points, le cadre et les couleurs (paramètres identiques, pixels du canevas et de ffmpeg à 3 niveaux près) coïncident.
 
 | Appli (`index.html`) | PC (`server.py`) | Objet |
 |---|---|---|
@@ -260,9 +278,13 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 | `rZone` | `zone_box` et les `clip()` de `blur_chain` | taille et place d'une zone de flou, gardée dans l'image |
 | `softBlur` | `blur_chain`, `blur_mask` | flou gaussien ou mosaïque, dans un ovale ou un rectangle aux bords fondus |
 | `fxApply` (place d'une forme) | `shape_chain` et ses `fx`, `fy` | position et taille d'une forme dans l'image mise au format |
+| `fxColParams`, `fxColor`, `fxColPix` | `color_params`, `color_chain` | couleurs d'un passage : réglages vers paramètres, puis modèle par canal (gains, luminosité, contraste, saturation) |
 | nom des extraits dans `runCompile` | `do_video`, fichiers séparés | `<base>_<NN>_<nom du passage>.mp4` |
 | `PROD_RE` | `PROD`, `COMPIL` | noms des vidéos produites par l'outil |
-| `rCrop` | `crop_box` | cadre au format de sortie dans l'image source |
+| `rCrop` | `crop_box` | cadre au format de sortie dans l'image source (place, zoom, image entière) |
+| `rKeyAt` | `key_at` | lissage des points, côté serveur pour la toile d'un zoom qui varie |
+| `rBackdrop` | `reel_backdrop` | fond « image entière » : image réduite au 1/8, floutée, assombrie |
+| `RZMAX` | `REEL_ZMAX` | zoom maximal du cadre |
 | `RFMTS` | `REEL_FMTS` | tailles des formats du réel et de la vidéo LinkedIn |
 | `buildSrt` | bloc SRT de `do_video` | commentaires internes en sous-titres |
 | `outName` | nettoyage des noms dans `do_video`, `do_reel` | noms des fichiers produits |
@@ -284,11 +306,11 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 
 | Commande | Ce qu'elle fait | Durée |
 |---|---|---|
-| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr`, `rCrop` / `crop_box` (Playwright sur `index.html` en `file://`) | 10 s |
-| `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture | 1 min |
-| `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5, contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
-| `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur ; en mode PC, flou suivi, formes, vitesses, vidéo compilée, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
-| `python tests/fabriquer_rushs.py DOSSIER [--vp9]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) | |
+| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr` / `key_at`, `rCrop` / `crop_box` (portrait, zoom, image entière), filtres de `frame_chain` lancés dans ffmpeg, `fxColParams` / `color_params` et pixels de `fxColor` contre ffmpeg, reprise d'une fiche ancienne avec section RETEX (Playwright sur `index.html` en `file://`) | 15 s |
+| `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture, timeline compacte (coupure entre les deux vols, `tlX` / `tlT` réciproques, bascule vers l'échelle réelle) | 1 min |
+| `python tests/test_reel.py` | étape Réseaux (`#reel`) de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5, plan sur la vidéo de téléphone en portrait, cadre zoomé et remonté, plan dupliqué, contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
+| `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur, couleurs (luminance de sortie mesurée) ; en mode PC, flou suivi, formes, vitesses, couleurs (« Appliquer à tous les passages » annulé, luminance mesurée), bande des durées, liste des plans (sans commentaire interne, enregistrée à côté de la fiche), vidéo compilée lancée de l'étape Export, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
+| `python tests/fabriquer_rushs.py DOSSIER [--vp9] [--espaces]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) ; `--espaces` ajoute une intervention sans drone (vidéos de deux téléphones espacées de 20 à 60 min) et un vol DJI continu en plusieurs fichiers, pour la timeline compacte | |
 | `python tests/fabriquer_longue.py DOSSIER` | intervention de 3 h sur 4 caméras, déjà préparée (planches seules), pour mesurer la mémoire | |
 
 Prérequis : ffmpeg, `pip install playwright` et `playwright install chromium`. Les tests créent leur propre `config.json` temporaire (variable `ESAM_CONFIG`) et ne touchent pas au vôtre. L'heure des faux rushs est locale : les tests supposent le fuseau du PC de traitement (Europe/Paris) ; sous un autre fuseau, lancer avec `TZ=Europe/Paris`.
@@ -312,6 +334,7 @@ La mémoire restante est le cache des planches décodées, que le navigateur peu
 - Pas de son dans la vidéo compilée ; heure incrustée en mode navigateur seulement (elle figure sur les cartons en mode PC).
 - Suivi automatique : comparaison de motifs, sans reconnaissance de visage ; il décroche sur un sujet masqué ou une zone uniforme. Un ralenti répète les images (pas d'interpolation).
 - Les formes suivies n'ont pas de fondu d'apparition ; les éléments libres de l'aperçu du réel (`elems`) restent fixes à l'écran.
+- Réel en mode PC, zoom qui varie pendant un morceau : les formes suivies gardent la taille du début du morceau (dans le navigateur, elles suivent le zoom) ; au-delà d'un rapport de 10 entre le plus grand et le plus petit cadre d'un morceau, `zoompan` est limité à 10.
 - Lecture à x16 limitée par le débit montant de la connexion du PC.
 - Idée : télémétrie des `.SRT` du M30T (GPS, altitudes, focale) pour afficher altitude, vitesse et distance, avec incrustation optionnelle.
 - Question ouverte : durée d'affichage des commentaires internes dans le `.srt` (tout le passage ou quelques secondes).

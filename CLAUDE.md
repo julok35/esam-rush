@@ -34,7 +34,7 @@ Projet : outil de dérushage des vidéos drone de l'ESAM (secours animalier en m
 
 - `python tests/test_unitaire.py` après toute modification de `server.py` ou des calculs en miroir.
 - `python tests/test_fumee.py` après toute modification de `server.py` ou du mode PC.
-- `python tests/test_reel.py` après toute modification de l'onglet Réel (6 à 10 minutes sans carte NVIDIA).
+- `python tests/test_reel.py` après toute modification de l'étape Réseaux, ex-onglet Réel `#reel` (6 à 10 minutes sans carte NVIDIA).
 - `python tests/test_montage.py` après toute modification des retouches (flous, formes, vitesse, suivi), de la compilation ou des extraits (3 minutes).
 - Vérifier visuellement par capture d'écran en 390x844 (téléphone) et 1400x900 (PC) ; mode navigateur : servir le dossier (`python -m http.server`), ouvrir `index.html` et charger des fichiers de `tests` avec `set_input_files('#fileIn', ...)`.
 

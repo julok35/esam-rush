@@ -4,7 +4,8 @@ Usage : python tests/test_reel.py [--garder]
 Prérequis : ffmpeg, playwright (pip install playwright ; playwright install chromium).
 Fabrique de faux rushs, lance server.py (port 8798, config temporaire), pose trois marqueurs,
 monte un réel de plus de 60 s avec cadrage suivi, retouches (flou suivi, cercle, ralenti), accéléré, textes et musique, le fait calculer
-par le PC puis en story, puis en vidéo LinkedIn 4:5, et vérifie les fichiers produits (1080 x 1920 ou 1080 x 1350, durée, piste son).
+par le PC puis en story, puis en vidéo LinkedIn 4:5 (un passage pris sur la vidéo de téléphone en portrait, cadre zoomé
+et remonté, puis dupliqué), et vérifie les fichiers produits (1080 x 1920 ou 1080 x 1350, durée, piste son).
 Les captures d'écran sont écrites dans le dossier temporaire affiché.
 """
 import asyncio, json, os, subprocess, sys, tempfile, time, urllib.request
@@ -154,6 +155,24 @@ async def navigateur(tmp, iv):
         # vidéo LinkedIn : même montage au format 4:5, pas de story ; puis aperçu en carré
         await volet(0); await pg.click("#rFmt .chip >> nth=1"); await pg.wait_for_timeout(500)
         assert await pg.is_hidden("#rGoStory") and "LinkedIn" in await pg.inner_text("#rGoReel")
+        # passage 2 pris sur la vidéo du téléphone (portrait) : cadre zoomé et remonté (cadre libre), puis plan dupliqué
+        await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(800)
+        tel = [c for c in await pg.locator("#rEdit [data-rcam]").all_inner_texts() if "Pixel" in c]
+        assert tel, "pas de piste du téléphone sur le passage 2"
+        await pg.click(f'#rEdit [data-rcam] >> text="{tel[0]}"'); await pg.wait_for_timeout(1500)
+        await pg.evaluate("const s = document.getElementById('rCamZ'); s.value = 600; s.dispatchEvent(new Event('input', {bubbles:true}))")
+        await pg.wait_for_timeout(600)
+        await pg.evaluate("document.getElementById('rStage').scrollIntoView()"); await pg.wait_for_timeout(400)
+        box = await pg.locator("#rCv").bounding_box()
+        cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+        await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy - 120, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(600)
+        await pg.screenshot(path=str(tmp / "r5b_telephone_45.png"))
+        await pg.click("#rEdit [data-rdup]"); await pg.wait_for_timeout(800)
+        reel = api("api/etat?d=" + urllib.parse.quote(iv))["meta"]["reel"]
+        its = [x for x in reel["items"] if (x.get("cam") or "").startswith("@")]
+        print("téléphone en 4:5 :", [(x["id"], x["mk"], x["keys"]) for x in its])
+        assert len(its) == 2 and its[0]["mk"] == its[1]["mk"] and its[0]["id"] != its[1]["id"]
+        assert all(k["z"] > 1.2 and k["y"] < 0.45 for k in its[0]["keys"]), its[0]["keys"]
         await volet(1); await pg.wait_for_timeout(800)
         await pg.screenshot(path=str(tmp / "r5_linkedin.png"))
         await pg.click("#rGoReel")
