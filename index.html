@@ -11,7 +11,7 @@
 @font-face{font-family:Montserrat;font-style:normal;font-weight:400 700;font-display:swap;src:url(vendor/montserrat-latin.woff2) format("woff2")}
 /* Charte ESAM : polices Anton (titres) et Montserrat (texte), couleurs en variables ci-dessous.
    Organisation : base, en-tête, boutons, accueil, lecteur, timeline, sommaire, fiche de marqueur,
-   dialogue de calcul, mode PC, réel, export ; les règles pour écran large sont regroupées à la fin
+   dialogue de calcul, menu Exporter, mode PC, réel ; les règles pour écran large sont regroupées à la fin
    de chaque partie dans un seul bloc @media (min-width:1100px). */
 :root{
   --lh:46px; --ink:#171618; --onblue:#171618; --bg:#FFFFFF; --blue:#A8C8FB; --yellow:#F9DD10; --paleyellow:#FEF6C8;
@@ -52,7 +52,7 @@ body.loaded .top .ttl{display:none}
 .tabs{display:flex;flex:1;min-width:0;align-self:stretch}
 .tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;padding:0 6px;font-size:14px;font-weight:600;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
 .tab[aria-selected="true"]{border-bottom-color:var(--ink)}
-/* onglets numérotés comme les étapes du parcours : Sélection, Compilation, Réseaux, Export */
+/* onglets numérotés comme les étapes du parcours : Sélection, Compilation, Réseaux */
 .tab .tn{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ctl);font-size:12px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .tab[aria-selected="true"] .tn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tab .n{display:inline-block;min-width:22px;padding:0 6px;border-radius:11px;background:var(--blue);color:var(--onblue);font-size:12px;margin-left:6px}
@@ -71,13 +71,13 @@ body.loaded .home:hover .homel{text-decoration:underline;text-underline-offset:3
 .helpb::after{content:"";position:absolute;inset:-6px -2px}
 @media (min-width:700px){ .tabs{max-width:640px} }
 /* jusqu'à 899 px, le numéro passe au-dessus du libellé et les compteurs se retirent (la bande des durées les donne) :
-   les quatre étapes tiennent sur une ligne, même à 360 px */
+   les trois étapes tiennent sur une ligne, même à 360 px */
 @media (max-width:899px){
   .tab{flex-direction:column;gap:1px;padding:0 2px;font-size:13px;line-height:1.15}
   .tab .tn{width:17px;height:17px;font-size:12px}
   .tab .n{display:none}
 }
-/* téléphone : deux rangées une fois l'intervention ouverte (retour, aide, version, puis les quatre onglets en entier) */
+/* téléphone : deux rangées une fois l'intervention ouverte (retour, Exporter, aide, version, puis les trois onglets en entier) */
 @media (max-width:479px){
   .top{gap:6px}
   body.loaded{--top:88px}
@@ -227,6 +227,13 @@ textarea.field{min-height:70px;resize:vertical}
 .inwin.new .iwl{flex:none}
 .inwin.new .iwb{flex:1 1 auto;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
 .inwin .btn{min-height:44px;padding:4px 12px;font-size:13px;border-width:1.5px}
+/* « ce qu'on voit » : le champ prend la place des boutons, le bandeau garde sa hauteur */
+.inwin.desc{border:2px solid var(--ink);color:var(--ink)}
+.inwin.desc .iwl{flex:0 1 34%}
+.inwin.desc .iwb{flex:1 1 auto}
+.inwin .iwb>.iwdesc{flex:1 1 auto;min-width:0;width:auto;min-height:44px;padding:6px 10px;font-size:14px}
+.inwin .iwd{max-width:220px}
+.inwin .iwd span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inwin.on .btn{background:var(--bg);color:var(--ink);border-color:var(--onblue)}
 /* téléphone : le texte sur une ligne, les boutons dessous (défilement horizontal s'ils débordent) */
 @media (max-width:520px){
@@ -238,6 +245,8 @@ textarea.field{min-height:70px;resize:vertical}
   .inwin .iwb{padding-right:4px}
   .inwin.new .iwb{padding-right:28px}
   .inwin .iwb:empty{display:none}
+  .inwin.desc .iwl{flex:none}
+  .inwin .iwb>.iwdesc{min-height:40px;font-size:16px}
 }
 
 /* ---------- timeline ----------
@@ -379,18 +388,20 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   .srow .btn{min-height:44px;min-width:44px;padding:2px 8px;font-size:12px}
   .srow small{font-size:12px;font-weight:600;color:var(--muted)}
   .sidelist .empty2{font-size:13px;color:var(--muted)}
+  .srow textarea.sdesc{grid-column:3 / -1;display:block;min-height:36px;height:36px;padding:7px 9px;font-size:13px;line-height:1.4;resize:none;overflow:hidden;border-width:1.5px;cursor:text}
 }
 
 /* ---------- sommaire ---------- */
 .sumhead{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
 .sumgo{width:100%}
 .sumfiche .btn{flex:1}
+body.srv .sumfiche{display:none}             /* mode PC : la fiche se reprend d'elle-même, rien à proposer ici */
 .sumaut{display:flex;align-items:center;gap:10px}
 .sumaut label{flex:none;font-weight:700;font-size:13px}
 .sumaut .field{flex:1;min-width:0;padding:8px 12px}
 .flight{font-size:12px;color:var(--muted)}
 .list{list-style:none;margin:0;padding:0 16px 30px}
-/* carte d'un marqueur : quatre rangées au plus sur téléphone (heure, nom et caméra, commentaire, actions) */
+/* carte d'un marqueur : heure, miniatures (carton et plan), nom et caméra, ce qu'on voit, commentaire, actions */
 .card{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .chead{display:flex;align-items:center;gap:10px;min-width:0}
 .card .idx{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
@@ -405,6 +416,14 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
 .card .note{font-size:13px}
 .card .cams{display:flex;gap:6px}
 .card .cams .btn{flex:1 1 0;min-width:0;padding:6px 4px;gap:5px;white-space:nowrap}
+/* miniatures : carton puis plan, pleine largeur de la carte ; en vertical (9:16), côte à côte */
+.cviz{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.cviz.v{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cviz.v.one{grid-template-columns:minmax(0,50%)}
+.cviz canvas{display:block;width:100%;height:auto;background:#000;border-radius:6px}
+.cviz .cvp{touch-action:pan-y;cursor:ew-resize}
+.cviz .cvp.tri{cursor:default}
+.cvx{margin:0;padding:8px 10px;font-size:12px;font-weight:600;color:var(--muted);border:1.5px dashed var(--ctl);border-radius:6px}
 .icom{display:block}
 .icom textarea{display:block;min-height:44px;height:44px;font-size:14px;padding:10px;line-height:1.4;resize:none;overflow:hidden}
 .emptylist{padding:10px 16px 40px;color:var(--muted);max-width:52ch}
@@ -412,17 +431,12 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   #sum:not([hidden]){display:grid;grid-template-columns:420px minmax(0,1fr);align-items:start}
   .sumside{grid-column:1;grid-row:1 / span 2;position:sticky;top:var(--top);max-height:calc(100vh - var(--top));overflow:auto;border-right:1px solid var(--line);padding-bottom:16px}
   #sum>.list,#sum>.emptylist{grid-column:2;padding-left:28px;padding-right:28px}
-  .list{max-width:1040px}
-  /* PC : heure, nom et caméra sur une ligne ; commentaire et actions sur la suivante */
-  .card{grid-template-columns:250px minmax(0,1fr) auto;gap:6px 14px;padding:10px 0;align-items:center}
-  .card .ttl{grid-column:2 / -1;grid-template-columns:minmax(0,240px) minmax(0,180px)}
+  /* PC : cartes en grille, miniatures en haut de chaque carte */
+  #sum>.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding-top:16px;align-items:start}
+  .card{border:1.5px solid var(--line);border-radius:10px;padding:12px;gap:8px}
   .card .namesel,.card .camsel{min-height:38px;padding:6px 10px}
-  .card .sensbox,.card .meta,.card .note{grid-column:1 / -1}
-  .card .icom{grid-column:1 / 3}
-  .card .icom.idesc{grid-column:1 / -1}
   .card .icom textarea{min-height:38px;height:38px;padding:7px 10px}
-  .card .cams{grid-column:3}
-  .card .cams .btn{flex:none;padding:6px 12px}
+  .card .cams .btn{padding:6px 6px;min-height:38px}
 }
 
 /* ---------- fiche de marqueur et autres dialogues ---------- */
@@ -495,26 +509,34 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 /* bouton « Enregistrer » toujours visible, même sous une vidéo verticale haute */
 #cmpSetup .sheetbtns, #cmpDone .sheetbtns{position:sticky;bottom:0;background:var(--bg);padding:10px 0;margin-top:8px;z-index:1}
 
-/* ---------- étape Export ----------
-   Une carte par sortie : titre, durée, état, boutons. Une colonne sur téléphone, deux puis trois sur écran large. */
-#expo{padding:12px 16px 40px}
-.xlead{margin:0 0 12px;font-size:13px;color:var(--muted);max-width:70ch}
-.xgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
-.xcard{border:1.5px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.xcard h3{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;line-height:1.1;margin:0}
-.xdur{margin:0;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-.xst{margin:0;font-size:13px;color:var(--muted)}
-.xbtns{display:flex;flex-wrap:wrap;gap:8px;padding-top:8px}
-.xbtns .btn{flex:1 1 auto}
-.xchk{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;min-height:44px;cursor:pointer}
+/* ---------- menu Exporter (en-tête) ----------
+   Bouton toujours visible une fois l'intervention ouverte ; il déplie la liste des exports sous l'en-tête :
+   une ligne par sortie (titre, durée ou état, boutons). Pleine largeur sur téléphone, 420 px à droite sur écran large. */
+.xwrap{display:none;flex:none}
+body.loaded .xwrap{display:block;margin-left:auto}
+body.loaded .helpb{margin-left:0}
+.xbtn{display:flex;align-items:center;gap:5px;border:1.5px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:14px;padding:0 8px 0 10px;min-height:32px;font-size:13px;font-weight:700;position:relative;white-space:nowrap}
+.xbtn::after{content:"";position:absolute;inset:-6px -2px}          /* zone de toucher de 44 px */
+.xbtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
+.xbtn[aria-expanded="true"] .dd{transform:rotate(180deg)}
+.xmenu{position:absolute;top:100%;left:8px;right:8px;margin-top:6px;background:var(--bg);border:1.5px solid var(--ink);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.25);max-height:calc(100vh - var(--top) - 24px);max-height:calc(100dvh - var(--top) - 24px);overflow:auto;overscroll-behavior:contain;z-index:30}
+.xi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.xi:first-child{border-top:0}
+.xt{min-width:0;display:flex;flex-direction:column}
+.xt b{font-size:14px;font-weight:700}
+.xt small{font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.xt .xst{color:var(--ink)}
+.xb{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.xb .btn{min-height:var(--tap)}
+.xchk{grid-column:1 / -1;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;min-height:var(--tap);cursor:pointer}
 .xchk input{width:20px;height:20px;margin:0;accent-color:var(--ink)}
-.xprev>summary{cursor:pointer;font-weight:700;font-size:13px;min-height:44px;display:flex;align-items:center}
-.xprev pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.45;max-height:50vh;overflow:auto;background:var(--soft);border-radius:6px;padding:10px;margin:0}
-@media (min-width:700px){ .xgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-@media (min-width:1100px){
-  #expo{padding:20px 28px 40px;max-width:1400px}
-  .xgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:700px){ .xmenu{left:auto;width:420px} }
+/* téléphone : retour, Exporter, Aide et version tiennent sur la première rangée de l'en-tête */
+@media (max-width:479px){
+  .xbtn>svg:first-child{display:none} .xbtn{padding:0 6px 0 10px}
+  body.srv.loaded .home .homel{display:none}      /* « Interventions » : le chevron et le logo suffisent (nom accessible et info-bulle gardés) */
 }
+@media (max-width:379px){ body.loaded .home .homel{display:none} }
 
 /* ---------- mode PC : liste des interventions ---------- */
 body.srv .empty{max-width:760px}
@@ -801,9 +823,19 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <button class="tab" role="tab" id="tabView" aria-selected="true" aria-controls="view" title="Étape 1 : visionner les rushs et marquer les plans"><span class="tn" aria-hidden="true">1</span><span class="tl">Sélection</span></button>
       <button class="tab" role="tab" id="tabSum" aria-selected="false" aria-controls="sum" title="Étape 2 : les plans de la vidéo compilée, avec leurs retouches"><span class="tn" aria-hidden="true">2</span><span class="tl">Compilation</span><span class="n" id="count">0</span></button>
       <button class="tab" role="tab" id="tabReel" aria-selected="false" aria-controls="reel" title="Étape 3 : vidéo courte pour les réseaux (9:16, 4:5, 1:1)"><span class="tn" aria-hidden="true">3</span><span class="tl">Réseaux</span><span class="n" id="rCount">0</span></button>
-      <button class="tab" role="tab" id="tabExp" aria-selected="false" aria-controls="expo" title="Étape 4 : vidéos, liste des plans et fiche"><span class="tn" aria-hidden="true">4</span><span class="tl">Export</span></button>
     </nav>
     <div class="sub" id="hsub">Aucune intervention chargée</div>
+    <div class="xwrap" id="xWrap">
+      <button type="button" class="xbtn" id="xBtn" aria-expanded="false" aria-controls="xMenu"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exporter<svg class="dd" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg></button>
+      <div class="xmenu" id="xMenu" role="group" aria-label="Exports" hidden>
+        <div class="xi" id="xCmp"><div class="xt"><b>Vidéo compilée</b><small id="xCmpDur"></small><small class="xst" id="xCmpSt" hidden></small></div><div class="xb"><button type="button" class="btn small" id="xCmpGo" aria-label="Créer la vidéo compilée">Créer</button></div></div>
+        <div class="xi" id="xRaw"><div class="xt"><b>Extraits bruts</b><small id="xRawDur"></small></div><div class="xb"><button type="button" class="btn small" id="xRawGo" aria-label="Créer les extraits bruts">Créer</button></div></div>
+        <div class="xi" id="xSoc"><div class="xt"><b id="xSocTtl">Réel ou story</b><small id="xSocDur"></small></div><div class="xb"><button type="button" class="btn small" id="xSocReel">Réel</button><button type="button" class="btn small" id="xSocStory">Story</button><button type="button" class="btn small ghost" id="xSocGo">Ouvrir Réseaux</button></div></div>
+        <div class="xi" id="xPlans"><div class="xt"><b>Liste des plans</b><small id="xPlansDur"></small></div><div class="xb"><button type="button" class="btn small" id="xPlansCopy" aria-label="Copier la liste des plans">Copier</button><button type="button" class="btn small" id="xPlansDl" aria-label="Télécharger la liste des plans en .md">Télécharger .md</button></div>
+          <label class="xchk"><input type="checkbox" id="xPlansCom"> Inclure les commentaires internes</label></div>
+        <div class="xi" id="xFiche"><div class="xt"><b>Fiche de dérushage</b><small id="xFicheDur"></small></div><div class="xb"><button type="button" class="btn small" id="exp">Exporter la fiche</button></div></div>
+      </div>
+    </div>
     <button type="button" class="helpb" id="helpBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>Aide</button>
     <button type="button" class="ver" id="ver" title="Version de l'appli" aria-haspopup="dialog">v</button>
   </header>
@@ -948,7 +980,6 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <div class="sumhead">
       <button class="btn primary sumgo" id="cmpOpen" aria-describedby="emptyList">Créer la vidéo compilée</button>
       <div class="actions sumfiche">
-        <button class="btn small" id="exp" aria-describedby="emptyList">Exporter la fiche</button>
         <label class="btn small ghost" for="mdIn">Reprendre une fiche</label>
       </div>
       <div class="sumaut">
@@ -1053,44 +1084,6 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     </div>
   </div>
 </section>
-  <section id="expo" hidden role="tabpanel" aria-labelledby="tabExp">
-    <h2 class="vh">Export</h2>
-    <p class="xlead">Ce que l'on peut produire à partir des plans marqués. Les calculs se font comme dans les étapes précédentes.</p>
-    <div class="xgrid" id="xGrid">
-      <article class="xcard" id="xCmp">
-        <h3>Vidéo compilée</h3>
-        <p class="xdur" id="xCmpDur"></p>
-        <p class="xst" id="xCmpSt"></p>
-        <div class="xbtns"><button type="button" class="btn primary" id="xCmpGo">Créer la vidéo compilée</button></div>
-      </article>
-      <article class="xcard" id="xRaw">
-        <h3>Extraits bruts</h3>
-        <p class="xdur" id="xRawDur"></p>
-        <p class="xst">Chaque plan sans carton, sans heure et sans logo, avec ses retouches : une vidéo ou un fichier par plan.</p>
-        <div class="xbtns"><button type="button" class="btn" id="xRawGo">Créer les extraits</button></div>
-      </article>
-      <article class="xcard" id="xSoc">
-        <h3>Réseaux sociaux</h3>
-        <p class="xdur" id="xSocDur"></p>
-        <p class="xst" id="xSocSt"></p>
-        <div class="xbtns"><button type="button" class="btn" id="xSocReel">Créer le réel</button><button type="button" class="btn" id="xSocStory">Créer la story</button><button type="button" class="btn ghost" id="xSocGo">Ouvrir Réseaux</button></div>
-      </article>
-      <article class="xcard" id="xPlans">
-        <h3>Liste des plans</h3>
-        <p class="xdur" id="xPlansDur"></p>
-        <p class="xst">Pour bâtir un storyboard : à coller dans une conversation avec Claude, ou à partager. Ce qu'on voit, caméra, thèmes, carton et ordre du montage réseaux, sans les commentaires internes.</p>
-        <label class="xchk"><input type="checkbox" id="xPlansCom"> Inclure les commentaires internes</label>
-        <div class="xbtns"><button type="button" class="btn" id="xPlansCopy">Copier</button><button type="button" class="btn" id="xPlansDl">Télécharger .md</button></div>
-        <details class="xprev" id="xPlansPrev"><summary>Aperçu</summary><pre id="xPlansTxt"></pre></details>
-      </article>
-      <article class="xcard" id="xFiche">
-        <h3>Fiche de dérushage</h3>
-        <p class="xdur" id="xFicheDur"></p>
-        <p class="xst" id="xFicheSt"></p>
-        <div class="xbtns"><button type="button" class="btn" id="xFicheGo">Exporter la fiche</button></div>
-      </article>
-    </div>
-  </section>
   </main>
 </div>
 
@@ -1149,10 +1142,10 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <h3 id="helpTtl" tabindex="-1">Aide</h3>
     <p class="helpver" id="helpVer"></p>
     <h4>Le parcours</h4>
-    <ul><li>Après l'import (l'accueil), quatre étapes numérotées : <b>1 Sélection</b> (visionner et marquer les plans), <b>2 Compilation</b> (les plans retenus pour la vidéo longue, avec leurs retouches), <b>3 Réseaux</b> (vidéo courte 9:16, 4:5 ou 1:1), <b>4 Export</b> (tout ce que l'on peut produire). La bande sous le nom de l'intervention donne toujours le nombre de plans et leur durée, la durée estimée de la vidéo compilée (cartons et marges compris) et celle du montage réseaux.</li></ul>
+    <ul><li>Après l'import (l'accueil), trois étapes numérotées : <b>1 Sélection</b> (visionner et marquer les plans), <b>2 Compilation</b> (les plans retenus pour la vidéo longue, avec leurs retouches), <b>3 Réseaux</b> (vidéo courte 9:16, 4:5 ou 1:1). Le bouton <b>Exporter</b>, en haut, liste tout ce que l'on peut produire. La bande sous le nom de l'intervention donne toujours le nombre de plans et leur durée, la durée estimée de la vidéo compilée (cartons et marges compris) et celle du montage réseaux.</li></ul>
     <h4>1 Sélection</h4>
     <ul>
-      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, ce qu'on voit, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
+      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Ce qu'on voit</b>, dans le même bandeau (aussi quand la lecture passe dans un passage ou juste à côté), ouvre un champ pour décrire le plan sans arrêter la lecture (<kbd>Entrée</kbd> pour finir, <kbd>Échap</kbd> pour annuler) ; sur PC, ce champ est aussi sous le nom de chaque marqueur, dans la colonne de droite ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, ce qu'on voit, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
       <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer, ou touchez <b>+</b> et <b>-</b> au-dessus des noms de pistes.</li>
       <li>Les périodes sans image sur aucune piste (plus de 20 s) sont repliées en une bande hachurée étroite qui affiche la durée sautée (« 1 h 12 ») ; les heures restent les vraies. La lecture et les boutons <b>-5 s</b> et <b>+5 s</b> sautent par-dessus. <b>Replier les temps morts</b>, sous les noms de pistes, rétablit l'échelle réelle.</li>
       <li>Les numéros trop proches pour être touchés un par un sont regroupés (« 3-6 ») : touchez le groupe pour zoomer jusqu'à les séparer, ou choisir dans la liste s'ils sont presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus pour régler ses bords ; <b>-</b> ramène au zoom d'avant. Carré jaune : marqueur sensible.</li>
@@ -1162,6 +1155,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <h4>2 Compilation</h4>
     <ul>
       <li>Tous les plans dans l'ordre : nom, caméra retenue pour la vidéo compilée, ce qu'on voit (pour la liste des plans) et commentaire interne (jamais incrusté dans la vidéo) se règlent sur la carte ; <b>Modifier</b> ouvre le reste (sensibilité, intérêt, texte du carton).</li>
+      <li>Chaque carte montre ce que la vidéo compilée affichera : le carton (écran de titre avec son texte), puis le plan avec ses retouches, sur la caméra retenue. À la souris, survolez l'image du plan pour faire défiler la séquence ; sur téléphone, le début, le milieu et la fin sont côte à côte. Sans habillage, seul le plan est montré.</li>
       <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant. Les retouches valent pour la vidéo compilée, les extraits et le réel.</li>
       <li><b>Créer la vidéo compilée</b> : format, marge et heure incrustée sont repliés sous « Réglages ». Habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
@@ -1171,8 +1165,8 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <li>Le format se choisit dans le volet Montage : réel 9:16 (Instagram, Facebook, story), LinkedIn 4:5 ou carré 1:1.</li>
       <li>Aperçu : <b>Grille</b> montre les tiers et les marges couvertes par la légende des réseaux ; les éléments glissés s'y aimantent (Alt ou Maj : sans aimant). Les textes des passages partagent une place ; <b>Gabarit</b> la garde, avec celles du titre et du logo, pour les prochains réels.</li>
       <li>Sur téléphone, trois volets : <b>Montage</b>, <b>Passage</b> (cadrage du passage touché ; les flèches de l'en-tête passent au précédent ou au suivant), <b>Habillage</b> (titre d'accroche, aperçu du réel et tout ce qui est posé dessus ; logo, carton de fin et musique sont repliés dessous). Sur PC, « Cadrage » et « Aperçu du réel » au-dessus de l'image ; toucher le titre montre l'aperçu.</li></ul>
-    <h4>4 Export</h4>
-    <ul><li>Une carte par sortie, avec sa durée : <b>Vidéo compilée</b> et <b>Extraits bruts</b> ouvrent le même calcul que l'étape Compilation ; <b>Réseaux sociaux</b> lance le réel, la story ou la vidéo LinkedIn de l'étape Réseaux ; <b>Fiche de dérushage</b> (tout, commentaires internes compris, à garder à l'ESAM).</li>
+    <h4>Exporter</h4>
+    <ul><li>Le bouton <b>Exporter</b>, en haut de chaque étape, déplie la liste des sorties avec leur durée : <b>Vidéo compilée</b> et <b>Extraits bruts</b> ouvrent le même calcul que l'étape Compilation ; <b>Réel</b>, <b>Story</b> ou la vidéo LinkedIn (selon le format) se lancent depuis l'étape Réseaux ; <b>Fiche de dérushage</b> (tout, commentaires internes compris, à garder à l'ESAM). <kbd>Échap</kbd> ou un appui à côté referme la liste.</li>
       <li><b>Liste des plans</b> : un texte à coller dans une conversation avec Claude pour bâtir un storyboard (<b>Copier</b>), ou un fichier .md (en mode PC ou dossier ouvert, il est aussi enregistré dans le dossier de l'intervention). Elle peut sortir de l'ESAM : les commentaires internes n'y figurent que si la case est cochée.</li></ul>
     <h4>Revenir</h4>
     <ul><li id="helpHome">Le logo en haut à gauche ramène à l'accueil. Vos marqueurs restent gardés dans ce navigateur.</li></ul>
@@ -1801,7 +1795,7 @@ function rebuild(){
 function showApp(){
   $("empty").hidden = true; $("tabs").hidden = false; document.body.classList.add("loaded"); $("home").disabled = false;
   const was = document.querySelector('.tab[aria-selected="true"]').id;         // l'appli rouvre sur l'étape quittée (sauf Réseaux)
-  setTab(was === "tabSum" ? "sum" : was === "tabExp" ? "expo" : "view");
+  setTab(was === "tabSum" || was === "tabExp" ? "sum" : "view");      // l'ancienne étape Export rouvre sur Compilation
   renderAll();
 }
 
@@ -2103,7 +2097,7 @@ function fitStage(){
   st.style.setProperty("--stmax", `${Math.max(pc ? 240 : 160, Math.floor(H - top - rest - tracks))}px`);
 }
 let stripRaf = 0;
-function scheduleStrips(){ if(!stripRaf) stripRaf = requestAnimationFrame(drawStrips); }
+function scheduleStrips(){ if(!stripRaf) stripRaf = requestAnimationFrame(drawStrips); scheduleMinis(); }
 function drawStrips(){
   stripRaf = 0;
   const sc = $("scroller"); if(!sc || $("view").hidden) return;
@@ -2169,10 +2163,14 @@ document.addEventListener("change", e => {
   const m = S.markers.find(x => x.id === el.dataset.name); if(!m || el.value === "__custom") return;
   nameMarker(m, el.value);
 });
+/* colonne Marqueurs (PC) : nom, caméra et « ce qu'on voit » ; un champ en cours de saisie garde le focus quand la liste est redessinée */
 function renderSideList(){
   const el = $("sideList"); if(!el) return;
-  const list = sorted();
-  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Modifier le ${kindName(m).toLowerCase()} ${i+1}" title="Modifier (nom libre, sensibilité, texte du carton)">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
+  const list = sorted(), ae = document.activeElement;
+  const keep = ae && ae.dataset && ae.dataset.desc && el.contains(ae) ? {id:ae.dataset.desc, a:ae.selectionStart, z:ae.selectionEnd} : null;
+  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Modifier le ${kindName(m).toLowerCase()} ${i+1}" title="Modifier (nom libre, sensibilité, texte du carton)">${ICON_EDIT}</button><textarea class="field sdesc" rows="1" maxlength="300" data-desc="${m.id}" aria-label="Ce qu'on voit dans le ${kindName(m).toLowerCase()} ${i+1} (liste des plans)" placeholder="Ce qu'on voit">${esc(m.desc || "")}</textarea></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
+  el.querySelectorAll("textarea[data-desc]").forEach(t => { if(t.value) growCom(t); });
+  if(keep){ const t = el.querySelector(`textarea[data-desc="${keep.id}"]`); if(t){ t.focus(); try { t.setSelectionRange(keep.a, keep.z); } catch(x){} } }
 }
 function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
 /* ---------- pastilles et poignées des marqueurs ----------
@@ -2310,6 +2308,21 @@ function pickMarker(m){
   openSheet(m, false);
 }
 let inWinKey = "";
+/* « ce qu'on voit » écrit depuis le bandeau sans arrêter la lecture : IWD = {id, old, focus} tant que le champ est ouvert ;
+   Entrée, OK ou le focus qui sort l'enregistrent, Échap remet le texte d'avant. Même donnée m.desc que la fiche et la carte. */
+let IWD = null;
+function descBtn(m){
+  const d = clean(m.desc || "");
+  return `<button type="button" class="btn small ghost iwd" data-wa="desc" data-id="${m.id}" aria-label="Ce qu'on voit${d ? ` : ${esc(d)}, modifier` : ", décrire le plan"}"><span>${d ? `« ${esc(d)} »` : "Ce qu'on voit"}</span></button>`;
+}
+function descEnd(keep){
+  if(!IWD) return;
+  const m = S.markers.find(x => x.id === IWD.id), old = IWD.old, had = document.activeElement && document.activeElement.id === "iwDesc";
+  IWD = null;
+  if(m && !keep){ m.desc = old; persist(); }
+  inWinKey = ""; renderInWin(); renderSummary();
+  if(had){ const b = $("inWinBtns").querySelector('[data-wa="desc"]'); if(b) b.focus(); }
+}
 /* marqueur que l'on vient de poser (S.fresh = {id, t, named}) : le bandeau propose ses noms courants pendant 20 s,
    lecture en cours ou non ; une fois nommé, il affiche le nom 2,5 s puis reprend son état habituel */
 const FRESH_MS = 20000, NAMED_MS = 2500;
@@ -2347,25 +2360,31 @@ function renderInWin(){
   let txt;
   let sub = "";
   let btns = "";
+  const dm = IWD ? S.markers.find(x => x.id === IWD.id) : null; if(IWD && !dm) IWD = null;
   if(S.pending){
     key = `pend:${S.pending.at}`;
     txt = `Passage en cours depuis ${clockAbs(S.pending.at)}`;
     sub = `${ms(Math.abs(w.abs - S.pending.at))}, touchez Fin pour le terminer`;
     btns = '<button type="button" class="btn small ghost" data-wa="pcancel">Annuler le début</button>';
+  } else if(dm){
+    const nd = sorted().indexOf(dm) + 1;
+    key = `desc:${dm.id}`; txt = `${kindName(dm)} ${nd} : ${label(dm)}`; sub = "Ce qu'on voit, Entrée pour finir";
+    btns = `<input class="field iwdesc" id="iwDesc" type="text" maxlength="300" autocomplete="off" enterkeyhint="done" data-desc="${dm.id}" value="${esc(dm.desc || "")}" aria-label="Ce qu'on voit dans le ${kindName(dm).toLowerCase()} ${nd} (liste des plans)" placeholder="Ex. : chien couché sous une barre rocheuse"><button type="button" class="btn small" data-wa="descok">OK</button>`;
   } else if(fresh){
     const n0 = sorted().indexOf(fresh) + 1, kn = kindName(fresh).toLowerCase();
-    if(S.fresh.named){ key = `named:${fresh.id}`; txt = `${kindName(fresh)} ${n0} : ${label(fresh)}`; sub = "nommé"; }
+    if(S.fresh.named){ key = `named:${fresh.id}:${fresh.desc || ""}`; txt = `${kindName(fresh)} ${n0} : ${label(fresh)}`; sub = "nommé"; btns = descBtn(fresh); }
     else {
-      key = `new:${fresh.id}`; txt = `Nommer le ${kn} ${n0}`; sub = fresh.to != null ? `${clockAbs(fresh.at)}, ${len(fresh.to - fresh.at)}` : clockAbs(fresh.at);
-      btns = PRESET_MAIN.map(p => `<button type="button" class="chip" data-wa="name" data-id="${fresh.id}" data-v="${esc(p)}">${esc(p)}</button>`).join("")
+      key = `new:${fresh.id}:${fresh.desc || ""}`; txt = `Nommer le ${kn} ${n0}`; sub = fresh.to != null ? `${clockAbs(fresh.at)}, ${len(fresh.to - fresh.at)}` : clockAbs(fresh.at);
+      btns = descBtn(fresh) + PRESET_MAIN.map(p => `<button type="button" class="chip" data-wa="name" data-id="${fresh.id}" data-v="${esc(p)}">${esc(p)}</button>`).join("")
         + `<button type="button" class="btn small ghost" data-wa="edit" data-id="${fresh.id}">Autre...</button>`;
     }
   } else if(w.cur){
     const m = w.cur.m, n = w.cur.i + 1;
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
     const named = !!(m.preset || m.title);
-    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}:${named}`;
+    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}:${named}:${m.desc || ""}`;
     if(!named) btns += nameSelect(m);          // sans nom : la liste des noms est là, sans ouvrir la fiche
+    btns += descBtn(m);
     txt = m.to != null ? `Passage ${n}, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : `Repère ${n}`;
     sub = label(m)+(ec ? `, compilé en ${camName(ec).toLowerCase()}` : "");
     if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(camName(shown).toLowerCase())}</button>`;
@@ -2373,19 +2392,22 @@ function renderInWin(){
     btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Modifier</button>`;
   } else if(w.after || w.before){
     const o = w.after || w.before, n2 = o.i + 1;
-    key = `near:${o.m.id}:${w.after ? "a" : "b"}`;
+    key = `near:${o.m.id}:${w.after ? "a" : "b"}:${o.m.desc || ""}`;
     txt = w.after ? `Après le passage ${n2} (+${ms(w.abs - o.m.to)})` : `Avant le passage ${n2} (${ms(o.m.at - w.abs)} avant)`;
-    btns = w.after ? `<button type="button" class="btn small" data-wa="fin" data-id="${o.m.id}">Prolonger le passage ${n2} jusqu'ici</button>`
-                   : `<button type="button" class="btn small" data-wa="debut" data-id="${o.m.id}">Faire commencer le passage ${n2} ici</button>`;
+    btns = (w.after ? `<button type="button" class="btn small" data-wa="fin" data-id="${o.m.id}">Prolonger le passage ${n2} jusqu'ici</button>`
+                    : `<button type="button" class="btn small" data-wa="debut" data-id="${o.m.id}">Faire commencer le passage ${n2} ici</button>`) + descBtn(o.m);
   } else if(S.markers.length){ key = "out"; txt = "Hors des passages marqués"; sub = "Début puis Fin pour en marquer un autre"; }
   else { key = "none"; txt = "Aucun passage marqué"; sub = "Touchez Début puis Fin pendant la lecture, ou Repère pour un instant"; }
   const tx = $("inWinTxt"); tx.textContent = txt;
   if(sub){ const sm = document.createElement("small"); sm.textContent = sub; tx.appendChild(sm); }
+  if(key !== inWinKey && dm && $("iwDesc") && $("iwDesc").dataset.desc === dm.id) inWinKey = key;      // champ en cours de saisie : jamais recréé
   if(key !== inWinKey){
     inWinKey = key; $("inWinBtns").innerHTML = btns;
-    el.classList.toggle("on", !S.pending && (fresh ? !!S.fresh.named : !!w.cur));
+    el.classList.toggle("desc", !!dm && !S.pending);
+    if(dm && IWD.focus && $("iwDesc")){ IWD.focus = false; const d = $("iwDesc"); d.focus(); d.setSelectionRange(d.value.length, d.value.length); }
+    el.classList.toggle("on", !S.pending && !dm && (fresh ? !!S.fresh.named : !!w.cur));
     el.classList.toggle("pend", !!S.pending);
-    el.classList.toggle("new", !S.pending && !!fresh && !S.fresh.named);
+    el.classList.toggle("new", !S.pending && !dm && !!fresh && !S.fresh.named);
     $("inWinBtns").scrollLeft = 0;
     el.classList.toggle("empty", !btns);
     document.querySelector(".stage").classList.toggle("inside", !!(!S.pending && w.cur && w.cur.m.to != null));
@@ -2394,9 +2416,11 @@ function renderInWin(){
 $("inWin").addEventListener("click", e => {
   const b = e.target.closest("[data-wa]"); if(!b) return;
   if(b.dataset.wa === "pcancel"){ cancelPending(); return; }
+  if(b.dataset.wa === "descok"){ descEnd(true); return; }
   const m = S.markers.find(x => x.id === b.dataset.id); if(!m) return;
   const abs = S.base + S.t, n = sorted().indexOf(m) + 1;
   if(b.dataset.wa === "edit"){ v.pause(); openSheet(m, false); return; }
+  if(b.dataset.wa === "desc"){ IWD = {id:m.id, old:m.desc || "", focus:true}; inWinKey = ""; renderInWin(); return; }       // la lecture continue
   if(b.dataset.wa === "name"){
     nameMarker(m, b.dataset.v); S.fresh = {id:m.id, t:Date.now(), named:true}; inWinKey = ""; renderInWin();
     setTimeout(() => { if(S.clips.length){ inWinKey = ""; renderInWin(); } }, NAMED_MS + 60);
@@ -2409,6 +2433,12 @@ $("inWin").addEventListener("click", e => {
   persist(); renderMarkers(); renderSummary();
   toast(`Passage ${n} : ${clockAbs(m.at)} à ${clockAbs(m.to)}.`, "Annuler", () => { m.at = old.at; m.to = old.to; persist(); renderMarkers(); renderSummary(); });
 });
+$("inWin").addEventListener("keydown", e => {
+  if(e.target.id !== "iwDesc") return;
+  if(e.key === "Enter"){ e.preventDefault(); descEnd(true); }
+  else if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); descEnd(false); }
+});
+$("inWin").addEventListener("focusout", e => { if(e.target.id === "iwDesc" && IWD && !(e.relatedTarget && $("inWin").contains(e.relatedTarget))) descEnd(true); });
 // souris : la molette fait défiler la rangée de noms quand elle dépasse (pas de barre de défilement visible)
 $("inWinBtns").addEventListener("wheel", function(e){
   if(this.scrollWidth <= this.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
@@ -2462,7 +2492,8 @@ function renderComp(){
   el.setAttribute("aria-label", `Durées : ${n ? `${nPlans(n)}, ${len(plansDur())}` : "aucun plan"} ; ${hab ? "vidéo compilée" : "extraits"} ${pl.items.length ? len(pl.total) : "vide"} ; réseaux ${rt ? len(rt) : "vide"}`);
   const rc = $("rCount"); if(rc) rc.textContent = S.meta.reel && S.meta.reel.items ? S.meta.reel.items.length : 0;
   const b = $("cmpOpen"), what = hab ? "Créer la vidéo compilée" : "Créer les extraits"; if(b) b.textContent = pl.items.length ? `${what} (${len(pl.total)})` : what;
-  if(!$("expo").hidden) renderExport();
+  renderExport();
+  renderMinis(pl);
 }
 $("mName").addEventListener("input", function(){ S.meta.intervention = clean(this.value); persist(); });
 function renderHeader(){
@@ -2488,7 +2519,7 @@ function camsFor(m){
     .filter(x => x.c);
 }
 function renderSummary(){
-  const list = sorted();
+  const list = sorted(), pl = S.clips.length && !$("sum").hidden ? buildPlan() : null;      // miniatures : étape affichée seulement
   let h = "";
   /* carte compacte : heure et durée, nom et caméra, puis seulement ce qui est renseigné (sensibilité, intérêt, thèmes,
      texte du carton, retouches), ce qu'on voit et le commentaire interne sur une ligne qui grandit, et les actions sur une rangée */
@@ -2498,6 +2529,7 @@ function renderSummary(){
     if(m.themes && m.themes.length) extra.push(m.themes.join(", "));
     if(fxs) extra.push(`Retouches : ${fxs}`);
     h += `<li class="card"><div class="chead"><span class="idx${isSens(m) ? " sens" : ""}">${i+1}</span><span class="when">${clockAbs(m.at)}${m.to != null ? ` à ${clockAbs(m.to)}` : ""}</span><span class="cdur">${m.to != null ? len(m.to-m.at) : "repère"}</span></div>`;
+    if(pl) h += miniHtml(m, pl);
     h += `<div class="ttl">${nameSelect(m)}${camSelect(m)}</div>`;
     if(isSens(m)) h += `<div class="sensbox">Sensibilité : ${esc(m.sens.join(", "))}</div>`;
     if(extra.length) h += `<div class="meta">${esc(extra.join(". "))}</div>`;
@@ -2508,12 +2540,141 @@ function renderSummary(){
     if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse, couleurs">Retoucher</button>`;
     h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
+  if(S.clips.length && MINI.io) MINI.io.disconnect();      // les anciennes cartes ne sont plus observées
   $("list").innerHTML = h;
   growComs();
   $("emptyList").hidden = list.length > 0;
   $("cmpOpen").disabled = $("exp").disabled = !list.length;        // sans marqueur, rien à compiler ni à exporter
   renderSideList();
+  renderMinis();
 }
+/* ---------- miniatures de l'étape Compilation ----------
+   Chaque carte montre ce que la vidéo compilée affichera : le carton (drawCard, la fonction du rendu, à la taille de
+   sortie BACKEND.outSize puis réduit : en mode PC, la même image que celle envoyée au PC), puis le plan sur la caméra
+   compilée (planFor, comme effCam) avec ses retouches (fxApply : couleurs, flous, formes). Le plan est fait des vignettes
+   déjà chargées (drawThumb : ImageBitmap du navigateur ou case d'une planche JPEG du PC), jamais d'un décodage vidéo.
+   Souris : la miniature suit le pointeur dans la séquence (vitesses comprises) ; écran tactile : début, milieu et fin
+   côte à côte (une seule image qui suit le doigt en vertical). Dessin à la demande (IntersectionObserver), et seulement
+   si quelque chose a changé (signature) : nom, carton, habillage, format, marge, retouches, vignettes, largeur. */
+const MINI = {io:null, pl:null, fonts:false, t:0, q:new Set(), raf:0, hover:!!(window.matchMedia && matchMedia("(hover:hover) and (pointer:fine)").matches)};
+function miniIO(){
+  if(MINI.io || typeof IntersectionObserver !== "function") return MINI.io;
+  MINI.io = new IntersectionObserver(es => { es.forEach(x => { x.target._vis = x.isIntersecting; if(x.isIntersecting) miniQueue(x.target); }); }, {rootMargin:"300px 0px"});
+  return MINI.io;
+}
+/* file de dessin : au plus 12 ms par image, le reste à l'image suivante (le défilement d'une longue liste reste fluide) */
+function miniQueue(el){ MINI.q.add(el); if(!MINI.raf) MINI.raf = requestAnimationFrame(miniFlush); }
+function miniFlush(){
+  MINI.raf = 0; const t0 = performance.now();
+  for(const el of MINI.q){ MINI.q.delete(el); if(el.isConnected) drawMini(el); if(performance.now() - t0 > 12) break; }
+  if(MINI.q.size) MINI.raf = requestAnimationFrame(miniFlush);
+}
+function renderMinis(pl){
+  if($("sum").hidden || !S.clips.length) return;
+  MINI.pl = pl || buildPlan();
+  if(!MINI.fonts){
+    MINI.fonts = true;
+    Promise.all([document.fonts.load("40px Anton"), document.fonts.load("600 40px Montserrat"), document.fonts.load("400 40px Montserrat")])
+      .then(() => { MINI.fontsOk = true; renderMinis(); }, () => {});
+  }
+  const io = miniIO();
+  document.querySelectorAll("#list .cviz").forEach(el => {
+    if(!io){ miniQueue(el); return; }
+    if(!el._obs){ el._obs = true; io.observe(el); } else if(el._vis) miniQueue(el);
+  });
+}
+/* vignettes qui arrivent (planches du PC, décodage du navigateur), largeur qui change : redessiner, au plus deux fois par seconde */
+function scheduleMinis(){ if($("sum").hidden || MINI.t) return; MINI.t = setTimeout(() => { MINI.t = 0; renderMinis(); }, 500); }
+window.addEventListener("resize", scheduleMinis);
+/* instant de la timeline à la fraction f (0 à 1) de la durée du plan dans la vidéo compilée, vitesses comprises */
+function miniTime(it, f){
+  let o = clamp(f, 0, 1)*it.len;
+  for(let k=0; k<it.pieces.length; k++){
+    const p = it.pieces[k], d = (p.to - p.from)/(p.vit || 1);
+    if(o <= d || k === it.pieces.length - 1) return p.c.s + p.from + Math.min(o, d)*(p.vit || 1);
+    o -= d;
+  }
+  return it.absA - S.base;
+}
+/* une image du plan dans le rectangle x, y, w, h : vignette mise au format comme drawFrame (entière, ou recadrée en
+   vertical), retouches du passage à l'instant t */
+function miniFrame(ctx, it, t, x, y, w, h, V){
+  ctx.fillStyle = "#000"; ctx.fillRect(x, y, w, h);
+  const th = thumbAt(it.tr, t);
+  if(!th || (th.img && !th.img.complete)){
+    ctx.fillStyle = "#a6a8ae"; ctx.font = `600 ${Math.max(10, Math.round(h*0.09))}px ${MONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("Vignette en cours", x + w/2, y + h/2); return;
+  }
+  const sw = thW(th), sh = thH(th), k = V ? Math.max(w/sw, h/sh) : Math.min(w/sw, h/sh), x0 = x + (w - sw*k)/2, y0 = y + (h - sh*k)/2;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  drawThumb(ctx, th, x0, y0, sw*k, sh*k);
+  fxApply(ctx, it.m, it.tr.lens, t, {x0:x0, y0:y0, k:k, sw:sw, sh:sh});
+  ctx.restore();
+}
+/* le plan : une image (fraction f de la séquence, repère du pointeur en bas) ou trois (début, milieu, fin) */
+function miniPlan(cv, it, W, H, V, tri, f, live){
+  const dpr = Math.min(2, window.devicePixelRatio || 1), n = tri ? 3 : 1, gap = tri ? Math.round(3*dpr) : 0;
+  const fw = Math.max(16, Math.round((Math.max(40, cv.clientWidth)*dpr - gap*(n - 1))/n)), fh = Math.round(fw*H/W);
+  if(cv.width !== fw*n + gap*(n - 1) || cv.height !== fh){ cv.width = fw*n + gap*(n - 1); cv.height = fh; }
+  const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
+  (tri ? [0.04, 0.5, 0.96] : [f]).forEach((q, k) => { miniFrame(ctx, it, miniTime(it, q), k*(fw + gap), 0, fw, fh, V); });
+  if(!live) return;
+  const t = miniTime(it, f), bh = Math.max(3, Math.round(3*dpr)), txt = clockAbs(S.base + t), fs = Math.round(11*dpr);
+  ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, fh - bh, fw, bh); ctx.fillStyle = "#A8C8FB"; ctx.fillRect(0, fh - bh, fw*clamp(f, 0, 1), bh);
+  ctx.font = `600 ${fs}px ${MONT}`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  const tw = ctx.measureText(txt).width;
+  ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(4*dpr, fh - bh - fs - 8*dpr, tw + 8*dpr, fs + 6*dpr);
+  ctx.fillStyle = "#fff"; ctx.fillText(txt, 8*dpr, fh - bh - 6*dpr);
+}
+/* place des miniatures d'un marqueur dans le plan pl : carton ou non, format, image seule ou trois images ; html est
+   posé tel quel par renderSummary (les canevas ont déjà leur forme : rien ne bouge quand ils sont dessinés) */
+function miniLayout(m, pl){
+  const i = pl.items.findIndex(x => x.m === m), it = i >= 0 ? pl.items[i] : planFor(m), n = sorted().indexOf(m) + 1;
+  const od = (pl.items.length && BACKEND.outSize(pl.items)) || (it && BACKEND.outSize([it])) || (CMP.fmt === "v" ? {W:1080, H:1920} : {W:1920, H:1080});
+  const W = od.W, H = od.H, V = H > W, card = pl.hab && i >= 0, tri = !MINI.hover && !V, what = `${kindName(m).toLowerCase()} ${n}`;
+  const html = (card ? `<canvas class="cvc" role="img" style="aspect-ratio:${W}/${H}" aria-label="Carton du ${what} dans la vidéo compilée"></canvas>`
+      : (i < 0 && it ? '<p class="cvx">Exclu de la vidéo compilée (case décochée avant le calcul)</p>' : ""))
+    + (it ? `<canvas class="cvp${tri ? " tri" : ""}" style="aspect-ratio:${tri ? 3*W : W}/${H}" role="img" aria-label="Image du ${what} retouchée, caméra ${esc(it.tr.name.toLowerCase())}${tri ? " : début, milieu et fin" : MINI.hover ? " : survoler pour faire défiler" : " : glisser le doigt pour faire défiler"}"></canvas>`
+      : '<p class="cvx">Aucune image à ce moment</p>');
+  return {i:i, it:it, W:W, H:H, V:V, tri:tri, cls:`cviz${V ? " v" : ""}${card ? "" : " one"}`, shape:[card, V, tri, !!it, i >= 0, W, H].join(), html:html};
+}
+function miniHtml(m, pl){ const L = miniLayout(m, pl); return `<div class="${L.cls}" data-viz="${m.id}" data-shape="${L.shape}">${L.html}</div>`; }
+function drawMini(el){
+  const m = S.markers.find(x => x.id === el.dataset.viz), pl = MINI.pl; if(!m || !pl) return;
+  const L = miniLayout(m, pl), i = L.i, it = L.it, W = L.W, H = L.H, V = L.V, tri = L.tri;
+  if(el.dataset.shape !== L.shape){ el.dataset.shape = L.shape; el._sig = ""; el.className = L.cls; el.innerHTML = L.html; }
+  if(!it) return;
+  const cw = el.clientWidth, thn = it.pieces.reduce((t, p) => t + p.c.thumbs.length, 0);
+  const sig = [W, H, cw, MINI.fontsOk, i, pl.items.length, label(m), m.note, (m.sens || []).join(), it.absA, it.absZ, it.tr.lens, it.tr.name, thn, JSON.stringify(m.fx || null)].join("|");
+  if(el._sig === sig) return;
+  el._sig = sig;
+  const cc = el.querySelector(".cvc");
+  if(cc){
+    const dpr = Math.min(2, window.devicePixelRatio || 1), k = Math.max(40, cc.clientWidth)*dpr/W;
+    cc.width = Math.round(W*k); cc.height = Math.round(H*k);
+    const ctx = cc.getContext("2d"); ctx.setTransform(k, 0, 0, k, 0, 0);
+    drawCard(ctx, W, H, it, i, pl.items.length);          // mise en page calculée à la taille de sortie : la même que le rendu
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  const cp = el.querySelector(".cvp"); cp._it = it; cp._dims = {W:W, H:H, V:V, tri:tri};
+  miniPlan(cp, it, W, H, V, tri, 0.5, false);
+}
+/* survol à la souris, ou glissement du doigt (image seule), sur l'image du plan : elle suit le pointeur dans la séquence */
+let miniRaf = 0, miniEv = null;
+function miniScrub(){
+  miniRaf = 0; const e = miniEv; if(!e) return;
+  const cv = e.cv, d = cv._dims; if(!cv._it || !d || d.tri || !document.body.contains(cv)) return;
+  const r = cv.getBoundingClientRect(); miniPlan(cv, cv._it, d.W, d.H, d.V, false, (e.x - r.left)/Math.max(1, r.width), true);
+}
+$("list").addEventListener("pointermove", e => {
+  const cv = e.target.closest && e.target.closest(".cvp"); if(!cv || (e.pointerType !== "mouse" && !e.buttons && e.pressure === 0)) return;
+  miniEv = {cv:cv, x:e.clientX}; if(!miniRaf) miniRaf = requestAnimationFrame(miniScrub);
+});
+$("list").addEventListener("pointerdown", e => { const cv = e.target.closest && e.target.closest(".cvp"); if(cv && e.pointerType !== "mouse"){ miniEv = {cv:cv, x:e.clientX}; if(!miniRaf) miniRaf = requestAnimationFrame(miniScrub); } });
+["pointerleave", "pointerout", "pointercancel"].forEach(ev => $("list").addEventListener(ev, e => {
+  const cv = e.target.closest && e.target.closest(".cvp"); if(!cv || !cv._it || (ev === "pointerout" && cv.contains(e.relatedTarget))) return;
+  miniEv = null; const d = cv._dims; if(d && !d.tri) miniPlan(cv, cv._it, d.W, d.H, d.V, false, 0.5, false);
+}));
 /* commentaire interne et « ce qu'on voit » : une ligne au repos, la hauteur suit le texte (sans effet tant que l'onglet est masqué) */
 function growCom(t){ if(!t.offsetParent) return; t.style.height = "auto"; t.style.height = `${t.scrollHeight + 4}px`; }
 function growComs(){ $("list").querySelectorAll("textarea[data-com],textarea[data-desc]").forEach(t => { if(t.value) growCom(t); }); }
@@ -2790,7 +2951,9 @@ function buildMarkdown(){
   persist();
   return clean(L.join("\n"));
 }
+/* l'unique bouton de la fiche, dans le menu Exporter : téléchargement, ou enregistrement immédiat quand elle s'écrit seule */
 $("exp").onclick = async () => {
+  xToggle(false);
   if(!S.clips.length) return;
   if(autoTarget()){ await writeFiche(true); return; }
   ficheBusy = true; let md; try { md = buildMarkdown(); } finally { ficheBusy = false; }
@@ -2830,7 +2993,7 @@ $("fbCopy").onclick = () => {
 /* ---------- liste des plans ----------
    Markdown pensé pour être collé dans une conversation avec Claude afin de bâtir un storyboard : en-tête, un bloc par plan
    (heure, durée, caméra compilée, nom, thèmes, intérêt, sensibilité, ce qu'on voit, carton), puis l'ordre du montage réseaux.
-   La liste peut sortir de l'ESAM : les commentaires internes n'y figurent que sur demande (case de l'étape Export). */
+   La liste peut sortir de l'ESAM : les commentaires internes n'y figurent que sur demande (case du menu Exporter). */
 function plansName(){ return outName("Plans", ".md"); }
 function buildPlans(withCom){
   const interv = clean(S.meta.intervention || "Intervention sans nom"), list = sorted(), L = [];
@@ -2887,29 +3050,53 @@ async function saveText(name, txt){
   return ficheDest();
 }
 
-/* ---------- étape Export ----------
-   Une carte par sortie, avec sa durée et son état ; chaque bouton appelle la fonction de l'étape qui la fabrique. */
+/* ---------- menu Exporter ----------
+   Bouton de l'en-tête, toujours visible une fois l'intervention ouverte, qui déplie la liste des exports (motif
+   « disclosure » : bouton aria-expanded et panneau). Échap, un appui à côté ou le focus qui sort le referment ; les
+   flèches haut et bas passent d'un contrôle à l'autre. Chaque entrée affiche sa durée ou son état et appelle la fonction
+   qui fabrique la sortie : cmpShow (vidéo compilée, extraits), xSoc (étape Réseaux), buildPlans, fiche (#exp). */
+function xOpen(){ return !$("xMenu").hidden; }
+function xCtls(){ return Array.from($("xMenu").querySelectorAll("button,input")).filter(b => !b.disabled && b.offsetParent); }
+function xToggle(on, focusFirst){
+  if(on === xOpen()) return;
+  const inside = $("xWrap").contains(document.activeElement);
+  $("xMenu").hidden = !on; $("xBtn").setAttribute("aria-expanded", on);
+  if(on){ renderExport(); if(focusFirst){ const c = xCtls()[0]; if(c) c.focus(); } }
+  else if(inside) $("xBtn").focus();             // le focus ne se perd pas avec le panneau (et revient là après un dialogue)
+}
+/* action d'une entrée : le panneau se referme d'abord, le focus revient au bouton Exporter */
+function xDo(fn){ return () => { xToggle(false); fn(); }; }
+$("xBtn").onclick = () => { xToggle(!xOpen(), viaKbd); };
+$("xWrap").addEventListener("keydown", e => {
+  if(e.key === "Escape" && xOpen()){ e.preventDefault(); e.stopPropagation(); xToggle(false); $("xBtn").focus(); return; }
+  if(e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  if(e.target === $("xBtn") && !xOpen()){ if(e.key === "ArrowDown"){ e.preventDefault(); viaKbd = true; xToggle(true, true); } return; }
+  if(!xOpen()) return;
+  const c = xCtls(), i = c.indexOf(document.activeElement);
+  e.preventDefault(); e.stopPropagation(); viaKbd = true;
+  const j = i < 0 ? 0 : (i + (e.key === "ArrowDown" ? 1 : c.length - 1)) % c.length;
+  if(c[j]) c[j].focus();
+});
+document.addEventListener("pointerdown", e => { if(xOpen() && !$("xWrap").contains(e.target)) xToggle(false); }, true);
+$("xWrap").addEventListener("focusout", e => { if(xOpen() && e.relatedTarget && !$("xWrap").contains(e.relatedTarget)) xToggle(false); });
 function renderExport(){
-  if(!S.clips.length) return;
+  if(!S.clips.length || !xOpen()) return;
   const n = S.markers.length, raw = buildPlan(false), full = buildPlan(true), r = S.meta.reel;
   const ni = full.items.length, ok = ni > 0;
-  $("xCmpDur").textContent = ok ? `Environ ${len(full.total)}, ${nPlans(ni)}` : "Aucun plan";
-  $("xCmpSt").textContent = CMP.running ? "Calcul en cours." : CMP.outs && CMP.lastHab !== false ? `Calculée : ${CMP.outs.map(o => o.name).join(", ")}.` : ok ? "Un carton avant chaque plan, heure et logo. Format, marge et heure se règlent avant le calcul." : "Marquez d'abord des plans dans l'étape Sélection.";
-  $("xRawDur").textContent = ok ? `${len(raw.total)}, ${nPlans(ni)}` : "Aucun plan";
+  $("xCmpDur").textContent = ok ? `Environ ${len(full.total)}, ${nPlans(ni)}, cartons compris` : "Aucun plan";
+  const st = CMP.running ? "Calcul en cours." : CMP.outs && CMP.lastHab !== false ? `Calculée : ${CMP.outs.map(o => o.name).join(", ")}.` : "";
+  $("xCmpSt").textContent = st; $("xCmpSt").hidden = !st;
+  $("xRawDur").textContent = ok ? `${len(raw.total)}, ${nPlans(ni)}, sans carton, heure ni logo` : "Aucun plan";
   $("xCmpGo").disabled = $("xRawGo").disabled = !ok;
   const items = r && Array.isArray(r.items) ? r.items.length : 0, rt = reelTotal(), F = RFMTS[(r && r.fmt) || "reel"] || RFMTS.reel, story = F === RFMTS.reel;
-  $("xSocDur").textContent = items ? `${F.lib} : ${len(rt)}, ${items} élément${items > 1 ? "s" : ""}` : "Montage vide";
-  $("xSocSt").textContent = items ? (story ? "Réel Instagram et Facebook, ou story découpée en morceaux de 60 s." : "Vidéo pour le fil LinkedIn.") + " Le format se choisit dans l'étape Réseaux." : "Choisissez les plans et le format dans l'étape Réseaux.";
-  $("xSocReel").hidden = !items; $("xSocStory").hidden = !items || !story;
-  $("xSocReel").textContent = story ? "Créer le réel" : "Créer la vidéo LinkedIn";
-  $("xSocGo").textContent = items ? "Modifier dans Réseaux" : "Ouvrir Réseaux";
-  $("xPlansDur").textContent = n ? `${nPlans(n)}, ${len(plansDur())}` : "Aucun plan";
+  $("xSocTtl").textContent = story ? "Réel ou story" : F.quoi;
+  $("xSocDur").textContent = items ? `${F.lib}, ${len(rt)}, ${items} élément${items > 1 ? "s" : ""}` : `${F.lib}, montage vide : à préparer dans Réseaux`;
+  $("xSocReel").hidden = !items; $("xSocStory").hidden = !items || !story; $("xSocGo").hidden = !!items;
+  $("xSocReel").textContent = story ? "Réel" : "Créer";
+  $("xSocReel").setAttribute("aria-label", story ? "Créer le réel" : `Créer la ${F.quoi.toLowerCase()}`);
+  $("xPlansDur").textContent = n ? `${nPlans(n)}, ${len(plansDur())}${autoTarget() ? ", enregistrée aussi dans le dossier" : ""}` : "Aucun plan";
   $("xPlansCopy").disabled = $("xPlansDl").disabled = !n;
-  $("xPlansDl").textContent = autoTarget() ? "Télécharger et enregistrer .md" : "Télécharger .md";
-  if($("xPlansPrev").open) $("xPlansTxt").textContent = buildPlans($("xPlansCom").checked);
-  $("xFicheDur").textContent = `${nPlans(n)}${S.meta.version ? `, version ${S.meta.version.toFixed(1)}` : ""}`;
-  $("xFicheSt").textContent = autoTarget() ? `Enregistrée automatiquement dans ${ficheDest()} à chaque modification${SAVE.short ? ` (${SAVE.short.toLowerCase()})` : ""}. Elle se reprend avec « Reprendre une fiche ».` : "Toutes les informations des plans, commentaires internes compris, à garder à l'ESAM. Elle se reprend avec « Reprendre une fiche » (étape Compilation).";
-  $("xFicheGo").textContent = $("exp").textContent; $("xFicheGo").disabled = !n;
+  $("xFicheDur").textContent = `${nPlans(n)}${S.meta.version ? `, version ${S.meta.version.toFixed(1)}` : ""}${autoTarget() ? `, enregistrée automatiquement${SAVE.short ? ` (${SAVE.short.toLowerCase()})` : ""}` : ", commentaires internes compris"}`;
 }
 /* ouvre le dialogue de calcul : vidéo compilée (hab true), extraits bruts (false) ou selon le choix en cours (null) */
 function cmpShow(hab){
@@ -2919,28 +3106,25 @@ function cmpShow(hab){
   if(hab != null && hab !== cmpHab()){ CMP.hab = hab; renderComp(); }
   if(CMP.blob && (CMP.lastHab !== false) === cmpHab()) jobDone(cmpDoneOpts()); else { jobView("Setup"); renderCmpSetup(); jobOpen(); }
 }
-$("xCmpGo").onclick = () => { cmpShow(true); };
-$("xRawGo").onclick = () => { cmpShow(false); };
+$("xCmpGo").onclick = xDo(() => { cmpShow(true); });
+$("xRawGo").onclick = xDo(() => { cmpShow(false); });
 /* réel, story, vidéo LinkedIn : les boutons de l'étape Réseaux, qui reste affichée derrière le dialogue de calcul */
 function xSoc(btn){ setTab("reel"); const b = $(btn); if(b.disabled || b.hidden) toast("Le montage n'a encore aucun plan lisible : choisissez-les ici."); else b.click(); }
-$("xSocReel").onclick = () => { xSoc("rGoReel"); };
-$("xSocStory").onclick = () => { xSoc("rGoStory"); };
-$("xSocGo").onclick = () => { setTab("reel"); };
-$("xPlansPrev").addEventListener("toggle", function(){ if(this.open) $("xPlansTxt").textContent = buildPlans($("xPlansCom").checked); });
-$("xPlansCom").addEventListener("change", () => { if($("xPlansPrev").open) $("xPlansTxt").textContent = buildPlans($("xPlansCom").checked); });
-$("xPlansCopy").onclick = () => {
+$("xSocReel").onclick = xDo(() => { xSoc("rGoReel"); });
+$("xSocStory").onclick = xDo(() => { xSoc("rGoStory"); });
+$("xSocGo").onclick = xDo(() => { setTab("reel"); });
+$("xPlansCopy").onclick = xDo(() => {
   const txt = buildPlans($("xPlansCom").checked);
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => { toast("Liste des plans copiée : collez-la dans la conversation."); }, () => { copyDialog(txt, "la liste des plans"); });
   else copyDialog(txt, "la liste des plans");
-};
-$("xPlansDl").onclick = async () => {
+});
+$("xPlansDl").onclick = xDo(async () => {
   const txt = buildPlans($("xPlansCom").checked), name = plansName();
   let where = null;
   try { where = await saveText(name, txt); }
   catch(e){ toast(`Enregistrement dans le dossier impossible : ${errMsg(e)}. Le téléchargement suit.`); }
   await downloadText(name, txt, "la liste des plans", where ? `Liste des plans exportée et enregistrée dans ${where}.` : "Liste des plans exportée.", where ? `Liste des plans téléchargée et enregistrée dans ${where} : ${name}` : `Liste des plans téléchargée : ${name}`);
-};
-$("xFicheGo").onclick = () => { $("exp").click(); };
+});
 $("mdIn").addEventListener("change", e => {
   const f = e.target.files[0]; e.target.value = ""; if(!f) return;
   const r = new FileReader();
@@ -3305,14 +3489,18 @@ $("list").addEventListener("input", e => {
   const m = S.markers.find(x => x.id === t.dataset.com); if(!m) return;
   m.comment = clean(t.value); persist(); growCom(t);
 });
-$("list").addEventListener("input", e => {
+/* « ce qu'on voit » : carte de l'étape Compilation, colonne Marqueurs (PC) ou bandeau sous Début, Fin, Repère ; même m.desc */
+document.addEventListener("input", e => {
   const t = e.target; if(!t.dataset || !t.dataset.desc) return;
   const m = S.markers.find(x => x.id === t.dataset.desc); if(!m) return;
-  m.desc = clean(t.value); persist(); growCom(t);
+  m.desc = clean(t.value); persist(); if(t.tagName === "TEXTAREA") growCom(t);
+  if(t.id === "iwDesc"){ const sd = $("sideList").querySelector(`textarea[data-desc="${m.id}"]`); if(sd){ sd.value = t.value; growCom(sd); } }    // colonne Marqueurs à jour pendant la saisie
 });
+$("sideList").addEventListener("change", e => { if(e.target.dataset && e.target.dataset.desc && S.clips.length){ inWinKey = ""; renderInWin(); } });
 
-/* étapes du parcours, dans l'ordre des onglets : Sélection, Compilation, Réseaux, Export (l'import est l'accueil) */
-const STEPS = {view:"tabView", sum:"tabSum", reel:"tabReel", expo:"tabExp"};
+/* étapes du parcours, dans l'ordre des onglets : Sélection, Compilation, Réseaux (l'import est l'accueil ; les exports
+   sont dans le menu Exporter de l'en-tête) */
+const STEPS = {view:"tabView", sum:"tabSum", reel:"tabReel"};
 function setTab(which){
   Object.keys(STEPS).forEach(k => { $(STEPS[k]).setAttribute("aria-selected", which === k); $(k).hidden = which !== k; });
   syncTabs();
@@ -3320,12 +3508,11 @@ function setTab(which){
   if(which !== "reel" && typeof reelLeave === "function") reelLeave();
   if(which === "reel"){ v.pause(); reelEnter(); }
   else if(which === "sum"){ v.pause(); renderHeader(); renderSummary(); }
-  else if(which === "expo"){ v.pause(); renderHeader(); renderExport(); }
   else { renderTimeline(); fitStage(); }
   renderComp();
 }
 $("sideList").addEventListener("click", e => {
-  if(e.target.closest("select")) return;
+  if(e.target.closest("select,textarea")) return;
   const ed = e.target.closest("[data-sedit]");
   if(ed){ const mk = S.markers.find(x => x.id === ed.dataset.sedit); if(mk) openSheet(mk, false); return; }
   const r = e.target.closest("[data-seek]"); if(!r) return;
@@ -3336,7 +3523,6 @@ $("sideList").addEventListener("click", e => {
 
 $("tabView").onclick = () => { setTab("view"); };
 $("tabSum").onclick = () => { setTab("sum"); };
-$("tabExp").onclick = () => { setTab("expo"); };
 
 /* retour à l'accueil (navigateur) ou à la liste des interventions (PC) : bouton de retour de l'en-tête (chevron et logo) */
 function goHome(){
@@ -3345,7 +3531,7 @@ function goHome(){
   S.clips = []; S.tracks = []; S.markers = []; S.meta = {intervention:"",version:0,log:[]}; S.offsets = {}; S.key = null; S.t = 0; S.cur = null; S.zoom = 1;
   S.dirHandle = null; S.verBumped = false; clearTimeout(ficheT); setSave("");
   if(!BACKEND.pc) $("exp").textContent = "Exporter la fiche";
-  cmpForget();
+  cmpForget(); xToggle(false);
   cancelPending();
   Object.keys(STEPS).forEach(k => { $(k).hidden = true; }); reelLeave(); $("tabs").hidden = true; $("empty").hidden = false;
   $("hsub").textContent = "Aucune intervention chargée"; document.body.classList.remove("loaded"); $("mission").hidden = true; setRate(1);
@@ -3785,7 +3971,7 @@ function planFor(m){
   return null;
 }
 function cardSec(it){ return 3 + Math.min(3, ((it.m.note||"").length)/40); }
-function buildPlan(habArg){          // habArg : habillage imposé (étape Export), sinon le choix en cours
+function buildPlan(habArg){          // habArg : habillage imposé (menu Exporter, liste des plans), sinon le choix en cours
   const items = [], hab = habArg != null ? habArg : cmpHab();
   let skipped = 0;
   sorted().forEach(m => { if(CMP.off[m.id]) return; const it = planFor(m); if(it) items.push(it); else skipped++; });
@@ -3908,7 +4094,7 @@ $("cmpCancel").onclick = jobCancel;
 $("cmpClose").onclick = jobClose;
 $("cmpClose2").onclick = jobClose;
 $("cmp").addEventListener("cancel", e => { if(CMP.running) e.preventDefault(); });
-$("cmp").addEventListener("close", () => { JOB.onSave = JOB.onBack = null; $("cmpResult").onerror = null; $("cmpResult").removeAttribute("src"); if(!$("expo").hidden) renderExport(); });
+$("cmp").addEventListener("close", () => { JOB.onSave = JOB.onBack = null; $("cmpResult").onerror = null; $("cmpResult").removeAttribute("src"); renderExport(); });
 
 /* ----- compilation : réglages, résultat ----- */
 function cmpDoneOpts(){
@@ -3926,7 +4112,7 @@ $("cmpList").addEventListener("click", e => {
   const m = S.markers.find(x => x.id === b.dataset.fx); if(m) fxOpen(m, null, () => { if($("cmp").open && !$("cmpSetup").hidden) renderCmpSetup(); });
 });
 $("cmpWin").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.win = [0,5,10][+b.dataset.k]; renderCmpSetup(); renderComp(); });
-$("cmpFmt").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.fmt = +b.dataset.k ? "v" : "h"; renderCmpSetup(); });
+$("cmpFmt").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.fmt = +b.dataset.k ? "v" : "h"; renderCmpSetup(); renderMinis(); });
 $("cmpClock").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.clock = !+b.dataset.k; renderCmpSetup(); });
 $("cmpHab").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.hab = !+b.dataset.k; renderCmpSetup(); renderComp(); });
 $("cmpSep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; CMP.sep = !!+b.dataset.k; renderCmpSetup(); });
@@ -4413,7 +4599,7 @@ function captureRemote(c, local){
 }
 async function runRemote(){
   const pl = buildPlan(); if(!pl.items.length) return;
-  const V = CMP.fmt === "v", W = V ? 1080 : 1920, H = V ? 1920 : 1080, hab = pl.hab;
+  const od = PC.outSize(), W = od.W, H = od.H, hab = pl.hab;
   try { await Promise.all([document.fonts.load("40px Anton"), document.fonts.load("600 40px Montserrat"), document.fonts.load("400 40px Montserrat"), document.fonts.load("700 40px Montserrat")]); } catch(e){}
   const cv = rCanvas(W, H), ctx = cv.getContext("2d");
   let intro = null, logo = null;
@@ -4509,6 +4695,7 @@ const LOCAL = {
   saveState:function(){},                 // le navigateur n'a que localStorage et la fiche (persist)
   capture:captureLocal,                   // photo décodée dans le navigateur (WebCodecs)
   compile:runCompile,                     // vidéo compilée par WebCodecs + mp4-muxer
+  outSize:outDims,                        // taille de la vidéo compilée : celle des rushs (recadrée en 9:16 en vertical)
   reel:runReelLocal,                      // réel ou story rendus par le navigateur
   busy:localBusy,                         // calcul en cours : avertir avant de fermer l'onglet, garder l'écran allumé
   compileFailed:function(msg){ jobError(`La vidéo n'a pas pu être fabriquée dans ce navigateur : ${msg}. Réessayez, ou faites le calcul sur le PC de traitement. (Appli v${APP_VERSION}, stockage : ${CMP.store || "?"})`, cmpRestart); },
@@ -4535,6 +4722,7 @@ let PC = {
   },
   capture:function(tr, t){ const c = clipAt(tr, t); return c && c.remote ? captureRemote(c, t - c.s) : captureLocal(tr, t); },
   compile:runRemote,
+  outSize:function(){ return CMP.fmt === "v" ? {W:1080, H:1920} : {W:1920, H:1080}; },     // cartons et ouverture envoyés au PC à cette taille
   reel:runReelRemote,
   busy:function(){},                      // le calcul tourne sur le PC : l'appli peut être fermée
   compileFailed:function(msg){ jobView("Setup"); toast(`Le PC n'a pas pu lancer le calcul : ${msg}. Réessayez dans un instant.`); },

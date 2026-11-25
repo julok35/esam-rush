@@ -73,13 +73,13 @@ L'adresse en `https` est indispensable : sans elle, le navigateur du téléphone
 
 1. Réveillez le PC depuis Home Assistant, puis ouvrez l'appli sur le téléphone : la liste des interventions s'affiche.
 2. « Préparer » lance la fabrication des proxies et des vignettes. La progression s'affiche ; vous pouvez fermer l'appli pendant ce temps.
-3. « Ouvrir » charge l'intervention. L'appli se parcourt en quatre étapes numérotées : **1 Sélection** (visionner et marquer les plans), **2 Compilation** (les plans retenus pour la vidéo longue, avec leurs retouches), **3 Réseaux** (vidéo courte 9:16, 4:5 ou 1:1), **4 Export** (tout ce que l'on peut produire). La bande sous le nom de l'intervention donne en permanence le nombre de plans et leur durée, la durée estimée de la vidéo compilée (cartons et marges compris) et celle du montage réseaux.
+3. « Ouvrir » charge l'intervention. L'appli se parcourt en trois étapes numérotées : **1 Sélection** (visionner et marquer les plans), **2 Compilation** (les plans retenus pour la vidéo longue, avec leurs retouches), **3 Réseaux** (vidéo courte 9:16, 4:5 ou 1:1). Le bouton **Exporter**, en haut de chaque étape, déplie la liste de tout ce que l'on peut produire. La bande sous le nom de l'intervention donne en permanence le nombre de plans et leur durée, la durée estimée de la vidéo compilée (cartons et marges compris) et celle du montage réseaux.
    Dans Sélection, Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète, qui s'enregistre en se fermant ; « Annuler » dans le message qui suit la remet comme avant). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
    Sur les pistes, les numéros trop proches pour être touchés un par un forment un groupe (« 3-6 ») : le toucher zoome jusqu'à les séparer, ou propose la liste s'ils tombent presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus, pour en glisser les bords à l'aise après la fiche ; « - » ramène au zoom d'avant.
    Les périodes où aucune piste n'a d'image pendant plus de 20 s (vidéos de téléphone espacées, changement de batterie) sont repliées en une bande hachurée étroite qui indique la durée sautée (« 1 h 12 ») ; les heures affichées restent les vraies, et la lecture passe directement au fichier suivant, sur une autre piste s'il le faut. Le bouton « Replier les temps morts », sous les noms de pistes, revient à l'échelle réelle ; le choix est gardé sur l'appareil.
-   La fiche d'un marqueur a un champ facultatif « Ce qu'on voit » (une phrase sur le contenu du plan), aussi modifiable sur la carte du plan dans Compilation : il sert à la liste des plans.
+   La fiche d'un marqueur a un champ facultatif « Ce qu'on voit » (une phrase sur le contenu du plan) : il sert à la liste des plans. Il s'écrit aussi sans quitter Sélection ni arrêter la lecture : bouton « Ce qu'on voit » du bandeau sous Début, Fin, Repère (juste après avoir posé le marqueur, ou quand la lecture passe dans le passage ou juste à côté ; Entrée pour finir, Échap pour annuler), et sur PC sous le nom de chaque marqueur, dans la colonne de droite. Il reste modifiable sur la carte du plan dans Compilation.
 4. L'icône d'appareil photo enregistre l'image en pleine résolution dans le sous-dossier `Photos`.
-5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; étape Compilation ou Export, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
+5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; étape Compilation ou menu Exporter, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
 6. Après 20 minutes sans activité, le PC se remet en veille.
 
 ## 7. Mise à jour
@@ -95,7 +95,7 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 | `proxies/` | Copies 540p, vignettes et métadonnées |
 | `.derushage/etat.json` | Marqueurs en cours (sauvegarde automatique) |
 | `ESAM_Derushage_<date>_<mission>.md` | Fiche de dérushage, une seule par intervention |
-| `ESAM_Plans_<date>_<mission>.md` | Liste des plans pour bâtir un storyboard (étape Export), sans commentaires internes sauf demande |
+| `ESAM_Plans_<date>_<mission>.md` | Liste des plans pour bâtir un storyboard (menu Exporter), sans commentaires internes sauf demande |
 | `Photos/` | Photos pleine résolution |
 | `ESAM_Compilation_<date>_<mission>.mp4` | Vidéo compilée, avec un chapitre par passage |
 | `ESAM_Compilation_<date>_<mission>.commentaires-ESAM.srt` | Commentaires internes signés, en sous-titres à part (jamais incrustés dans la vidéo) |
@@ -153,7 +153,7 @@ Pour reprendre quelques moments sans reparcourir tous les rushs, repartez de la 
 - **Mode PC** : dans la liste des interventions, « Préparer la vidéo compilée pour en extraire des morceaux » (une fois), puis « Extraire des morceaux de la vidéo compilée ». Les marqueurs posés sur la vidéo compilée sont enregistrés à part : ceux des rushs et la fiche de l'intervention ne changent pas.
 - **Mode navigateur** : « Choisir les vidéos », puis le fichier `ESAM_Compilation_...mp4`.
 
-Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans l'étape Compilation (ou « Extraits bruts » dans l'étape Export). L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
+Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans l'étape Compilation (ou « Extraits bruts » dans le menu Exporter). L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
 
 ## Réel, story et vidéo LinkedIn (étape Réseaux)
 
@@ -181,14 +181,18 @@ Par défaut, les textes et le logo sont placés à l'écart du bas de l'image et
 
 En mode navigateur, le son est encodé en AAC sur la plupart des ordinateurs et téléphones ; si le navigateur ne propose que l'Opus, l'appli le signale, et le mode PC reste la voie sûre.
 
-## Export : vidéos, liste des plans, fiche
+## Exporter : vidéos, liste des plans, fiche
 
-L'étape Export réunit une carte par sortie, avec sa durée et son état :
+Le bouton **Exporter**, en haut de l'écran dans toutes les étapes, déplie la liste des sorties, chacune avec sa durée ou son état (Échap ou un appui à côté la referme) :
 
 - **Vidéo compilée** et **Extraits bruts** : ouvrent le même calcul que le bouton de l'étape Compilation (habillage avec cartons, heure et logo, ou aucun) ;
-- **Réseaux sociaux** : « Créer le réel », « Créer la story » ou « Créer la vidéo LinkedIn », selon le format choisi dans l'étape Réseaux, qui s'affiche derrière le calcul ;
+- **Réel ou story** (format 9:16) ou **Vidéo LinkedIn** (4:5 ou 1:1), selon le format choisi dans l'étape Réseaux, qui s'affiche derrière le calcul ; « Ouvrir Réseaux » tant que le montage est vide ;
 - **Liste des plans** : un texte Markdown pensé pour être collé dans une conversation avec Claude afin de bâtir un storyboard. En tête, l'intervention, la date et la durée totale ; puis, pour chaque plan, son heure de début et de fin, sa durée, la caméra compilée, son nom, ses thèmes, son intérêt, sa sensibilité, « Ce qu'on voit » et le texte du carton ; enfin l'ordre du montage réseaux s'il existe (plans, plages, vitesses, textes). « Copier » le met dans le presse-papiers ; « Télécharger .md » le télécharge et, en mode PC ou avec le dossier des rushs ouvert, l'enregistre aussi dans le dossier de l'intervention (`ESAM_Plans_<date>_<mission>.md`). La liste peut sortir de l'ESAM : les commentaires internes n'y figurent que si « Inclure les commentaires internes » est coché ;
-- **Fiche de dérushage** : la fiche complète, commentaires internes compris, à garder à l'ESAM.
+- **Fiche de dérushage** : la fiche complète, commentaires internes compris, à garder à l'ESAM (« Exporter la fiche », seul bouton de la fiche dans l'appli ; « Reprendre une fiche » reste dans l'étape Compilation en mode navigateur).
+
+## Voir le résultat dans l'étape Compilation
+
+Chaque carte de plan montre ce que la vidéo compilée affichera : le carton (l'écran de titre avec le nom du passage, ses heures, la caméra et le texte du carton, tel qu'il sera dans la vidéo), puis l'image du plan avec ses retouches (couleurs, flous, flèches et cercles) sur la caméra retenue. À la souris, survolez l'image du plan : elle fait défiler la séquence en suivant le pointeur, vitesses comprises. Sur téléphone, le début, le milieu et la fin du plan sont côte à côte. Les miniatures suivent le nom, le texte du carton, l'habillage (sans habillage, pas de carton), le format et la marge choisis avant le calcul ; elles sont faites à partir des vignettes de la timeline, sans relire les vidéos.
 
 ## Choisir la caméra de chaque passage
 

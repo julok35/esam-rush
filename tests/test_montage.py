@@ -62,7 +62,14 @@ async def navigateur(p, tmp):
         await pg.set_input_files("#fileIn", str(video))
         await pg.wait_for_selector("#view:not([hidden])", timeout=30000); await pg.wait_for_timeout(1200)
         await marquer(pg, 1, 11)
-        await pg.click("#tabSum"); await pg.click("#list [data-fx]"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1200)
+        # « ce qu'on voit » écrit dans le bandeau pendant la lecture : les lettres (i, o, m, r...) ne déclenchent aucun raccourci
+        await pg.click("#play"); await pg.click('#inWinBtns [data-wa="desc"]'); await pg.keyboard.type("Motif mobile sur fond bruit"); await pg.keyboard.press("Enter")
+        etat = await pg.evaluate("window.ESAM_TEST.etat()"); lit = await pg.evaluate("!document.querySelector('#v').paused")
+        print("bandeau :", etat["markers"][0].get("desc"), "| lecture en cours :", lit)
+        assert len(etat["markers"]) == 1 and etat["markers"][0]["desc"] == "Motif mobile sur fond bruit" and lit, etat["markers"]
+        await pg.click("#play")
+        await pg.click("#tabSum"); await pg.wait_for_selector("#list .cvp")
+        await pg.click("#list [data-fx]"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1200)
         # flou posé sur le motif, puis suivi automatique jusqu'à la fin du passage
         await pg.click('#fxPanel [data-fxadd="flou"]'); await pg.wait_for_timeout(300)
         t0 = (await pg.evaluate("window.ESAM_TEST.etat()"))["fx"]["t"]
@@ -166,7 +173,16 @@ async def pc(p, tmp, iv):
     await pg.wait_for_timeout(1000)
     bande = await pg.inner_text("#durs"); print("bande des durées :", bande.replace("\n", " "))
     assert "2 plans" in bande and "Réseaux" in bande, bande
-    await pg.click("#tabExp"); await pg.wait_for_selector("#expo:not([hidden])")
+    # miniatures de l'étape Compilation : un carton et une image du plan par carte, dessinés (pixels non noirs)
+    for k in range(2): await pg.locator("#list .cviz").nth(k).scroll_into_view_if_needed(); await pg.wait_for_timeout(400)
+    clairs = await pg.evaluate("""() => [...document.querySelectorAll('#list .cviz canvas')].map(c => {
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0;
+      for(let i = 0; i < d.length; i += 4) if(d[i] + d[i+1] + d[i+2] > 120) n++;
+      return [c.className, c.width, n]; })""")
+    print("miniatures :", clairs)
+    assert [c[0].split()[0] for c in clairs] == ["cvc", "cvp", "cvc", "cvp"] and all(c[2] > 50 for c in clairs), clairs
+    # menu Exporter de l'en-tête : liste des plans, puis vidéo compilée
+    await pg.click("#xBtn"); await pg.wait_for_selector("#xMenu:not([hidden])")
     assert "2 plans" in await pg.inner_text("#xCmpDur")
     async with pg.expect_download() as dl: await pg.click("#xPlansDl")
     assert (await dl.value).suggested_filename.startswith("ESAM_Plans_2026-09-12")
@@ -176,8 +192,9 @@ async def pc(p, tmp, iv):
     assert "NE PAS PUBLIER" in await pg.evaluate("window.ESAM_TEST.plans(true)")
     assert len(list(d.glob("ESAM_Derushage_*.md"))) == 1, "la liste des plans a remplacé la fiche"
     print("liste des plans :", next(d.glob("ESAM_Plans_*.md")).name, len(plans), "caractères")
-    # vidéo compilée avec habillage, lancée depuis l'étape Export : ouverture, cartons, passages retouchés
-    await pg.click("#xCmpGo"); await pg.wait_for_timeout(400)
+    # vidéo compilée avec habillage, lancée depuis le menu Exporter : ouverture, cartons, passages retouchés
+    assert await pg.is_hidden("#xMenu")                                 # le panneau se referme après une action
+    await pg.click("#xBtn"); await pg.click("#xCmpGo"); await pg.wait_for_timeout(400)
     await pg.screenshot(path=str(tmp / "m4_compilation.png"))
     assert await pg.inner_text("#cmpTitle") == "Vidéo compilée"
     await calcul()
@@ -205,7 +222,7 @@ async def pc(p, tmp, iv):
     await pg.click("[data-openc]")
     await pg.wait_for_selector('[data-openc][data-ready="1"]', timeout=180000)
     await pg.screenshot(path=str(tmp / "m6_liste.png"))
-    await pg.click("[data-openc]"); await pg.wait_for_selector("#empty", state="hidden")      # l'appli rouvre sur l'étape quittée (Export)
+    await pg.click("[data-openc]"); await pg.wait_for_selector("#empty", state="hidden")      # l'appli rouvre sur l'étape quittée (Compilation)
     await pg.click("#tabView"); await pg.wait_for_selector("#view:not([hidden])"); await pg.wait_for_timeout(1000)
     pistes = await pg.eval_on_selector_all(".lab", "l => l.map(e => e.textContent.trim())"); print("source :", pistes, "|", await pg.inner_text("#mMeta"))
     await marquer(pg, 10, 14)
