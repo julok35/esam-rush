@@ -10,8 +10,8 @@ Deux fichiers de code, aucune étape de construction, aucune dépendance Python 
 
 | Fichier | Rôle | Taille |
 |---|---|---|
-| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 6 300 lignes |
-| `server.py` | Serveur HTTP du PC de traitement (bibliothèque standard, `ThreadingHTTPServer`), calculs ffmpeg, veille. | environ 1 020 lignes |
+| `index.html` | Toute l'appli : HTML, CSS et JavaScript (ES2017, une seule fonction englobante). Mobile d'abord, mise en page large à partir de 1100 px. | environ 7 100 lignes |
+| `server.py` | Serveur HTTP du PC de traitement (bibliothèque standard, `ThreadingHTTPServer`), calculs ffmpeg, veille. | environ 1 200 lignes |
 | `vendor/` | mp4box 0.5.3 (lecture des en-têtes MP4), mp4-muxer 5.2.1 (écriture MP4), polices Anton et Montserrat. Servis en local, repli sur jsDelivr si un fichier manque. | 290 Ko |
 | `tests/` | Fabrique de faux rushs, tests de bout en bout (Playwright), tests unitaires. | |
 
