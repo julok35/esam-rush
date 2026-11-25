@@ -990,8 +990,10 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/fiche":
                 d = folder(b.get("d"))
                 name = re.sub(r'[\\/:*?"<>|]', "_", clean(b.get("nom") or "ESAM_Derushage.md"))
-                for old in d.glob("ESAM_Derushage_*.md"):
-                    if old.name != name: old.unlink()     # une seule fiche vivante par intervention
+                if not name.lower().endswith(".md"): raise ValueError("nom de fichier Markdown attendu")
+                if name.startswith("ESAM_Derushage_"):    # la liste des plans (ESAM_Plans_...) passe aussi par ici
+                    for old in d.glob("ESAM_Derushage_*.md"):
+                        if old.name != name: old.unlink()     # une seule fiche vivante par intervention
                 (d / name).write_text(clean(b.get("md", "")), encoding="utf-8")
                 return self.send_json({"ok": True, "fichier": name})
             if u.path == "/api/photo":

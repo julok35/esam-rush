@@ -134,8 +134,24 @@ async def pc(p, tmp, iv):
     base = (await pg.evaluate("window.ESAM_TEST.etat()"))["base"]
     t1, t2 = m1["at"] - base, m1["to"] - base; cut = fx["vits"][1]["t"]
     d1 = (cut - t1) / 0.5 + (t2 - cut) / 4; d2 = m2["to"] - m2["at"]
-    # vidéo compilée avec habillage : ouverture, cartons, passages retouchés
-    await pg.click("#cmpOpen"); await pg.wait_for_timeout(400)
+    # liste des plans : « ce qu'on voit » sur la carte, commentaire interne absent sauf demande ; enregistrée aussi sur le PC
+    await pg.fill("#list textarea[data-desc] >> nth=0", "Le chien couché sous une barre rocheuse")
+    await pg.fill("#list textarea[data-com] >> nth=1", "NE PAS PUBLIER ce commentaire")
+    await pg.wait_for_timeout(1000)
+    bande = await pg.inner_text("#durs"); print("bande des durées :", bande.replace("\n", " "))
+    assert "2 plans" in bande and "Réseaux" in bande, bande
+    await pg.click("#tabExp"); await pg.wait_for_selector("#expo:not([hidden])")
+    assert "2 plans" in await pg.inner_text("#xCmpDur")
+    async with pg.expect_download() as dl: await pg.click("#xPlansDl")
+    assert (await dl.value).suggested_filename.startswith("ESAM_Plans_2026-09-12")
+    await pg.wait_for_timeout(500)
+    plans = next(d.glob("ESAM_Plans_*.md")).read_text(encoding="utf-8")
+    assert "Le chien couché sous une barre rocheuse" in plans and "NE PAS PUBLIER" not in plans and "### Plan 2" in plans, plans
+    assert "NE PAS PUBLIER" in await pg.evaluate("window.ESAM_TEST.plans(true)")
+    assert len(list(d.glob("ESAM_Derushage_*.md"))) == 1, "la liste des plans a remplacé la fiche"
+    print("liste des plans :", next(d.glob("ESAM_Plans_*.md")).name, len(plans), "caractères")
+    # vidéo compilée avec habillage, lancée depuis l'étape Export : ouverture, cartons, passages retouchés
+    await pg.click("#xCmpGo"); await pg.wait_for_timeout(400)
     await pg.screenshot(path=str(tmp / "m4_compilation.png"))
     assert await pg.inner_text("#cmpTitle") == "Vidéo compilée"
     await calcul()
@@ -159,7 +175,7 @@ async def pc(p, tmp, iv):
     await pg.click("[data-openc]")
     await pg.wait_for_selector('[data-openc][data-ready="1"]', timeout=180000)
     await pg.screenshot(path=str(tmp / "m6_liste.png"))
-    await pg.click("[data-openc]"); await pg.wait_for_selector("#empty", state="hidden")      # l'appli rouvre sur l'onglet quitté (Sommaire)
+    await pg.click("[data-openc]"); await pg.wait_for_selector("#empty", state="hidden")      # l'appli rouvre sur l'étape quittée (Export)
     await pg.click("#tabView"); await pg.wait_for_selector("#view:not([hidden])"); await pg.wait_for_timeout(1000)
     pistes = await pg.eval_on_selector_all(".lab", "l => l.map(e => e.textContent.trim())"); print("source :", pistes, "|", await pg.inner_text("#mMeta"))
     await marquer(pg, 10, 14)

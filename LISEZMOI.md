@@ -73,11 +73,12 @@ L'adresse en `https` est indispensable : sans elle, le navigateur du téléphone
 
 1. Réveillez le PC depuis Home Assistant, puis ouvrez l'appli sur le téléphone : la liste des interventions s'affiche.
 2. « Préparer » lance la fabrication des proxies et des vignettes. La progression s'affiche ; vous pouvez fermer l'appli pendant ce temps.
-3. « Ouvrir » charge l'intervention. Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète, qui s'enregistre en se fermant ; « Annuler » dans le message qui suit la remet comme avant). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
+3. « Ouvrir » charge l'intervention. L'appli se parcourt en quatre étapes numérotées : **1 Sélection** (visionner et marquer les plans), **2 Compilation** (les plans retenus pour la vidéo longue, avec leurs retouches), **3 Réseaux** (vidéo courte 9:16, 4:5 ou 1:1), **4 Export** (tout ce que l'on peut produire). La bande sous le nom de l'intervention donne en permanence le nombre de plans et leur durée, la durée estimée de la vidéo compilée (cartons et marges compris) et celle du montage réseaux.
+   Dans Sélection, Début, Fin et Repère posent les marqueurs ; juste après, le bandeau sous ces boutons propose les noms courants : un toucher suffit, sans arrêter la lecture (« Autre... » ouvre la fiche complète, qui s'enregistre en se fermant ; « Annuler » dans le message qui suit la remet comme avant). Ils sont enregistrés automatiquement sur le PC, dans le sous-dossier `.derushage` de l'intervention.
    Sur les pistes, les numéros trop proches pour être touchés un par un forment un groupe (« 3-6 ») : le toucher zoome jusqu'à les séparer, ou propose la liste s'ils tombent presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus, pour en glisser les bords à l'aise après la fiche ; « - » ramène au zoom d'avant.
-   L'onglet Planche montre une vignette par intervalle (piste et intervalle choisis en haut) ; « + Repère » sur une vignette pose un repère à cet instant.
+   La fiche d'un marqueur a un champ facultatif « Ce qu'on voit » (une phrase sur le contenu du plan), aussi modifiable sur la carte du plan dans Compilation : il sert à la liste des plans.
 4. L'icône d'appareil photo enregistre l'image en pleine résolution dans le sous-dossier `Photos`.
-5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; onglet Sommaire, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
+5. La fiche Markdown est enregistrée automatiquement dans le dossier de l'intervention, quelques secondes après chaque modification (l'heure du dernier enregistrement s'affiche à côté du nom de l'intervention) ; étape Compilation ou Export, « Créer la vidéo compilée » envoie le montage au PC, qui dépose la vidéo dans le dossier de l'intervention.
 6. Après 20 minutes sans activité, le PC se remet en veille.
 
 ## 7. Mise à jour
@@ -93,13 +94,14 @@ Le mode navigateur (https://julok35.github.io/esam-rush/) se met à jour tout se
 | `proxies/` | Copies 540p, vignettes et métadonnées |
 | `.derushage/etat.json` | Marqueurs en cours (sauvegarde automatique) |
 | `ESAM_Derushage_<date>_<mission>.md` | Fiche de dérushage, une seule par intervention |
+| `ESAM_Plans_<date>_<mission>.md` | Liste des plans pour bâtir un storyboard (étape Export), sans commentaires internes sauf demande |
 | `Photos/` | Photos pleine résolution |
 | `ESAM_Compilation_<date>_<mission>.mp4` | Vidéo compilée, avec un chapitre par passage |
 | `ESAM_Compilation_<date>_<mission>.commentaires-ESAM.srt` | Commentaires internes signés, en sous-titres à part (jamais incrustés dans la vidéo) |
 | `ESAM_Extraits_<date>_<mission>.mp4` | Extraits bruts (habillage « Aucun ») : les passages sans carton, sans heure et sans logo |
 | `ESAM_Extraits_<date>_<mission>_01_<passage>.mp4`... | Les mêmes extraits, en un fichier par passage |
 | `.derushage/etat-compil.json` | Marqueurs posés sur une vidéo compilée rouverte pour en extraire des morceaux (à part de ceux des rushs) |
-| `ESAM_Reel_<date>_<mission>.mp4` | Réel vertical 1080 x 1920 (onglet Réel) |
+| `ESAM_Reel_<date>_<mission>.mp4` | Réel vertical 1080 x 1920 (étape Réseaux) |
 | `ESAM_Story_<date>_<mission>_1sur2.mp4`... | Story découpée en morceaux de 60 s maximum |
 | `ESAM_LinkedIn_<date>_<mission>.mp4`, `..._carre.mp4` | Vidéo LinkedIn 1080 x 1350 (4:5) ou 1080 x 1080 (carré) |
 | `.derushage/musique.mp3` | Musique choisie pour le réel |
@@ -124,7 +126,7 @@ Le journal `derushage.log` indique aussi la version au démarrage du programme.
 
 ## Commentaires internes
 
-Dans l'onglet Sommaire, chaque marqueur a un champ « Commentaire interne ». Le champ « Auteur » se remplit une fois et signe tous les commentaires. À la compilation, ces commentaires partent dans un fichier de sous-titres `.commentaires-ESAM.srt` posé à côté de la vidéo, affiché pendant le passage concerné.
+Dans l'étape Compilation, chaque plan a un champ « Commentaire interne ». Le champ « Auteur » se remplit une fois et signe tous les commentaires. À la compilation, ces commentaires partent dans un fichier de sous-titres `.commentaires-ESAM.srt` posé à côté de la vidéo, affiché pendant le passage concerné.
 
 - VLC l'affiche automatiquement (même dossier, nom commençant comme celui de la vidéo).
 - Dans Google Drive : ouvrir la vidéo, menu des trois points, « Gérer les sous-titres », ajouter le fichier `.srt`. Seuls ceux qui regardent la vidéo dans le Drive les voient.
@@ -132,7 +134,7 @@ Dans l'onglet Sommaire, chaque marqueur a un champ « Commentaire interne ». Le
 
 ## Retoucher un passage : flous, flèches, cercles, vitesse
 
-Le bouton « Retoucher » d'un passage (onglet Sommaire, liste des passages de « Créer la vidéo compilée », réglages d'un passage dans l'onglet Réel) ouvre l'image du passage en grand. Les retouches appartiennent au passage : elles sont appliquées dans toutes les vidéos qui en sont tirées (vidéo compilée, extraits, réel, story) et enregistrées avec les marqueurs.
+Le bouton « Retoucher » d'un passage (étape Compilation, liste des passages de « Créer la vidéo compilée », réglages d'un passage dans l'étape Réseaux) ouvre l'image du passage en grand. Les retouches appartiennent au passage : elles sont appliquées dans toutes les vidéos qui en sont tirées (vidéo compilée, extraits, réel, story) et enregistrées avec les marqueurs.
 
 - **Flou** (visage, plaque d'immatriculation, lieu) : « + Flou » pose une zone au centre de l'image. Glissez-la sur ce qu'il faut cacher et tirez son coin (rond bleu) pour régler sa hauteur et sa largeur. Forme ovale (visage) ou rectangle (plaque) ; rendu flou doux ou pixelisé ; bords fondus dans les deux cas.
 - **Suivi en mouvement** : « Suivre automatiquement » lance la lecture et la zone suit toute seule son sujet, image après image, jusqu'à la fin du passage. Si le sujet est masqué ou sort de l'image, le suivi s'arrête et le dit : replacez la zone et relancez, le suivi repart de cet instant. On peut aussi suivre à la main : pendant la lecture, gardez le doigt (ou la souris) sur la zone ; à l'arrêt, chaque déplacement pose un point de suivi à l'instant affiché. « Supprimer le point ici » et « Rendre fixe » corrigent une trajectoire. Relisez toujours le passage avant de publier.
@@ -149,11 +151,11 @@ Pour reprendre quelques moments sans reparcourir tous les rushs, repartez de la 
 - **Mode PC** : dans la liste des interventions, « Préparer la vidéo compilée pour en extraire des morceaux » (une fois), puis « Extraire des morceaux de la vidéo compilée ». Les marqueurs posés sur la vidéo compilée sont enregistrés à part : ceux des rushs et la fiche de l'intervention ne changent pas.
 - **Mode navigateur** : « Choisir les vidéos », puis le fichier `ESAM_Compilation_...mp4`.
 
-Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans le Sommaire. L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
+Marquez les morceaux à garder (Début, Fin), retouchez-les au besoin, puis « Créer les extraits » dans l'étape Compilation (ou « Extraits bruts » dans l'étape Export). L'habillage est alors d'office sur « Aucun : extraits bruts » : ni carton de transition, ni heure incrustée, ni logo. La sortie est une seule vidéo (`ESAM_Extraits_...mp4`) ou un fichier par passage. Le même réglage « Habillage » existe à partir des rushs, pour sortir des passages bruts sans passer par une vidéo compilée.
 
-## Réel, story et vidéo LinkedIn (onglet Réel)
+## Réel, story et vidéo LinkedIn (étape Réseaux)
 
-L'onglet Réel monte une vidéo courte à partir des passages marqués. « Format de la vidéo », en tête du montage, choisit sa forme :
+L'étape Réseaux monte une vidéo courte à partir des passages marqués. « Format de la vidéo », en tête du montage, choisit sa forme :
 
 - **Réel 9:16** (1080 x 1920) : réel ou story pour Instagram et Facebook ;
 - **LinkedIn 4:5** (1080 x 1350) : la plus grande place dans le fil LinkedIn sur téléphone ;
@@ -161,7 +163,7 @@ L'onglet Réel monte une vidéo courte à partir des passages marqués. « Forma
 
 Le cadre bleu du cadrage et l'aperçu prennent la forme choisie ; le montage, le cadrage, les retouches et l'habillage sont les mêmes pour les trois formats, on peut donc fabriquer le réel puis la vidéo LinkedIn sans rien refaire. Après un changement de format, vérifiez dans l'aperçu la place du titre et du logo. Une vidéo produite par l'outil n'a pas de sous-titres : ne joignez jamais le fichier `.commentaires-ESAM.srt` à un post, il contient les commentaires internes.
 
-Sur téléphone, l'onglet se parcourt par trois volets, sans autre choix à faire avant l'image : **Montage**, **Passage** (l'image du passage en cadrage) et **Habillage** (le titre, puis l'aperçu du réel complet avec tout ce qui est posé dessus). Sur PC, tout est sur un écran : l'image à gauche, avec « Cadrage » ou « Aperçu du réel » au-dessus, le montage et l'habillage à droite ; en aperçu, les réglages des éléments se placent à droite de l'image verticale.
+Sur téléphone, l'étape se parcourt par trois volets, sans autre choix à faire avant l'image : **Montage**, **Passage** (l'image du passage en cadrage) et **Habillage** (le titre, puis l'aperçu du réel complet avec tout ce qui est posé dessus). Sur PC, tout est sur un écran : l'image à gauche, avec « Cadrage » ou « Aperçu du réel » au-dessus, le montage et l'habillage à droite ; en aperçu, les réglages des éléments se placent à droite de l'image verticale.
 
 1. **Montage** : « Passages à ajouter » liste les marqueurs qui ne sont pas encore dans le réel ; touchez-en un pour l'ajouter, ou « Tout ajouter » (annulable). Chaque passage ajouté reprend le passage du marqueur (6 s autour d'un repère), dans l'ordre chronologique. « Ordre et retrait » fait apparaître sur chaque ligne les flèches, qui changent l'ordre, et la croix, qui retire du réel. « Photos à ajouter » propose les photos JPEG, en une bande à faire défiler : en mode PC, celles du dossier de l'intervention et de son sous-dossier `Photos` ; en mode navigateur, celles choisies avec les vidéos, trouvées dans le dossier des rushs ou ajoutées par « Choisir des photos JPEG ». Une photo dure 2 à 8 s (4 s par défaut), avec un zoom lent qu'on peut couper, et se cadre comme un passage.
 2. **Passage** (cadrage) : touchez un passage, ou « Cadrer » dans le message qui suit un ajout. Les flèches de part et d'autre du nom du passage passent au précédent ou au suivant, sans revenir au montage. L'image entière s'affiche avec le cadre vertical en bleu. Glissez le cadre : à l'arrêt, il est posé pour tout le passage ; pendant la lecture, gardez le doigt sur l'image et suivez l'animal, le cadre enregistre votre mouvement et le lisse. Les points de cadrage apparaissent en noir sur la barre. « Début ici » et « Fin ici » raccourcissent ou allongent le passage pour le réel sans toucher au marqueur. Choisissez aussi la caméra (quand plusieurs ont de l'image), la vitesse dans le réel (accéléré x2 à x8, signalé à l'image) et un texte court, affiché tout le passage ou 3, 5 ou 8 s (un texte plus long que le passage continue sur les suivants).
@@ -175,11 +177,20 @@ Par défaut, les textes et le logo sont placés à l'écart du bas de l'image et
 
 En mode navigateur, le son est encodé en AAC sur la plupart des ordinateurs et téléphones ; si le navigateur ne propose que l'Opus, l'appli le signale, et le mode PC reste la voie sûre.
 
+## Export : vidéos, liste des plans, fiche
+
+L'étape Export réunit une carte par sortie, avec sa durée et son état :
+
+- **Vidéo compilée** et **Extraits bruts** : ouvrent le même calcul que le bouton de l'étape Compilation (habillage avec cartons, heure et logo, ou aucun) ;
+- **Réseaux sociaux** : « Créer le réel », « Créer la story » ou « Créer la vidéo LinkedIn », selon le format choisi dans l'étape Réseaux, qui s'affiche derrière le calcul ;
+- **Liste des plans** : un texte Markdown pensé pour être collé dans une conversation avec Claude afin de bâtir un storyboard. En tête, l'intervention, la date et la durée totale ; puis, pour chaque plan, son heure de début et de fin, sa durée, la caméra compilée, son nom, ses thèmes, son intérêt, sa sensibilité, « Ce qu'on voit » et le texte du carton ; enfin l'ordre du montage réseaux s'il existe (plans, plages, vitesses, textes). « Copier » le met dans le presse-papiers ; « Télécharger .md » le télécharge et, en mode PC ou avec le dossier des rushs ouvert, l'enregistre aussi dans le dossier de l'intervention (`ESAM_Plans_<date>_<mission>.md`). La liste peut sortir de l'ESAM : les commentaires internes n'y figurent que si « Inclure les commentaires internes » est coché ;
+- **Fiche de dérushage** : la fiche complète, commentaires internes compris, à garder à l'ESAM.
+
 ## Choisir la caméra de chaque passage
 
 La vidéo compilée prend, pour chaque passage, une seule caméra. Elle se choisit en un toucher, comme le nom du passage :
 - dans la colonne Marqueurs, sous le nom ;
-- dans le Sommaire, à côté du nom ;
+- dans l'étape Compilation, à côté du nom ;
 - pendant la lecture, dans le bandeau sous les boutons Début, Fin, Repère : quand la piste affichée n'est pas celle retenue, le bouton « Compiler en <caméra> » la retient pour ce passage.
 
 Le bandeau indique toujours la caméra réellement compilée (« compilée en zoom »). Si la caméra choisie n'a pas d'image sur le passage, la première caméra disponible est prise à la place. La piste affichée pendant la lecture reste libre et ne change rien à la compilation.
