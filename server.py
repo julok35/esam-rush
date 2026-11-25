@@ -100,7 +100,8 @@ def probe(path):
             created = datetime.fromisoformat(ct.replace("Z", "+00:00")).timestamp()
             if created < 1.2e9: created = None
         except ValueError: pass
-    return {"w": w, "h": h, "dur": dur, "codec": vs.get("codec_name"), "created": created, "appareil": device(d, vs)}
+    return {"w": w, "h": h, "dur": dur, "codec": vs.get("codec_name"), "created": created, "appareil": device(d, vs),
+            "matrice": vs.get("color_space"), "plage": vs.get("color_range")}
 
 def device(d, vs):
     """Marque et modèle de l'appareil (iPhone, Android, ©mak/©mod) ; None si le fichier n'en dit rien (vidéo repassée par une messagerie).
@@ -463,8 +464,8 @@ def do_video(job):
             else:
                 pc = sg["pc"]; src = pc["fichier"]; info = srcs[src]; vit = sg["vit"]
                 job["libelle"] = "Extrait %d sur %d : %s" % (k + 1, len(segs), src)
-                # retouches : flous sur l'image source, puis mise au format, puis formes (nettes à la taille de sortie), puis vitesse
-                bargs, graph = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
+                # retouches : couleurs puis flous sur l'image source, puis mise au format, puis formes (nettes à la taille de sortie), puis vitesse
+                bargs, graph = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1, pc.get("couleur"), info)
                 nin = 1 + len(bargs) // 4
                 kk = (max if fmt == "v" else min)(W / info["w"], H / info["h"])
                 ox, oy = (W - info["w"] * kk) / 2, (H - info["h"] * kk) / 2
@@ -620,10 +621,48 @@ def blur_mask(work, zw, zh, rect, feather):
         run([FFMPEG, "-f", "lavfi", "-i", "color=c=black:s=%dx%d,format=gray" % (zw, zh), "-vf", "geq=lum='%s'" % a, "-frames:v", "1", str(out)])
     return out
 
-def blur_chain(flous, w, h, work, first):
-    """Zones de flou suivies (ovale ou rectangle, flou doux ou mosaïque), appliquées à l'image source avant le cadrage :
-    (entrées ffmpeg des masques, filtre de [0:v] vers la suite)."""
+def color_params(c):
+    """Réglages de couleur d'un morceau ({lum, con, sat, temp}, de -100 à 100) vers les paramètres du modèle :
+    gains de température gr, gg, gb, luminosité b (multiplication), contraste c (autour de 0,5), saturation s.
+    Miroir de fxColParams dans index.html (mêmes formules, mêmes arrondis)."""
+    def v(k):
+        try: x = float((c or {}).get(k) or 0)
+        except (TypeError, ValueError): x = 0.0
+        return min(100, max(-100, int(math.floor(x + 0.5))))
+    t = v("temp") / 100; a = abs(t)
+    r3 = lambda x: math.floor(x * 1000 + 0.5) / 1000
+    return {"b": r3(1 + v("lum") / 200), "c": r3(1 + v("con") / 200), "s": r3(1 + v("sat") / 100),
+            "gr": r3(1 - 0.2 * a if t < 0 else 1), "gg": r3(1 - 0.06 * a), "gb": r3(1 - 0.2 * a if t > 0 else 1)}
+
+def color_chain(c):
+    """Filtre ffmpeg des couleurs (vide si le réglage est neutre), à appliquer à l'image source avant les flous.
+    Miroir de fxColor et fxColPix dans index.html : par canal, gain de température, luminosité, contraste, chaque étape bornée
+    (lutrgb), puis saturation par la matrice de saturate() en CSS (colorchannelmixer, bornée aussi)."""
+    p = color_params(c)
+    if all(abs(p[k] - 1) < 1e-9 for k in ("b", "c", "s", "gr", "gg", "gb")): return ""
+    lut = lambda g: "clip((clip(val*%.4f,0,255)-127.5)*%.4f+127.5,0,255)" % (g * p["b"], p["c"])
+    f = "format=gbrp,lutrgb=r='%s':g='%s':b='%s'" % (lut(p["gr"]), lut(p["gg"]), lut(p["gb"]))
+    s = p["s"]
+    if abs(s - 1) > 1e-9:
+        m = [[0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s],
+             [0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s],
+             [0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s]]
+        f += ",colorchannelmixer=" + ":".join("%s%s=%.5f" % (a, b, m[i][j]) for i, a in enumerate("rgb") for j, b in enumerate("rgb"))
+    return f
+
+# matrice YUV de la source (color_space de ffprobe) vers le nom attendu par scale ; une source sans indication est lue en BT.601
+YUV_MATRIX = {"bt709": "bt709", "smpte170m": "smpte170m", "bt470bg": "bt470", "smpte240m": "smpte240m", "bt2020nc": "bt2020", "bt2020c": "bt2020", "fcc": "fcc"}
+
+def blur_chain(flous, w, h, work, first, couleur=None, info=None):
+    """Couleurs du passage puis zones de flou suivies (ovale ou rectangle, flou doux ou mosaïque), appliquées à l'image
+    source avant le cadrage : (entrées ffmpeg des masques, filtre de [0:v] vers la suite). info : métadonnées de la
+    source (probe), pour revenir au YUV avec la matrice de la source après les couleurs (sinon BT.601 : teintes faussées)."""
     fc, last, args = "", "[0:v]", []
+    cc = color_chain(couleur)
+    if cc:
+        info = info or {}
+        fc, last = "[0:v]%s,scale=out_color_matrix=%s:out_range=%s,format=yuv420p[cc];" % (
+            cc, YUV_MATRIX.get(info.get("matrice"), "bt601"), "pc" if info.get("plage") in ("pc", "jpeg") else "tv"), "[cc]"
     for j, z in enumerate(flous or []):
         zw, zh = zone_box(z, w, h)
         rect, pixel = z.get("forme") == "rect", z.get("mode") == "pixel"
@@ -778,7 +817,7 @@ def do_reel(job):
                 else:
                     info = srcs[pc["fichier"]]
                     cw, ch, course, y = crop_box(info["w"], info["h"], RW, RH)
-                    bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1)
+                    bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1, pc.get("couleur"), info)
                     xe = x_expr(pc.get("cles"), course)
                     # formes suivies : leur place dans l'image source, ramenée au cadre qui se déplace
                     sargs, sfc = shape_chain(pc.get("formes"), sprites, 1 + len(bargs) // 4,

@@ -4,7 +4,7 @@ Document pour un développeur qui découvre le projet. Le guide d'installation e
 
 ## 1. Vue d'ensemble
 
-L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication : fiche de dérushage, vidéo compilée, extraits bruts, réel ou story verticale, vidéo LinkedIn (4:5 ou carrée), avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse).
+L'outil annote les rushs d'un secours animalier (drone DJI M30T sur plusieurs caméras, téléphones) et prépare les images pour la communication : fiche de dérushage, vidéo compilée, extraits bruts, réel ou story verticale, vidéo LinkedIn (4:5 ou carrée), avec les retouches de chaque passage (flous suivis, flèches, cercles, vitesse, couleurs).
 
 Deux fichiers de code, aucune étape de construction, aucune dépendance Python :
 
@@ -50,14 +50,14 @@ Le CSS vient en premier (variables de la charte dans `:root`, mode sombre par `p
 | clavier, onglets, thème | Garde commune des raccourcis (champs, listes, boutons atteints au clavier), boutons de choix de fichier, onglets au clavier (flèches, Début, Fin), hauteur du lecteur collant pour le focus, réglage du thème | `keyTaken`, `syncTabs`, `applyTheme` |
 | planche | Grille de vignettes : une rangée avant la grille (piste et intervalle en listes `#bTracks`, `#bStep`), heure et bouton « + Repère » posés sur l'image, trois numéros de marqueur au plus par vignette (« +n » ensuite) ; l'explication est dans l'aide | `renderBoard`, `drawTile` |
 | photo | Capture pleine résolution | `captureAt`, `captureLocal`, `decodeFrameAt` |
-| retouches | Flous suivis, flèches et cercles, vitesses d'un passage (`m.fx`) : dessin, découpe par vitesse, description pour le PC | `fxGet`, `fxMake`, `fxApply`, `fxSplit`, `fxVitAt`, `fxPayload`, `fxSprite`, `drawFxShape` |
+| retouches | Flous suivis, flèches et cercles, vitesses, couleurs d'un passage (`m.fx`) : dessin, découpe par vitesse, couleurs de l'image source, description pour le PC | `fxGet`, `fxMake`, `fxApply`, `fxSplit`, `fxVitAt`, `fxPayload`, `fxSprite`, `drawFxShape`, `fxColor`, `fxColParams` |
 | compilation | Plan de la vidéo compilée ou des extraits bruts (`cmpHab`) et rendu navigateur | `buildPlan`, `planFor`, `effCam`, `runCompile`, `drawCard`, `drawFrame` |
 | dialogue de calcul | Vues Setup / Run / Done du `<dialog id="cmp">`, partagées par la compilation et le réel | `jobRun`, `jobProgress`, `jobDone`, `jobError`, `jobCancel` |
 | mode PC | Appels HTTP, liste des interventions (filtre au-delà de 8 dossiers), ouverture d'une intervention, suivi d'un calcul | `api`, `srvInit`, `refreshList`, `renderIvList`, `openRemote`, `loadSheets`, `runRemote`, `pollJob` |
 | accueil et aide | Rappel du travail gardé dans le navigateur (mode navigateur) ; aide par onglet (`<dialog id="help">`, bouton Aide ou badge de version) | `renderResume`, `openHelp` |
 | moteur de calcul | `LOCAL` et `PC`, même interface ; `BACKEND` pointe sur l'un des deux | `BACKEND.saveState`, `.capture`, `.compile`, `.reel`, `.compileFailed`, `.reset` |
 | réel et story | Montage court au format `RFMTS` (9:16, LinkedIn 4:5 ou 1:1 ; `RW` x `RH` posés par `reelData`) : plan, calques, aperçu, rendu navigateur, envoi au PC ; flou d'une zone (`softBlur`). Sur téléphone, trois volets (`#reel[data-pane]`) liés au mode de l'image (`REEL.mode`) : Montage, Passage = cadrage, Habillage = titre puis aperçu ; `rPane` règle le mode, `rSetMode` le volet | `reelData`, `reelPlan`, `rLayers`, `drawLayers`, `rDraw`, `rRender`, `runReelLocal`, `runReelRemote`, `renderReel`, `rPane`, `rSetMode` |
-| éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
+| éditeur de retouches | Dialogue `#fx` : image du passage, éléments à glisser, réglages, vitesses, bloc « Couleurs » (curseurs, Automatique, Neige / contre-jour, Appliquer à tous les passages) ; suivi au doigt et suivi automatique | `fxOpen`, `fxDraw`, `fxPanel`, `fxSeek`, `fxColCtl`, `fxColAuto`, `fxTrackStart`, `fxTrackFrame`, `fxSimplify` |
 
 Conventions du script :
 
@@ -105,7 +105,7 @@ Caméras (`LENS`) : lettre finale du nom DJI `DJI_AAAAMMJJHHMMSS_NNNN_X` : W gra
  note: "",            // texte du carton, visible dans la vidéo compilée
  comment: "",         // commentaire interne, jamais incrusté : fichier .srt à part
  cam: "W",            // caméra souhaitée pour la compilation ; effCam(m) rend la caméra réellement utilisée
- fx: {flous, formes, vits}}   // retouches du passage, absentes tant qu'il n'y en a pas : voir 3.3
+ fx: {flous, formes, vits, couleurs}}   // retouches du passage, absentes tant qu'il n'y en a pas : voir 3.3
 ```
 
 ### 3.3 Retouches d'un passage (`m.fx`)
@@ -123,14 +123,16 @@ Les retouches appartiennent au passage, pas à une vidéo produite : la vidéo c
            a, z,                     // plage d'affichage (absents : tout le passage)
            keys: [{t, x, y}]}],      // point visé par la pointe de la flèche, centre du cercle
  vits: [{t, v}],                    // changements de vitesse : v (0.25 à 8) à partir de t, jusqu'au changement suivant
+ couleurs: [{cam, lum, con, sat, temp}],   // une entrée par caméra, réglages entiers de -100 à 100 ; absente = image inchangée
  t0}                                 // heure absolue de l'origine de la timeline (S.base) quand ces temps ont été écrits
 ```
 
 - `fxGet` et `fxMake` passent par `fxNorm` : si `S.base` a changé depuis l'écriture (fichier plus ancien ajouté, fiche reprise sur d'autres fichiers), tous les temps sont recalés une fois. Un flou ne doit jamais glisser dans le temps.
 
-- `fxApply(ctx, m, lens, t, g)` dessine flous puis formes sur un canevas où l'image source occupe `g = {x0, y0, k, sw, sh}` : aperçus, rendu navigateur de la compilation (`drawFrame`) et du réel (`drawCropped`).
+- `fxApply(ctx, m, lens, t, g)` applique les couleurs puis dessine flous et formes sur un canevas où l'image source occupe `g = {x0, y0, k, sw, sh}` : aperçus, rendu navigateur de la compilation (`drawFrame`) et du réel (`drawCropped`).
+- Couleurs (`fxColor`) : un modèle par canal, sur des valeurs de 0 à 1, chaque étape bornée à 0..1 : gains de température (`gr`, `gg`, `gb`, au plus 1 : le chaud baisse le bleu, le froid le rouge, un peu le vert dans les deux cas), luminosité `b` (multiplication, 0,5 à 1,5), contraste `c` (autour de 0,5, de 0,5 à 1,5), puis saturation `s` (0 à 2, matrice de `saturate()` en CSS). `fxColParams` convertit les réglages en paramètres. Le navigateur applique ce modèle sur place à la zone de l'image source, avant les flous : composition `multiply` pour les gains, puis le canevas redessiné sur lui-même avec `ctx.filter = "brightness() contrast() saturate()"` ; sans `ctx.filter` (Safari avant la version 18, vérifié une fois par `fxHasFilter`), pixel par pixel (`fxColPix`). Le PC fait la même chose avec `lutrgb` et `colorchannelmixer` (`color_chain`), puis revient au YUV avec la matrice de la source (`probe` : `matrice`, `plage`), faute de quoi les teintes d'une vidéo BT.709 seraient faussées. « Automatique » (`fxColAuto`) lit cinq images du passage dans la vidéo de l'éditeur, prend les luminances à 1 % et 99 % et les amène à 4 % et 96 % par la luminosité et le contraste.
 - `fxSplit(m, morceaux, mult)` recoupe les morceaux d'un passage (un par fichier) aux changements de vitesse ; chaque morceau porte `vit`. La compilation (`planFor`) et le réel (`reelPlan`, où `mult` est l'accéléré du réel) rendent donc un morceau à vitesse constante. Un changement posé au début du passage vaut aussi pour la marge qui le précède (`fxVitAt`).
-- `fxPayload(m, lens, morceau, sprites)` décrit au PC les flous et les formes d'un morceau, points de suivi ramenés au début du morceau. Une forme est dessinée une fois par l'appli (`fxSprite`, PNG transparent prévu pour une image source de `ref` pixels de haut) : le tracé « au crayon » est ainsi le même dans le navigateur et sur le PC.
+- `fxPayload(m, lens, morceau, sprites)` décrit au PC les couleurs, les flous et les formes d'un morceau, points de suivi ramenés au début du morceau. Une forme est dessinée une fois par l'appli (`fxSprite`, PNG transparent prévu pour une image source de `ref` pixels de haut) : le tracé « au crayon » est ainsi le même dans le navigateur et sur le PC.
 - Suivi automatique (`fxTrackStart`) : la vidéo est lue à vitesse normale ; à chaque image présentée (`requestVideoFrameCallback`), le motif en niveaux de gris de la zone est recherché autour de sa position précédente dans une copie de 640 px de large (écart moyen, moyennes retirées), le motif s'adapte doucement, et un point est posé tous les 0,2 s. Dix images sans retrouver le motif arrêtent le suivi. À la fin, `fxSimplify` ne garde que les points qui changent la trajectoire lissée.
 - Les flous d'une photo du réel restent sur l'élément du réel (`it.flous`, même format sans `cam`). Les réels d'avant la v0.17 rangeaient aussi là les flous des passages vidéo : `reelData()` les déplace dans `m.fx`.
 
@@ -216,11 +218,12 @@ Un morceau est un extrait d'un fichier à vitesse constante, avec les retouches 
 
 ```json
 {"fichier": "DJI_..._W.MP4", "debut": 12.5, "fin": 20.0, "vitesse": 0.5,
+ "couleur": {"lum": 20, "con": -15, "sat": 10, "temp": 5},
  "flous": [{"s": 0.2, "ar": 1, "forme": "ellipse|rect", "mode": "doux|pixel", "cles": [{"t": 0, "x": 0.4, "y": 0.5}]}],
  "formes": [{"image": "<id de sprites>", "ref": 2160, "ax": 310.5, "ay": 120, "cles": [...], "debut": 0, "fin": null}]}
 ```
 
-Ordre des filtres ffmpeg d'un morceau : flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre 9:16), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
+`couleur` est absent quand l'image reste inchangée. Ordre des filtres ffmpeg d'un morceau : couleurs (`color_chain`) puis flous sur l'image source (`blur_chain`), mise au format (échelle et bandes, ou cadre 9:16), formes à la taille de sortie (`shape_chain`), vitesse (`setpts`), puis habillage (logo ou calques du réel). Un suivi de plusieurs centaines de points donne un filtre plus long que la ligne de commande de Windows : au-delà de 4 000 caractères, `fc_args` l'écrit dans un fichier (`-/filter_complex` à partir de ffmpeg 7, `-filter_complex_script` avant, détecté au démarrage).
 
 Un calcul (`travaux.json`, 30 derniers conservés) :
 
@@ -253,7 +256,7 @@ Le nom de base est construit par `outName()` côté appli (`ESAM_<préfixe>_<dat
 
 ## 7. Ce qui existe en double, à dessein
 
-Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un commentaire qui nomme son jumeau ; `tests/test_unitaire.py` vérifie que les découpes de story et le lissage des points coïncident.
+Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un commentaire qui nomme son jumeau ; `tests/test_unitaire.py` vérifie que les découpes de story, le lissage des points, le cadre et les couleurs (paramètres identiques, pixels du canevas et de ffmpeg à 3 niveaux près) coïncident.
 
 | Appli (`index.html`) | PC (`server.py`) | Objet |
 |---|---|---|
@@ -262,6 +265,7 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 | `rZone` | `zone_box` et les `clip()` de `blur_chain` | taille et place d'une zone de flou, gardée dans l'image |
 | `softBlur` | `blur_chain`, `blur_mask` | flou gaussien ou mosaïque, dans un ovale ou un rectangle aux bords fondus |
 | `fxApply` (place d'une forme) | `shape_chain` et ses `fx`, `fy` | position et taille d'une forme dans l'image mise au format |
+| `fxColParams`, `fxColor`, `fxColPix` | `color_params`, `color_chain` | couleurs d'un passage : réglages vers paramètres, puis modèle par canal (gains, luminosité, contraste, saturation) |
 | nom des extraits dans `runCompile` | `do_video`, fichiers séparés | `<base>_<NN>_<nom du passage>.mp4` |
 | `PROD_RE` | `PROD`, `COMPIL` | noms des vidéos produites par l'outil |
 | `rCrop` | `crop_box` | cadre au format de sortie dans l'image source |
@@ -286,10 +290,10 @@ Deux moteurs de rendu imposent quelques calculs en miroir. Chaque paire porte un
 
 | Commande | Ce qu'elle fait | Durée |
 |---|---|---|
-| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr`, `rCrop` / `crop_box` (Playwright sur `index.html` en `file://`) | 10 s |
+| `python tests/test_unitaire.py` | fonctions pures de `server.py` et miroirs `storyCuts` / `story_cuts`, `rKeyAt` / `key_expr`, `rCrop` / `crop_box`, `fxColParams` / `color_params` et pixels de `fxColor` contre ffmpeg (Playwright sur `index.html` en `file://`) | 15 s |
 | `python tests/test_fumee.py` | faux rushs, serveur sur le port 8799, appli dans Chromium, préparation des proxies, ouverture, timeline compacte (coupure entre les deux vols, `tlX` / `tlT` réciproques, bascule vers l'échelle réelle) | 1 min |
 | `python tests/test_reel.py` | onglet Réel de bout en bout en mode PC, réel, story puis vidéo LinkedIn 4:5, contrôle des fichiers (1080 x 1920 ou 1080 x 1350, son, 60 s au plus) | 6 à 10 min sans NVIDIA |
-| `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur ; en mode PC, flou suivi, formes, vitesses, vidéo compilée, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
+| `python tests/test_montage.py` | retouches et extraits : suivi automatique mesuré sur un motif mobile et extraits calculés dans le navigateur, couleurs (luminance de sortie mesurée) ; en mode PC, flou suivi, formes, vitesses, couleurs (« Appliquer à tous les passages » annulé, luminance mesurée), vidéo compilée, extraits en un fichier par passage, reprise de la vidéo compilée comme source (durées contrôlées) | 3 min |
 | `python tests/fabriquer_rushs.py DOSSIER [--vp9] [--espaces]` | faux rushs seuls ; `--vp9` pour le Chromium de Playwright, qui ne décode pas le H.264 (réglage `_test_vp9` du serveur) ; `--espaces` ajoute une intervention sans drone (vidéos de deux téléphones espacées de 20 à 60 min) et un vol DJI continu en plusieurs fichiers, pour la timeline compacte | |
 | `python tests/fabriquer_longue.py DOSSIER` | intervention de 3 h sur 4 caméras, déjà préparée (planches seules), pour mesurer la mémoire | |
 
