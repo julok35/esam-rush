@@ -230,6 +230,17 @@ textarea.field{min-height:70px;resize:vertical}
 .tl{--rh:44px;padding:8px 0 4px;position:relative}
 .tl .tp{margin:4px 16px 0;font-weight:500;color:var(--muted);font-size:12px}
 .tl .tp:empty{display:none}
+/* temps morts repliés : coupure hachurée de largeur fixe sur la règle et les pistes, durée sautée en haut (renderTimeline) ;
+   bascule discrète sous les noms de pistes, affichée seulement s'il y a des temps morts à replier */
+.cuts{position:absolute;inset:0;pointer-events:none}
+.cut{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,var(--bg) 0 4px,var(--line) 4px 7px);border-left:1.5px solid var(--muted);border-right:1.5px solid var(--muted)}
+.cut span{position:absolute;left:0;right:0;top:2px;text-align:center;font-size:12px;line-height:14px;font-weight:700;color:var(--ink);background:var(--bg);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tick.rs{color:var(--ink);font-weight:600}
+.tlfoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tlfoot .tp{margin-top:0}
+.tlcut{display:inline-flex;align-items:center;gap:6px;margin:4px 0 0 6px;min-height:var(--tap);padding:4px 10px 4px 8px;border:1.5px solid transparent;border-radius:18px;background:none;color:var(--muted);font-size:12px;font-weight:600}
+.tlcut[aria-pressed="true"]{border-color:var(--ctl);color:var(--ink)}
+.tlcut[aria-pressed="true"] svg{color:var(--ink)}
 .zoom{display:flex;align-items:center;justify-content:center;gap:2px;height:var(--rh);border-bottom:1px solid var(--line)}
 .zoom .btn{min-height:44px;height:44px;min-width:44px;width:44px;padding:0;font-size:20px;line-height:1;border-color:transparent}
 .zoom .btn:disabled{opacity:.35;border-color:transparent;background:none}
@@ -863,12 +874,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
             <div class="inner" id="inner">
               <div class="ruler" id="ruler"></div>
               <div id="lanes"></div>
+              <div class="cuts" id="cuts" aria-hidden="true"></div>
               <div class="mlayer" id="mlayer"></div>
               <div class="ph" id="ph"></div>
             </div>
           </div>
         </div>
-        <p class="tp" id="thumbProg"></p>
+        <div class="tlfoot">
+          <button type="button" class="tlcut" id="tlCut" aria-pressed="true" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5v14M21 5v14M9 6l-3 4 3 4-3 4M18 6l-3 4 3 4-3 4"/></svg>Replier les temps morts</button>
+          <p class="tp" id="thumbProg"></p>
+        </div>
         <div class="mhpop" id="mhPop" role="menu" aria-label="Marqueurs regroupés" hidden></div>
       </div>
     </div>
@@ -1081,6 +1096,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <ul>
       <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
       <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer, ou touchez <b>+</b> et <b>-</b> au-dessus des noms de pistes.</li>
+      <li>Les périodes sans image sur aucune piste (plus de 20 s) sont repliées en une bande hachurée étroite qui affiche la durée sautée (« 1 h 12 ») ; les heures restent les vraies. La lecture et les boutons <b>-5 s</b> et <b>+5 s</b> sautent par-dessus. <b>Replier les temps morts</b>, sous les noms de pistes, rétablit l'échelle réelle.</li>
       <li>Les numéros trop proches pour être touchés un par un sont regroupés (« 3-6 ») : touchez le groupe pour zoomer jusqu'à les séparer, ou choisir dans la liste s'ils sont presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus pour régler ses bords ; <b>-</b> ramène au zoom d'avant. Carré jaune : marqueur sensible.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
@@ -1710,7 +1726,7 @@ function rebuild(){
   // avec une vidéo montée sur "?", les autres pistes "?N" sont renumérotées à partir de 1 pour l'affichage
   const autres = S.tracks.filter(tr => /^\?\d*$/.test(tr.lens) && tr.name !== "Vidéo montée");
   if(autres.length && S.tracks.some(tr => tr.lens === "?" && tr.name === "Vidéo montée")) autres.forEach((tr, i) => { tr.name = autres.length > 1 ? `${lensName("?")} ${i+1}` : lensName("?"); });
-  S.dur = Math.max(end, 1);
+  S.dur = Math.max(end, 1); tlDirty();
   if(mig){ migrateCams(); S.meta.pistes = 2; }
   let ai = S.tracks.findIndex(t => t.lens === activeLens);
   if(ai < 0){
@@ -1771,9 +1787,22 @@ v.addEventListener("loadedmetadata", () => {
 v.addEventListener("play", () => { hidePrev(); updatePlayBtn(); loop(); });
 v.addEventListener("pause", updatePlayBtn);
 v.addEventListener("seeked", () => { if(S.cur){ S.t = S.cur.s + v.currentTime; draw(); } if(!scrub && !edrag) hidePrev(); });
+/* fin d'un fichier : la lecture continue au fichier suivant de la piste, par-dessus un temps mort. Si plus aucune piste n'a
+   d'image à cet instant (temps mort, coupure de la timeline) et qu'une autre piste reprend avant, la lecture y passe
+   (téléphones de plusieurs personnes) */
 v.addEventListener("ended", () => {
   const c = S.cur; if(!c) return;
-  const n = track().clips.filter(x => x.ok && x !== c && x.s >= c.e - 0.5).sort((a, b) => a.s-b.s)[0];
+  const after = x => x.ok && x !== c && x.s >= c.e - 0.5;
+  const n = track().clips.filter(after).sort((a, b) => a.s-b.s)[0];
+  if(!S.tracks.some(tr => clipAt(tr, c.e))){
+    let best = null, bi = -1;
+    S.tracks.forEach((tr, i) => { tr.clips.forEach(x => { if(after(x) && (!best || x.s < best.s - 0.5)){ best = x; bi = i; } }); });
+    if(best && bi !== S.active && !(n && n.s <= best.s + 0.5)){
+      S.active = bi; S.cur = null; renderTimeline(); seek(best.s, true);
+      toast(`Suite de la lecture sur la piste ${S.tracks[bi].name}.`);
+      return;
+    }
+  }
   if(n) seek(n.s, true); else { S.t = c.e; draw(); }
 });
 v.addEventListener("error", () => {
@@ -1822,13 +1851,111 @@ function setTrack(i){
 
 /* ---------- drawing ----------
    Timeline : règle, pistes (bandes de vignettes sur canvas), marqueurs ; en-tête de mission ; sommaire et chronologie RETEX. */
-function pps(){ const w = $("scroller").clientWidth || 300; return (w / S.dur) * S.zoom; }
+/* ---------- échelle de la timeline ----------
+   Temps morts repliés (TLC, réglage gardé dans localStorage « esam-tl-echelle ») : une période où aucune piste n'a d'image
+   et qui dure plus de CUT_MIN s devient une coupure hachurée de CUT_W px, quel que soit le zoom (plus étroite seulement
+   si la période elle-même, à l'échelle, l'est, ou s'il y a tant de coupures qu'elles prendraient plus de la moitié de la
+   largeur au zoom 1) ; les heures affichées restent les heures réelles.
+   tlX(t) et tlT(x) sont la seule conversion entre secondes de timeline (S.t) et position dans #inner : règle, bandes de
+   vignettes, pastilles, poignées, glissements, aperçu, pincement, zoom et défilement passent tous par elles. Le modèle
+   (S.t, heures des marqueurs, m.fx) ne change pas : seule l'échelle d'affichage change. */
+const CUT_MIN = 20, CUT_W = 52;
+let TLC = true;
+try { TLC = localStorage.getItem("esam-tl-echelle") !== "reelle"; } catch(e){}
+let TLM = null;                  // échelle calculée ; tlDirty() la fait recalculer (fichiers, calage, rendu de la timeline)
+function tlDirty(){ TLM = null; }
+/* périodes sans image sur aucune piste, plus longues que CUT_MIN : [{t0, t1}] */
+function tlGaps(){
+  const iv = [], gaps = [];
+  S.tracks.forEach(tr => { tr.clips.forEach(c => { if(c.ok && c.e > c.s) iv.push([c.s, c.e]); }); });
+  iv.sort((a, b) => a[0] - b[0]);
+  let end = null;
+  iv.forEach(a => {
+    if(end != null && a[0] - end > CUT_MIN) gaps.push({t0:end, t1:a[0]});
+    end = end == null ? a[1] : Math.max(end, a[1]);
+  });
+  return gaps;
+}
+/* segments de la timeline [{t0, t1, x0, x1, cut}] : image à p px par seconde, ou coupure. p1 = p au zoom 1, choisi pour
+   que toute l'intervention tienne dans la largeur visible : p1 x durée d'image + largeur des coupures = largeur */
+function tlLayout(){
+  const sc = $("scroller"), w = (sc && sc.clientWidth) || 300, z = S.zoom, dur = Math.max(S.dur, 1e-3);
+  if(TLM && TLM.w === w && TLM.z === z && TLM.dur === dur) return TLM;
+  const gaps = TLC ? tlGaps() : [], n = gaps.length;
+  const cap1 = n ? Math.min(CUT_W, 0.5*w/n) : 0, cap = Math.min(CUT_W, cap1*z);
+  const tc = Math.max(1e-3, dur - gaps.reduce((s, g) => s + g.t1 - g.t0, 0));
+  const fit = p => p*tc + gaps.reduce((s, g) => s + Math.min(cap1, (g.t1 - g.t0)*p), 0);
+  let lo = 0, hi = w/tc;
+  for(let i = 0; i < 50 && n; i++){ const m = (lo + hi)/2; if(fit(m) < w) lo = m; else hi = m; }
+  const p1 = n ? hi : w/dur, p = p1*z, segs = [];
+  let t = 0, x = 0;
+  const add = (t1, cut) => { const x1 = x + (cut ? Math.min(cap, (t1 - t)*p) : (t1 - t)*p); segs.push({t0:t, t1:t1, x0:x, x1:x1, cut:cut}); t = t1; x = x1; };
+  gaps.forEach(g => { add(g.t0, false); add(g.t1, true); });
+  add(dur, false);
+  TLM = {w:w, z:z, dur:dur, p1:p1, p:p, segs:segs, W:x};
+  return TLM;
+}
+function tlSeg(L, t){
+  const s = L.segs;
+  let lo = 0, hi = s.length - 1;
+  while(lo < hi){ const m = (lo + hi) >> 1; if(s[m].t1 <= t) lo = m + 1; else hi = m; }
+  return s[lo];
+}
+/* secondes de timeline -> px dans #inner */
+function tlX(t){
+  const L = tlLayout();
+  if(t <= 0) return t*L.p;
+  if(t >= L.dur) return L.W + (t - L.dur)*L.p;
+  const g = tlSeg(L, t);
+  return g.cut ? g.x0 + (t - g.t0)/(g.t1 - g.t0)*(g.x1 - g.x0) : g.x0 + (t - g.t0)*L.p;
+}
+/* px dans #inner -> secondes de timeline (réciproque de tlX) */
+function tlT(x){
+  const L = tlLayout(), s = L.segs;
+  if(x <= 0) return x/L.p;
+  if(x >= L.W) return L.dur + (x - L.W)/L.p;
+  let lo = 0, hi = s.length - 1;
+  while(lo < hi){ const m = (lo + hi) >> 1; if(s[m].x1 <= x) lo = m + 1; else hi = m; }
+  const g = s[lo];
+  return g.cut ? g.t0 + (x - g.x0)/Math.max(1e-6, g.x1 - g.x0)*(g.t1 - g.t0) : g.t0 + (x - g.x0)/L.p;
+}
+/* px par seconde d'image au zoom actuel (pps) et au zoom 1 (tlBase) ; durée d'image entre deux instants, coupures exclues */
+function pps(){ return tlLayout().p; }
+function tlBase(){ return tlLayout().p1; }
+function tlSpan(a, b){
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  return Math.max(0, tlLayout().segs.reduce((d, g) => g.cut ? d - Math.max(0, Math.min(g.t1, hi) - Math.max(g.t0, lo)) : d, hi - lo));
+}
+/* coupure qui contient t, sinon null */
+function tlCutAt(t){ const L = tlLayout(); if(t <= 0 || t >= L.dur) return null; const g = tlSeg(L, t); return g.cut ? g : null; }
+/* défile la timeline pour que l'instant t soit à dx px du bord gauche (au milieu par défaut) */
+function tlShow(t, dx){ const sc = $("scroller"); sc.scrollLeft = Math.max(0, tlX(t) - (dx == null ? sc.clientWidth/2 : dx)); }
+/* saut relatif (boutons -5 s et +5 s, flèches, J, image par image) : un instant qui tombe dans une coupure va à son bord,
+   début du fichier suivant en avançant, fin du précédent en reculant */
+function seekBy(d, play){
+  const t = S.t + d, c = tlCutAt(t);
+  seek(c ? (d > 0 ? c.t1 : c.t0 - 0.1) : t, play);
+}
+/* durée sautée par une coupure : « 45 s », « 24 min », « 1 h 12 » */
+function cutLen(sec){
+  if(sec < 60) return `${Math.round(sec)} s`;
+  const m = Math.round(sec/60);
+  return m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${pad(m%60)}`;
+}
+/* bascule temps morts repliés / échelle réelle : l'instant courant garde sa place à l'écran */
+function setCompact(on){
+  const sc = $("scroller"), dx = tlX(S.t) - sc.scrollLeft;
+  TLC = !!on;
+  try { if(TLC) localStorage.removeItem("esam-tl-echelle"); else localStorage.setItem("esam-tl-echelle", "reelle"); } catch(e){}
+  TL.back = null; TL.auto = 0; tlDirty(); S.zoom = clamp(S.zoom, 1, zMax());
+  renderTimeline(); tlShow(S.t, dx);
+}
 function draw(fromLoop){
   const abs = S.base + S.t;
   $("clock").textContent = clockAbs(abs);
   $("clocksub").textContent = `+${ms(S.t)}`;
   const tr = track(); $("camtag").textContent = tr ? tr.name : "";
-  const x = S.t * pps(); $("ph").style.left = `${x}px`;
+  const x = tlX(S.t); $("ph").style.left = `${x}px`;
   if(S.pending) drawPending();
   renderInWin();
   if(fromLoop){
@@ -1843,7 +1970,8 @@ function tickStep(p){
   return 7200;
 }
 function renderTimeline(){
-  const p = pps(), W = Math.max(S.dur * p, $("scroller").clientWidth);
+  tlDirty();
+  const L = tlLayout(), p = L.p, W = Math.max(L.W, $("scroller").clientWidth);
   $("inner").style.width = `${W}px`;
   const zl = S.zoom >= 10 || !(S.zoom % 1) ? Math.round(S.zoom) : S.zoom.toFixed(1).replace(".", ",");
   $("zLvl").textContent = S.zoom > 1 ? `Zoom x${zl}` : "Toute l'intervention";
@@ -1854,13 +1982,39 @@ function renderTimeline(){
   S.tracks.forEach((t, i) => { lab += `<button class="lab" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`; });
   $("labels").innerHTML = lab;
 
-  // ruler
-  const step = tickStep(p);
-
-  let html = "";
-  const first = S.real ? Math.ceil(S.base/step)*step - S.base : 0;
-  for(let t = first; t <= S.dur; t += step){ html += `<div class="tick" style="left:${t*p}px">${S.real ? clockAbs(S.base+t) : ms(t)}</div>`; }
+  // ruler : graduations par segment d'image ; après une coupure, l'heure de reprise d'abord, puis les graduations qui ne
+  // chevauchent ni elle ni l'étiquette d'une coupure
+  const step = tickStep(p), TW = 62, cuts = L.segs.filter(g => g.cut);
+  const lbl = t => S.real ? clockAbs(S.base+t) : ms(t);
+  const busy = [];
+  let html = "", cutHtml = "";
+  cuts.forEach(g => {
+    const w = g.x1 - g.x0, d = g.t1 - g.t0;
+    busy.push([g.x0, g.x1]);
+    cutHtml += `<div class="cut" style="left:${g.x0}px;width:${w}px">${w >= 40 ? `<span>${cutLen(d)}</span>` : ""}</div>`;
+  });
+  L.segs.forEach((g, i) => {
+    if(g.cut || !cuts.length || (i < L.segs.length - 1 && g.x1 - g.x0 < TW)) return;
+    busy.push([g.x0, g.x0 + TW]); html += `<div class="tick rs" style="left:${g.x0}px">${lbl(g.t0)}</div>`;
+  });
+  busy.sort((a, b) => a[0] - b[0]);
+  L.segs.forEach(g => {
+    if(g.cut) return;
+    const first = S.real ? Math.ceil((S.base + g.t0)/step)*step - S.base : Math.ceil(g.t0/step)*step;
+    let k = 0;
+    for(let t = first; t <= g.t1 + 1e-6; t += step){
+      const x = tlX(t);
+      while(k < busy.length && busy[k][1] + 2 <= x) k++;
+      if(k < busy.length && busy[k][0] < x + TW) continue;
+      html += `<div class="tick" style="left:${x}px">${lbl(t)}</div>`;
+    }
+  });
   $("ruler").innerHTML = html;
+  $("cuts").innerHTML = cutHtml;
+  const tg = $("tlCut"), nCut = TLC ? cuts.length : tlGaps().length;
+  tg.hidden = !nCut;
+  tg.setAttribute("aria-pressed", String(TLC));
+  tg.title = TLC ? `${cuts.length} temps mort${cuts.length > 1 ? "s" : ""} sans image replié${cuts.length > 1 ? "s" : ""} : toucher pour revenir à l'échelle réelle` : "Replier les périodes sans image";
   // lanes
   let lanes = "";
   S.tracks.forEach((tr, i) => { lanes += `<div class="lane${i===S.active?" on":""}" data-i="${i}"><canvas class="strip"></canvas></div>`; });
@@ -1874,7 +2028,7 @@ function scheduleStrips(){ if(!stripRaf) stripRaf = requestAnimationFrame(drawSt
 function drawStrips(){
   stripRaf = 0;
   const sc = $("scroller"); if(!sc || $("view").hidden) return;
-  const sl = sc.scrollLeft, vw = sc.clientWidth, p = pps(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const sl = sc.scrollLeft, vw = sc.clientWidth, dpr = Math.min(2, window.devicePixelRatio || 1);
   const cs = getComputedStyle(document.documentElement), clipCol = cs.getPropertyValue("--clip").trim() || "#D9E6FC", inkCol = cs.getPropertyValue("--ink").trim() || "#171618";
   const canv = document.querySelectorAll("#lanes .strip");
   S.tracks.forEach((tr, i) => {
@@ -1883,17 +2037,17 @@ function drawStrips(){
     if(cv.width !== Math.round(vw*dpr) || cv.height !== Math.round(LH*dpr)){ cv.width = Math.round(vw*dpr); cv.height = Math.round(LH*dpr); cv.style.width = `${vw}px`; cv.style.height = `${LH}px`; }
     cv.style.left = `${sl}px`;
     const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,vw,LH);
-    const t0 = sl/p, t1 = (sl+vw)/p, hh = LH - 6;
+    const t0 = tlT(sl), t1 = tlT(sl+vw), hh = LH - 6;
     tr.clips.forEach(c => {
       if(!c.ok || c.e < t0 || c.s > t1) return;
-      const x0 = c.s*p - sl, x1 = c.e*p - sl;
+      const x0 = tlX(c.s) - sl, x1 = tlX(c.e) - sl;
       ctx.save(); ctx.beginPath(); ctx.rect(x0, 3, x1-x0, hh); ctx.clip();
       ctx.fillStyle = clipCol; ctx.fillRect(x0, 3, x1-x0, hh);
       if(c.thumbs.length){
         const asp = thW(c.thumbs[0]) / thH(c.thumbs[0]), tw = Math.max(20, Math.round(hh*asp));
         const start = Math.floor((Math.max(x0,0)+sl)/tw)*tw - sl;
         for(let x = start; x < Math.min(x1, vw); x += tw){
-          const th = nearestThumb(c, (x + sl + tw/2)/p - c.s);
+          const th = nearestThumb(c, tlT(x + sl + tw/2) - c.s);
           if(th) drawThumb(ctx, th, x, 3, tw, hh);
         }
       }
@@ -1950,13 +2104,13 @@ function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
 const MH_GAP = 44, EG_OUT = 34, EG_IN = 10;
 const TL = {sel:null, back:null, auto:0};
 /* zoom maximal : x64, ou 30 px par seconde sur une longue intervention (un vol de 3 h doit pouvoir séparer deux repères à 2 s) */
-function zMax(){ const w = $("scroller").clientWidth || 300; return Math.max(64, Math.ceil(30*S.dur/w)); }
+function zMax(){ return Math.max(64, Math.ceil(30/tlBase())); }
 /* position d'une pastille : jamais rognée par les bords de la timeline (demi-largeur w/2) */
-function mhX(x, w){ const h = (w || 24)/2, W = $("inner").offsetWidth || S.dur*pps(); return clamp(x, h, Math.max(h, W - h)); }
+function mhX(x, w){ const h = (w || 24)/2, W = $("inner").offsetWidth || tlLayout().W; return clamp(x, h, Math.max(h, W - h)); }
 function mhW(txt){ return Math.max(24, 10 + 7.5*String(txt).length); }
 /* regroupe les pastilles trop proches : liste triée -> [{a, b, x, w}] (indices a..b dans sorted()) */
-function mhLayout(list, p){
-  let g = list.map((m, i) => ({a:i, b:i, x0:(m.at - S.base)*p, x1:(m.at - S.base)*p}));
+function mhLayout(list){
+  let g = list.map((m, i) => { const x = tlX(m.at - S.base); return {a:i, b:i, x0:x, x1:x}; });
   const lab = o => o.a === o.b ? `${o.a+1}` : `${o.a+1}-${o.b+1}`;
   let merged = true;
   while(merged){
@@ -1976,11 +2130,11 @@ function mhLayout(list, p){
 }
 /* poignées de bord : celle du marqueur visé d'abord, puis des passages les plus larges ; une poignée dont la zone toucherait
    une poignée déjà posée n'est pas affichée (zone : EG_OUT px dehors, au plus EG_IN px dedans) */
-function egLayout(list, p){
+function egLayout(list){
   const zones = [], keep = {};
   const order = list.filter(m => m.to != null).sort((a, b) => (b.id === TL.sel) - (a.id === TL.sel) || (b.to - b.at) - (a.to - a.at));
   order.forEach(m => {
-    const x = (m.at - S.base)*p, w = Math.max(0, (m.to - m.at)*p), inn = Math.min(EG_IN, Math.floor(w/2));
+    const x = tlX(m.at - S.base), w = Math.max(0, tlX(m.to - S.base) - x), inn = Math.min(EG_IN, Math.floor(w/2));
     const zl = [x - EG_OUT, x + inn], zr = [x + w - inn, x + w + EG_OUT];
     const free = z => !zones.some(o => z[0] < o[1] && z[1] > o[0]);
     const k = {inn:inn};
@@ -1991,22 +2145,22 @@ function egLayout(list, p){
   return keep;
 }
 function renderMarkers(){
-  const p = pps(), list = sorted();
+  const list = sorted();
   if(TL.sel && !S.markers.some(m => m.id === TL.sel)) TL.sel = null;
-  const eg = egLayout(list, p);
+  const eg = egLayout(list);
   let html = "";
   list.forEach(m => {
-    const x = (m.at - S.base)*p, sel = m.id === TL.sel ? " sel" : "";
+    const x = tlX(m.at - S.base), sel = m.id === TL.sel ? " sel" : "";
     if(m.to != null){
       const k = eg[m.id], st = `--in:${k.inn}px;width:${EG_OUT + k.inn}px`;
-      html += `<div class="mr${sel}" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px">`
+      html += `<div class="mr${sel}" data-id="${m.id}" style="left:${x}px;width:${Math.max(3, tlX(m.to - S.base) - x)}px">`
         + (k.l ? `<span class="eg l" data-id="${m.id}" data-edge="l" style="left:-${EG_OUT}px;${st}" title="Glisser pour ajuster le début"></span>` : "")
         + (k.r ? `<span class="eg r" data-id="${m.id}" data-edge="r" style="left:calc(100% - ${k.inn}px);${st}" title="Glisser pour ajuster la fin"></span>` : "")
         + "</div>";
     }
     else html += `<div class="mi" style="left:${x}px"></div>`;
   });
-  mhLayout(list, p).forEach(g => {
+  mhLayout(list).forEach(g => {
     const ms2 = list.slice(g.a, g.b + 1), sens = ms2.some(isSens) ? " sens" : "", st = `left:${mhX(g.x, g.w)}px;margin-left:-${g.w/2}px;width:${g.w}px`;
     if(g.a === g.b){
       const m = ms2[0];
@@ -2024,21 +2178,21 @@ function renderMarkers(){
 /* zoom automatique : z (borné), centré sur l'instant t (secondes de timeline). Le zoom d'avant est gardé pour -. */
 function zoomTo(z, t){
   z = clamp(z, 1, zMax());
-  if(z <= S.zoom*1.05){ const sc0 = $("scroller"); sc0.scrollLeft = Math.max(0, t*pps() - sc0.clientWidth/2); return; }
+  if(z <= S.zoom*1.05){ tlShow(t); return; }
   if(!TL.back || TL.auto !== S.zoom) TL.back = S.zoom;
   S.zoom = z; TL.auto = z; renderTimeline();
-  const sc = $("scroller"); sc.scrollLeft = Math.max(0, t*pps() - sc.clientWidth/2);
+  tlShow(t);
 }
 /* groupe de pastilles : zoom qui le montre en entier (s'il est large), sinon qui sépare ses pastilles ; si le zoom maximal
    ne suffit pas (marqueurs presque au même instant), liste à choisir */
 function openGroup(a, b){
   hideGroupPop();
   const list = sorted().slice(a, b + 1); if(!list.length) return;
-  const base = ($("scroller").clientWidth || 300)/S.dur;
+  // écarts en secondes d'image (une coupure entre deux marqueurs a sa largeur fixe, quel que soit le zoom)
+  const base = tlBase(), t0 = list[0].at - S.base, t1 = list[list.length-1].at - S.base;
   let dmin = Infinity;
-  for(let i=1;i<list.length;i++) dmin = Math.min(dmin, list[i].at - list[i-1].at);
-  const t0 = list[0].at - S.base, t1 = list[list.length-1].at - S.base;
-  const need = (MH_GAP + 8)/Math.max(dmin, 1e-3)/base, fit = 0.8*($("scroller").clientWidth || 300)/Math.max(t1 - t0, 1e-3)/base;
+  for(let i=1;i<list.length;i++) dmin = Math.min(dmin, tlSpan(list[i-1].at - S.base, list[i].at - S.base));
+  const need = (MH_GAP + 8)/Math.max(dmin, 1e-3)/base, fit = 0.8*($("scroller").clientWidth || 300)/Math.max(tlSpan(t0, t1), 1e-3)/base;
   // d'abord montrer tout le groupe (il se scinde en groupes plus petits), puis, quand il tient déjà dans la vue, séparer
   const z0 = S.zoom, z = Math.min(zMax(), fit > z0*1.3 ? Math.min(fit, need*1.5) : need);
   zoomTo(z, (t0 + t1)/2);
@@ -2069,10 +2223,9 @@ function pickMarker(m){
   hideGroupPop();
   TL.sel = m.id;
   seek(m.at - S.base, false);
-  const p = pps(), w = m.to != null ? (m.to - m.at)*p : 0;
+  const w = m.to != null ? tlX(m.to - S.base) - tlX(m.at - S.base) : 0;
   if(m.to != null && w < 2*MH_GAP){
-    const base = ($("scroller").clientWidth || 300)/S.dur;
-    zoomTo(0.45*($("scroller").clientWidth || 300)/Math.max(m.to - m.at, 1)/base, (m.at + m.to)/2 - S.base);
+    zoomTo(0.45*($("scroller").clientWidth || 300)/Math.max(tlSpan(m.at, m.to), 1)/tlBase(), (m.at + m.to)/2 - S.base);
   }
   renderMarkers();
   openSheet(m, false);
@@ -2184,8 +2337,8 @@ $("inWinBtns").addEventListener("wheel", function(e){
 }, {passive:false});
 function drawPending(){
   const b = $("pendBand"); if(!b) return;
-  const p = pps(), a = S.pending.at - S.base, z = S.t;
-  b.hidden = false; b.style.left = `${Math.min(a,z)*p}px`; b.style.width = `${Math.max(3, Math.abs(z-a)*p)}px`;
+  const xa = tlX(S.pending.at - S.base), xz = tlX(S.t);
+  b.hidden = false; b.style.left = `${Math.min(xa, xz)}px`; b.style.width = `${Math.max(3, Math.abs(xz - xa))}px`;
 }
 function renderTracks(){
   let h = "";
@@ -2733,8 +2886,8 @@ $("dirIn").addEventListener("change", e => {
    Transport, vitesse, zoom et pincement de la timeline, glissement des bords de plage, raccourcis clavier, onglets. */
 $("fileIn").addEventListener("change", e => { const fl = e.target.files; addFiles(fl).then(() => { e.target.value = ""; }); });
 $("play").onclick = togglePlay;
-$("back").onclick = () => { seek(S.t - 5, S.cur && !v.paused); };
-$("fwd").onclick = () => { seek(S.t + 5, S.cur && !v.paused); };
+$("back").onclick = () => { seekBy(-5, S.cur && !v.paused); };
+$("fwd").onclick = () => { seekBy(5, S.cur && !v.paused); };
 let FAST = 16;
 const FAST_OPTS = [2,4,8,16];
 function setRate(r){
@@ -2782,12 +2935,16 @@ document.addEventListener("pointerdown", e => { if(!$("spdPop").hidden && !e.tar
 })();
 $("r1").onclick = () => { hidePop(); setRate(1); };
 $("zIn").onclick = () => { setZoom(S.zoom*2); };
+$("tlCut").onclick = () => {
+  setCompact(!TLC);
+  toast(TLC ? "Temps morts repliés : la timeline saute les périodes sans image." : "Timeline à l'échelle réelle.");
+};
 /* - après un zoom automatique (groupe de pastilles, passage étroit) : retour direct au zoom d'avant */
 $("zOut").onclick = () => { setZoom(TL.back != null && TL.auto === S.zoom ? TL.back : S.zoom/2); };
 function setZoom(z){
   z = clamp(z, 1, zMax()); TL.back = null; TL.auto = 0; hideGroupPop(); if(z === S.zoom) return;
   S.zoom = z; renderTimeline();
-  const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
+  tlShow(S.t);
 }
 $("labels").addEventListener("click", e => { const b = e.target.closest(".lab"); if(b) setTrack(+b.dataset.i); });
 
@@ -2797,7 +2954,7 @@ $("lanes").addEventListener("pointerdown", e => { tap = {x:e.clientX, y:e.client
 $("lanes").addEventListener("pointerup", e => {
   if(!tap) return; const t0 = tap; tap = null;
   if(Math.abs(e.clientX-t0.x) > 8 || Math.abs(e.clientY-t0.y) > 8) return;
-  const rect = $("inner").getBoundingClientRect(), t = (e.clientX - rect.left)/pps();
+  const rect = $("inner").getBoundingClientRect(), t = tlT(e.clientX - rect.left);
   const playing = S.cur && !v.paused;
   if(t0.lane){ const i = +t0.lane.dataset.i; if(i !== S.active){ S.active = i; S.cur = null; renderTimeline(); } }
   seek(t, playing);
@@ -2811,7 +2968,7 @@ $("scroller").addEventListener("pointerdown", e => {
   pinch.pts.set(e.pointerId, e.clientX);
   if(pinch.pts.size === 2){
     const [a, b] = [...pinch.pts.values()], rect = $("inner").getBoundingClientRect();
-    pinch.d0 = Math.abs(a - b) || 1; pinch.z0 = S.zoom; pinch.t0 = ((a + b)/2 - rect.left)/pps(); tap = null;
+    pinch.d0 = Math.abs(a - b) || 1; pinch.z0 = S.zoom; pinch.t0 = tlT((a + b)/2 - rect.left); tap = null;
   }
 });
 $("scroller").addEventListener("pointermove", e => {
@@ -2823,7 +2980,7 @@ $("scroller").addEventListener("pointermove", e => {
     const [a, b] = [...pinch.pts.values()], z = Math.round(clamp(pinch.z0*Math.abs(a - b)/pinch.d0, 1, zMax())*100)/100;
     if(Math.abs(z - S.zoom) < 0.02) return;
     S.zoom = z; TL.back = null; TL.auto = 0; renderTimeline();
-    const sc = $("scroller"); sc.scrollLeft = Math.max(0, pinch.t0*pps() - ((a + b)/2 - sc.getBoundingClientRect().left));
+    tlShow(pinch.t0, (a + b)/2 - $("scroller").getBoundingClientRect().left);
   });
 });
 ["pointerup", "pointercancel"].forEach(ev => $("scroller").addEventListener(ev, e => { pinch.pts.delete(e.pointerId); }));
@@ -2847,7 +3004,7 @@ function releasePrev(){ clearTimeout(prevTimer); if(!$("scrubPrev").hidden) prev
 function scrubTo(){
   scrubRaf = 0; if(!scrub) return;
   const rect = $("inner").getBoundingClientRect();
-  const t = clamp((scrubX - rect.left)/pps(), 0, S.dur); scrubT = t; S.t = t;
+  const t = clamp(tlT(scrubX - rect.left), 0, S.dur); scrubT = t; S.t = t;
   const th = thumbAt(track(), t);
   if(th) showPrev(th);
   else {
@@ -2871,7 +3028,7 @@ $("scroller").addEventListener("scroll", scheduleStrips, {passive:true});
 $("lanes").addEventListener("pointermove", e => {
   if(e.pointerType !== "mouse"){ return; }
   const lane = e.target.closest(".lane");if(!lane){ $("hov").hidden = true; return; }
-  const tr = S.tracks[+lane.dataset.i], rect = $("inner").getBoundingClientRect(), t = (e.clientX - rect.left)/pps();
+  const tr = S.tracks[+lane.dataset.i], rect = $("inner").getBoundingClientRect(), t = tlT(e.clientX - rect.left);
   const th = thumbAt(tr, t), hv = $("hov");
   if(!clipAt(tr, t)){ hv.hidden = true; return; }
   drawThumbInto($("hovCv"), th, 240, 135);
@@ -2918,14 +3075,13 @@ $("mlayer").addEventListener("pointerdown", e => {
 $("mlayer").addEventListener("pointermove", e => {
   if(!edrag) return;
   const rect = $("inner").getBoundingClientRect();
-  const p = pps();
-  let t = clamp((e.clientX - rect.left)/p, 0, S.dur);
+  let t = clamp(tlT(e.clientX - rect.left), 0, S.dur);
   const m = edrag.m;
   const abs = S.base + t;
   if(edrag.edge === "l") m.at = Math.min(abs, m.to - 1); else m.to = Math.max(abs, m.at + 1);
   t = (edrag.edge === "l" ? m.at : m.to) - S.base;edrag.t = t;
-  const b = edrag.band;b.style.left = `${(m.at - S.base)*p}px`;b.style.width = `${Math.max(3, (m.to - m.at)*p)}px`;
-  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p, h.offsetWidth)}px`;
+  const b = edrag.band, xa = tlX(m.at - S.base);b.style.left = `${xa}px`;b.style.width = `${Math.max(3, tlX(m.to - S.base) - xa)}px`;
+  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX(xa, h.offsetWidth)}px`;
   S.t = t;
   const th = thumbAt(track(), t);
   if(th) showPrev(th); else hidePrev();
@@ -2958,7 +3114,7 @@ $("list").addEventListener("click", e => {
     S.stopAt = m.to != null ? m.to - S.base : null;
     const start = m.to != null ? m.at - S.base : Math.max(0, m.at - S.base - 3);
     seek(start, true);
-    const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
+    tlShow(S.t);
     window.scrollTo({top:0});
   }
   if(ed){
@@ -3003,7 +3159,7 @@ $("sideList").addEventListener("click", e => {
   const r = e.target.closest("[data-seek]"); if(!r) return;
   const m = S.markers.find(x => x.id === r.dataset.seek); if(!m) return;
   S.stopAt = null; seek(Math.max(0, m.at - S.base - (m.to != null ? 0 : 2)), false);
-  const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
+  tlShow(S.t);
 });
 
 /* ---------- planche ----------
@@ -3059,7 +3215,7 @@ $("bGrid").addEventListener("click", e => {
   const t = +tile.dataset.t;
   if(mk){ addMarker(S.base+t, null); return; }
   setTab("view"); seek(t, false);
-  const sc = $("scroller"); sc.scrollLeft = Math.max(0, t*pps() - sc.clientWidth/2);
+  tlShow(t);
 });
 $("tabView").onclick = () => { setTab("view"); };
 $("tabSum").onclick = () => { setTab("sum"); };
@@ -3108,13 +3264,13 @@ document.addEventListener("keydown", e => {
   if($("view").hidden) return;
   const k = e.key.toLowerCase(), playing = S.cur && !v.paused;
   if(e.key === " "){ e.preventDefault(); togglePlay(); }
-  else if(e.key === "ArrowLeft"){ e.preventDefault(); seek(S.t - (e.shiftKey ? 60 : 5), playing); }
-  else if(e.key === "ArrowRight"){ e.preventDefault(); seek(S.t + (e.shiftKey ? 60 : 5), playing); }
-  else if(k === "j"){ seek(S.t - 10, playing); }
+  else if(e.key === "ArrowLeft"){ e.preventDefault(); seekBy(-(e.shiftKey ? 60 : 5), playing); }
+  else if(e.key === "ArrowRight"){ e.preventDefault(); seekBy(e.shiftKey ? 60 : 5, playing); }
+  else if(k === "j"){ seekBy(-10, playing); }
   else if(k === "k"){ v.pause(); setRate(1); }
   else if(k === "l"){ playAt(FAST); }
-  else if(e.key === ","){ v.pause(); seek(S.t - 1/30, false); }
-  else if(e.key === "."){ v.pause(); seek(S.t + 1/30, false); }
+  else if(e.key === ","){ v.pause(); seekBy(-1/30, false); }
+  else if(e.key === "."){ v.pause(); seekBy(1/30, false); }
   else if(k === "m"){ startInstant(); }
   else if(k === "p"){ v.pause(); captureAt(track(), S.t); }
   else if(k === "i"){ if(S.pending) cancelPending(); toggleRange(); }
@@ -6293,6 +6449,9 @@ window.ESAM_TEST = {storyCuts:(durs, fin) => {
 }, keyAt:(keys, t, f) => rKeyAt(keys, t, f, 0.5),
   crop:(fmt, sw, sh) => { const w = RW, h = RH; RW = RFMTS[fmt].w; RH = RFMTS[fmt].h; const c = rCrop(sw, sh, 1); RW = w; RH = h; return c; },
   etat:() => ({base:S.base, markers:JSON.parse(JSON.stringify(S.markers)), fx:{ouvert:!!FX.m, t:FX.t, lecture:FX.playing, suivi:!!FX.trk, choix:FX.sel}})};
+/* échelle de la timeline : conversion temps <-> position, coupures, bascule */
+window.ESAM_TEST.tl = {x:t => tlX(t), t:x => tlT(x), dur:() => S.dur, compact:() => TLC, setCompact:on => setCompact(on),
+  segs:() => tlLayout().segs.map(g => Object.assign({}, g)), clips:() => S.tracks.map(tr => tr.clips.filter(c => c.ok).map(c => [c.s, c.e]))};
 if(window.claude && typeof window.claude.use === "function"){
   window.claude.use("downloads").then(x => { dl = x; }, () => { dl = null; });
 }

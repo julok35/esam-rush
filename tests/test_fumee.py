@@ -15,6 +15,33 @@ def statut():
     with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/status", timeout=2) as r:
         return json.load(r)
 
+async def timeline_compacte(pg):
+    """Temps morts repliés : les deux vols DJI des faux rushs sont séparés de 85 s sans image, soit une coupure ;
+    tlX et tlT sont réciproques et croissantes, aucune image ne tombe dans une coupure, la bascule revient à l'échelle réelle."""
+    segs = await pg.evaluate("ESAM_TEST.tl.segs()"); cuts = [s for s in segs if s["cut"]]
+    print("coupures :", [(round(c["t0"]), round(c["t1"]), round(c["x1"] - c["x0"])) for c in cuts])
+    assert len(cuts) == 1 and abs(cuts[0]["t0"] - 90) < 1 and abs(cuts[0]["t1"] - 175) < 1, cuts
+    assert 0 < cuts[0]["x1"] - cuts[0]["x0"] <= 52
+    for piste in await pg.evaluate("ESAM_TEST.tl.clips()"):
+        for s, e in piste:
+            assert not any(s < c["t1"] - 1e-6 and e > c["t0"] + 1e-6 for c in cuts), ("image dans une coupure", s, e)
+    ecart = await pg.evaluate("""() => { const d = ESAM_TEST.tl.dur(); let w = 0, prev = -Infinity;
+        for(let i = 0; i <= 1000; i++){ const t = d*i/1000, x = ESAM_TEST.tl.x(t); if(x < prev) return -1; prev = x;
+          w = Math.max(w, Math.abs(ESAM_TEST.tl.t(x) - t)); } return w; }""")
+    assert 0 <= ecart < 1e-6, ecart
+    # dans la coupure, 85 s tiennent dans sa largeur ; hors coupure, l'échelle est la même de part et d'autre
+    c = cuts[0]
+    assert abs(await pg.evaluate("t => ESAM_TEST.tl.x(t)", (c["t0"] + c["t1"])/2) - (c["x0"] + c["x1"])/2) < 1e-6
+    k1 = await pg.evaluate("() => ESAM_TEST.tl.x(50) - ESAM_TEST.tl.x(40)"); k2 = await pg.evaluate("() => ESAM_TEST.tl.x(200) - ESAM_TEST.tl.x(190)")
+    assert abs(k1 - k2) < 1e-6, (k1, k2)
+    assert await pg.is_visible("#tlCut") and await pg.get_attribute("#tlCut", "aria-pressed") == "true"
+    await pg.click("#tlCut"); await pg.wait_for_timeout(200)
+    assert not [s for s in await pg.evaluate("ESAM_TEST.tl.segs()") if s["cut"]] and await pg.locator("#cuts .cut").count() == 0
+    assert await pg.evaluate("localStorage.getItem('esam-tl-echelle')") == "reelle"
+    await pg.click("#tlCut"); await pg.wait_for_timeout(200)
+    assert await pg.locator("#cuts .cut").count() == 1 and await pg.evaluate("ESAM_TEST.tl.compact()")
+    print("timeline compacte : OK")
+
 async def navigateur():
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
@@ -39,6 +66,7 @@ async def navigateur():
         print("pistes :", pistes)
         assert len(pistes) >= 3, "pistes manquantes"
         assert any("Pixel 8" in x for x in pistes), "piste du téléphone non nommée d'après l'appareil"
+        await timeline_compacte(pg)
         assert not erreurs, erreurs
         await b.close()
 
