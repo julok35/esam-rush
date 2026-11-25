@@ -40,6 +40,12 @@ async def navigateur(tmp, iv):
         async def volet(n):
             # deux temps : 0 = Séquences (choix, ordre, titres, format...), 1 = Montage (image et réglages de la séquence)
             await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(400)
+        async def section(cle):
+            # volet Montage : sections repliées, une seule dépliée à la fois
+            assert await pg.locator(f'#rEdit details[data-rfold="{cle}"]').count() == 1, cle
+            if not await pg.locator(f'#rEdit details[data-rfold="{cle}"][open]').count():
+                await pg.click(f'#rEdit details[data-rfold="{cle}"] > summary'); await pg.wait_for_timeout(200)
+            assert await pg.evaluate("[...document.querySelectorAll('#rEdit details[open]')].map(d => d.dataset.rfold)") == [cle]
         for a, z in ((3, 80), (40, 55)):
             await at(a); await pg.click("#mkS"); await at(z); await pg.click("#mkE")
             if await pg.is_visible("#sheet"): await pg.click("#shSave")
@@ -56,7 +62,11 @@ async def navigateur(tmp, iv):
         # passage 2 : accéléré x4 et texte
         await volet(0); await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(500)
         assert await pg.is_visible("#rCv") and await pg.is_hidden("#rList")
-        await pg.click('#rEdit [data-rvit="4"]'); await pg.fill("#rTexte", "Le chien est repéré au bord du torrent")
+        assert await pg.locator("#rEdit details[open]").count() == 0          # tout replié : la palette d'outils d'un coup d'oeil
+        await section("vit"); await pg.click('#rEdit [data-rvit="4"]')
+        await section("col"); await pg.evaluate("const s = document.getElementById('rCol_sat'); s.value = 40; s.dispatchEvent(new Event('input', {bubbles:true}))")
+        await pg.wait_for_timeout(300); assert "saturation +40" in await pg.inner_text('#rEdit [data-rfold="col"] > summary')
+        await section("txt"); await pg.fill("#rTexte", "Le chien est repéré au bord du torrent")
         # passage 1 : cadrage sur l'image du rendu, suivi du doigt pendant la lecture du réel
         await volet(0); await pg.click("#rList [data-rsel] >> nth=0"); await pg.wait_for_timeout(1200)
         box = await pg.locator("#rCv").bounding_box()
@@ -68,10 +78,10 @@ async def navigateur(tmp, iv):
             await pg.mouse.move(cx - 60 + i * 15, cy); await pg.wait_for_timeout(150)
         await pg.mouse.up(); await pg.evaluate("document.getElementById('rPlay').click()"); await pg.wait_for_timeout(300)
         assert "1/3" in await pg.inner_text("#rEdit .rnav"), await pg.inner_text("#rEdit .rnav")
-        print("cadrage :", await pg.inner_text("#rEdit .grp >> nth=0"))
+        print("cadrage :", await pg.inner_text('#rEdit [data-rfold="cadre"] > summary'))
         # passage 1 : retouches du passage (flou pixelisé suivi du doigt pendant la lecture, cercle, ralenti à mi-passage)
-        await pg.click('#rEdit [data-rtrim="a"]'); await pg.wait_for_timeout(200)
-        await pg.click("#rEdit [data-rfx]"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1000)
+        await section("plage"); await pg.click('#rEdit [data-rtrim="a"]'); await pg.wait_for_timeout(200)
+        await section("fx"); await pg.click("#rEdit [data-rfx]"); await pg.wait_for_selector("#fx[open]"); await pg.wait_for_timeout(1000)
         await pg.click('#fxPanel [data-fxadd="flou"]'); await pg.wait_for_timeout(300)
         await pg.fill("#fxSize", "32"); await pg.dispatch_event("#fxSize", "input")
         await pg.click('#fxPanel [data-fxmode="pixel"]'); await pg.wait_for_timeout(200)
@@ -89,16 +99,16 @@ async def navigateur(tmp, iv):
         await pg.click('#fxPanel [data-fxvit="0.5"]'); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1b_retouches.png"))
         await pg.click("#fxDone"); await pg.wait_for_timeout(400)
-        print("retouches :", await pg.inner_text("#rEdit .rtarget"))
+        print("retouches :", await pg.inner_text('#rEdit [data-rfold="fx"] > summary'), "|", await pg.inner_text('#rEdit [data-rfold="vit"] > summary'))
         # photo du drone dans le montage, avec texte de 8 s
         await volet(0); await pg.click("#rPhSum"); await pg.wait_for_timeout(300)
         print("photos :", await pg.locator("#rPhList [data-rph]").count())
         await pg.click("#rPhList [data-rph] >> nth=0"); await pg.wait_for_timeout(300)
         await volet(1); await pg.wait_for_timeout(1200)
-        await pg.fill("#rTexte", "Photo prise par le drone"); await pg.wait_for_timeout(200)
+        await section("txt"); await pg.fill("#rTexte", "Photo prise par le drone"); await pg.wait_for_timeout(200)
         await pg.click('#rEdit [data-rtdur="8"]'); await pg.wait_for_timeout(200)
-        await pg.click('#rEdit [data-rpdur="5"]'); await pg.wait_for_timeout(200)
-        await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
+        await section("pdur"); await pg.click('#rEdit [data-rpdur="5"]'); await pg.wait_for_timeout(200)
+        await section("pflou"); await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1c_photo.png"))
         await pg.screenshot(path=str(tmp / "r1_cadrage.png"))
         await volet(0); await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
@@ -121,6 +131,7 @@ async def navigateur(tmp, iv):
         # flèche rouge tournée, puis texte libre sans fond
         await pg.click('#rEdit [data-radd-el="fleche"]'); await pg.wait_for_timeout(500)
         await pg.fill("#rElRot", "135"); await pg.dispatch_event("#rElRot", "input")
+        await pg.fill("#rElSx", "200"); await pg.dispatch_event("#rElSx", "input")          # flèche allongée, pointe inchangée
         await pg.click('#rEdit [data-rcol="#E20C0F"]'); await pg.click('#rEdit [data-rel-dur="5"]'); await pg.wait_for_timeout(300)
         await pg.click('#rEdit [data-radd-el="texte"]'); await pg.wait_for_timeout(500)
         await pg.fill("#rElTxt", "Le chien est ici"); await pg.click('#rEdit [data-rfond="0"]'); await pg.wait_for_timeout(300)
@@ -148,6 +159,8 @@ async def navigateur(tmp, iv):
         print("éléments :", reel["elems"])
         assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] == 1.3 and reel["titreBox"]["c"] == "#F9DD10" and reel["titreDur"] == 8
         assert [e["kind"] for e in reel["elems"]] == ["fleche", "texte"] and reel["elems"][0]["rot"] == 135 and reel["elems"][1]["x"] < 0.45
+        assert reel["elems"][0]["sx"] == 2 and "sy" not in reel["elems"][0], reel["elems"][0]
+        assert any(c["sat"] == 40 for f in fx for c in (f.get("couleurs") or [])), fx
         assert any(x.get("photo") and x.get("flous") for x in reel["items"])
         # cadre suivi du doigt pendant la lecture du réel : plusieurs points sur la première séquence
         assert any(len(x.get("keys") or []) >= 3 for x in reel["items"] if not x.get("photo")), [x.get("keys") for x in reel["items"]]
@@ -165,7 +178,7 @@ async def navigateur(tmp, iv):
         assert await pg.is_hidden("#rGoStory") and "LinkedIn" in await pg.inner_text("#rGoReel")
         # passage 2 pris sur la vidéo du téléphone (portrait) : cadre zoomé et remonté (cadre libre), puis plan dupliqué
         await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(800)
-        tel = [c for c in await pg.locator("#rEdit [data-rcam]").all_inner_texts() if "Pixel" in c]
+        await section("cam"); tel = [c for c in await pg.locator("#rEdit [data-rcam]").all_inner_texts() if "Pixel" in c]
         assert tel, "pas de piste du téléphone sur le passage 2"
         await pg.click(f'#rEdit [data-rcam] >> text="{tel[0]}"'); await pg.wait_for_timeout(1500)
         await pg.evaluate("const s = document.getElementById('rCamZ'); s.value = 600; s.dispatchEvent(new Event('input', {bubbles:true}))")

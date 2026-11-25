@@ -254,7 +254,7 @@ textarea.field{min-height:70px;resize:vertical}
 .tl{--rh:44px;padding:8px 0 4px;position:relative}
 .tl .tp{margin:4px 16px 0;font-weight:500;color:var(--muted);font-size:12px}
 .tl .tp:empty{display:none}
-/* temps morts repliés : coupure hachurée de largeur fixe sur la règle et les pistes, durée sautée en haut (renderTimeline) ;
+/* temps morts repliés : coupure hachurée de largeur fixe sur la règle et les pistes, heure de début de chaque séquence en gras sur la règle (renderTimeline) ;
    bascule discrète sous les noms de pistes, affichée seulement s'il y a des temps morts à replier */
 .cuts{position:absolute;inset:0;pointer-events:none}
 .cut{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,var(--bg) 0 4px,var(--line) 4px 7px);border-left:1.5px solid var(--muted);border-right:1.5px solid var(--muted)}
@@ -636,7 +636,14 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 /* blocs des réglages : élément choisi sur l'image, séquence, éléments posés sur l'image */
 .rblk{border-top:1px solid var(--line);margin-top:12px;padding-top:2px}
 .rblk>h4{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:18px;margin:10px 0 0}
-.rblk.relsel{border:2px solid var(--blue);border-radius:10px;padding:2px 10px 12px;margin-top:10px}
+.relsel{border:2px solid var(--blue);border-radius:10px;padding:2px 10px 12px;margin-top:12px;background:var(--bg)}
+/* sections repliées du volet Montage : une seule ouverte, son titre en encre, le résumé de ce qui est réglé à droite */
+.rfold>summary{font-size:15px}
+.rfold[open]>summary .shk{color:var(--ink);font-weight:700}
+.rfold[open]{background:var(--soft);border-radius:10px;padding:0 10px 10px;margin:0 -10px;border-top-color:transparent}
+.rfold[open]+.rfold{border-top-color:transparent}
+.rfbody .grp:first-child{margin-top:0}
+.redit .rdup{margin-top:8px}
 .rtarget{margin-top:10px}
 .rtarget .lbl{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
 .rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
@@ -1161,7 +1168,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <ul>
       <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Ce qu'on voit</b>, dans le même bandeau (aussi quand la lecture passe dans un passage ou juste à côté), ouvre un champ pour décrire le plan sans arrêter la lecture (<kbd>Entrée</kbd> pour finir, <kbd>Échap</kbd> pour annuler) ; sur PC, ce champ est aussi sous le nom de chaque marqueur, dans la colonne de droite ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, ce qu'on voit, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
       <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer, ou touchez <b>+</b> et <b>-</b> au-dessus des noms de pistes.</li>
-      <li>Les périodes sans image sur aucune piste (plus de 20 s) sont repliées en une bande hachurée étroite qui affiche la durée sautée (« 1 h 12 ») ; les heures restent les vraies. La lecture et les boutons <b>-5 s</b> et <b>+5 s</b> sautent par-dessus. <b>Replier les temps morts</b>, sous les noms de pistes, rétablit l'échelle réelle.</li>
+      <li>Les périodes sans image sur aucune piste (plus de 20 s) sont repliées en une bande hachurée étroite ; chaque séquence d'images porte son heure de début (heures et minutes) en gras sur la règle. La lecture et les boutons <b>-5 s</b> et <b>+5 s</b> sautent par-dessus. <b>Replier les temps morts</b>, sous les noms de pistes, rétablit l'échelle réelle.</li>
       <li>Les numéros trop proches pour être touchés un par un sont regroupés (« 3-6 ») : touchez le groupe pour zoomer jusqu'à les séparer, ou choisir dans la liste s'ils sont presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus pour régler ses bords ; <b>-</b> ramène au zoom d'avant. Carré jaune : marqueur sensible.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
@@ -1170,14 +1177,14 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <ul>
       <li>Tous les plans dans l'ordre : nom, caméra retenue pour la vidéo compilée, ce qu'on voit (pour la liste des plans) et commentaire interne (jamais incrusté dans la vidéo) se règlent sur la carte ; <b>Modifier</b> ouvre le reste (sensibilité, intérêt, texte du carton).</li>
       <li>Chaque carte montre ce que la vidéo compilée affichera : le carton (écran de titre avec son texte), puis le plan avec ses retouches, sur la caméra retenue. À la souris, survolez l'image du plan pour faire défiler la séquence ; sur téléphone, le début, le milieu et la fin sont côte à côte. Sans habillage, seul le plan est montré.</li>
-      <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant. Les retouches valent pour la vidéo compilée, les extraits et le réel.</li>
+      <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant, couleurs (luminosité, contraste, saturation, température). Les retouches valent pour la vidéo compilée, les extraits et le réel. La photo d'un instant se prend dans Sélection (bouton appareil photo ou touche <kbd>P</kbd>).</li>
       <li><b>Créer la vidéo compilée</b> : format, marge et heure incrustée sont repliés sous « Réglages ». Habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
     <h4>3 Réseaux</h4>
     <ul><li>Deux temps. <b>1. Séquences</b> : le format (réel 9:16 pour Instagram, Facebook et la story, LinkedIn 4:5 ou carré 1:1), les séquences du réel, prises dans « Passages à ajouter » (ou <b>Tout ajouter</b>) et dans les photos, avec le texte de chacune sous son nom ; <b>Ordre et retrait</b> fait apparaître les flèches, <b>Dupliquer</b> (une copie du plan juste après, avec sa plage, son cadrage et son texte) et la croix. Puis le titre d'accroche ; logo, carton de fin et musique sont repliés dessous.</li>
       <li><b>2. Montage</b> : une seule image, au format, qui montre le résultat (titre, logo, textes, flèches, retouches) et sur laquelle on cadre. La bande sous l'image choisit la séquence (Fin : le carton de fin) ; les flèches autour de son nom passent à la précédente ou à la suivante. La lecture part de l'instant affiché et va jusqu'au bout du réel.</li>
       <li>Cadrer : glissez l'image dans le cadre (l'image entière apparaît en transparence autour pendant le geste) ; pendant la lecture, gardez le doigt dessus pour suivre l'animal. Molette, deux doigts ou « Taille du cadre » zooment, jusqu'à « Image entière » (le reste est rempli par l'image floutée). Une taille posée à un autre instant fait un zoom pendant la séquence.</li>
-      <li>Réglages de la séquence : Début ici, Fin ici (la barre montre 10 s de marge pour l'allonger), <b>Retoucher</b> (flous, flèches et cercles qui suivent, vitesse, couleurs), caméra, accéléré, texte. Sur l'image : + Texte, + Flèche, + Cercle, + Cadre (au crayon, sans contour) ; touchez un élément pour le régler. <b>Grille</b> montre les tiers et les marges couvertes par la légende des réseaux ; les éléments glissés s'y aimantent (Alt ou Maj : sans aimant). <b>Gabarit</b> garde les places du titre, du logo et des textes pour les prochains réels.</li></ul>
+      <li>Réglages de la séquence, en sections repliées (une seule dépliée à la fois, le résumé de chacune à droite) : <b>Début et fin</b> (la barre montre 10 s de marge pour l'allonger), <b>Cadrage</b>, <b>Caméra</b>, <b>Vitesse</b> (ralenti ou accéléré à partir de l'instant affiché, jusqu'au changement suivant, et accéléré de toute la séquence dans le réel), <b>Couleurs</b> (luminosité, contraste, saturation, température, Automatique, Neige / contre-jour), <b>Flous, flèches, cercles qui suivent</b> (ouvre l'éditeur des retouches), <b>Texte</b>. Vitesse, couleurs et flous valent aussi pour la vidéo compilée. Sur l'image : + Texte, + Flèche, + Cercle, + Cadre (au crayon, sans contour) ; touchez un élément pour le régler : taille, largeur et hauteur (longueur et pointe pour une flèche), inclinaison, couleur, durée. <b>Grille</b> montre les tiers et les marges couvertes par la légende des réseaux ; les éléments glissés s'y aimantent (Alt ou Maj : sans aimant). <b>Gabarit</b> garde les places du titre, du logo et des textes pour les prochains réels.</li></ul>
     <h4>Exporter</h4>
     <ul><li>Le bouton <b>Exporter</b>, en haut de chaque étape, déplie la liste des sorties avec leur durée : <b>Vidéo compilée</b> et <b>Extraits bruts</b> ouvrent le même calcul que l'étape Compilation ; <b>Réel</b>, <b>Story</b> ou la vidéo LinkedIn (selon le format) se lancent depuis l'étape Réseaux ; <b>Fiche de dérushage</b> (tout, commentaires internes compris, à garder à l'ESAM). <kbd>Échap</kbd> ou un appui à côté referme la liste.</li>
       <li><b>Liste des plans</b> : un texte à coller dans une conversation avec Claude pour bâtir un storyboard (<b>Copier</b>), ou un fichier .md (en mode PC ou dossier ouvert, il est aussi enregistré dans le dossier de l'intervention). Elle peut sortir de l'ESAM : les commentaires internes n'y figurent que si la case est cochée.</li></ul>
@@ -1260,7 +1267,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.23";
+const APP_VERSION = "0.24";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -2005,12 +2012,6 @@ function seekBy(d, play){
   const t = S.t + d, c = tlCutAt(t);
   seek(c ? (d > 0 ? c.t1 : c.t0 - 0.1) : t, play);
 }
-/* durée sautée par une coupure : « 45 s », « 24 min », « 1 h 12 » */
-function cutLen(sec){
-  if(sec < 60) return `${Math.round(sec)} s`;
-  const m = Math.round(sec/60);
-  return m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${pad(m%60)}`;
-}
 /* bascule temps morts repliés / échelle réelle : l'instant courant garde sa place à l'écran */
 function setCompact(on){
   const sc = $("scroller"), dx = tlX(S.t) - sc.scrollLeft;
@@ -2051,20 +2052,24 @@ function renderTimeline(){
   S.tracks.forEach((t, i) => { lab += `<button class="lab" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`; });
   $("labels").innerHTML = lab;
 
-  // ruler : graduations par segment d'image ; après une coupure, l'heure de reprise d'abord, puis les graduations qui ne
-  // chevauchent ni elle ni l'étiquette d'une coupure
-  const step = tickStep(p), TW = 62, cuts = L.segs.filter(g => g.cut);
+  // ruler : graduations par segment d'image ; quand des temps morts sont repliés, chaque séquence (segment d'image) porte
+  // d'abord son heure de début en heures et minutes, puis les graduations qui ne la chevauchent pas ; la coupure ne montre
+  // que ses hachures, ou l'heure de la séquence suivante quand celle-ci est trop étroite
+  const step = tickStep(p), TW = 62, SW = 46, cuts = L.segs.filter(g => g.cut);
   const lbl = t => S.real ? clockAbs(S.base+t) : ms(t);
+  const hm = t => S.real ? clockAbs(S.base+t).slice(0, 5) : ms(t);
   const busy = [];
   let html = "", cutHtml = "";
-  cuts.forEach(g => {
-    const w = g.x1 - g.x0, d = g.t1 - g.t0;
-    busy.push([g.x0, g.x1]);
-    cutHtml += `<div class="cut" style="left:${g.x0}px;width:${w}px">${w >= 40 ? `<span>${cutLen(d)}</span>` : ""}</div>`;
-  });
   L.segs.forEach((g, i) => {
-    if(g.cut || !cuts.length || (i < L.segs.length - 1 && g.x1 - g.x0 < TW)) return;
-    busy.push([g.x0, g.x0 + TW]); html += `<div class="tick rs" style="left:${g.x0}px">${lbl(g.t0)}</div>`;
+    const w = g.x1 - g.x0, nx = L.segs[i+1];
+    if(g.cut){
+      busy.push([g.x0, g.x1]);
+      const inCut = nx && nx.x1 - nx.x0 < SW && w >= 40;      // séquence suivante trop étroite : son heure dans la coupure
+      cutHtml += `<div class="cut" style="left:${g.x0}px;width:${w}px">${inCut ? `<span>${hm(g.t1)}</span>` : ""}</div>`;
+      return;
+    }
+    if(!cuts.length || (i < L.segs.length - 1 && w < SW)) return;
+    busy.push([g.x0, g.x0 + SW]); html += `<div class="tick rs" style="left:${g.x0}px">${hm(g.t0)}</div>`;
   });
   busy.sort((a, b) => a[0] - b[0]);
   L.segs.forEach(g => {
@@ -2551,7 +2556,7 @@ function renderSummary(){
     h += `<label class="icom"><span class="vh">Commentaire interne ESAM du ${kindName(m).toLowerCase()} ${i+1} (sous-titre, jamais publié)</span><textarea class="field" rows="1" data-com="${m.id}" placeholder="Commentaire interne (jamais publié)">${esc(m.comment || "")}</textarea></label>`;
     h += '<div class="cams">';
     if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse, couleurs">Retoucher</button>`;
-    h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
+    h += `<button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
   if(S.clips.length && MINI.io) MINI.io.disconnect();      // les anciennes cartes ne sont plus observées
   $("list").innerHTML = h;
@@ -2611,26 +2616,26 @@ function miniTime(it, f){
 }
 /* une image du plan dans le rectangle x, y, w, h : vignette mise au format comme drawFrame (entière, ou recadrée en
    vertical), retouches du passage à l'instant t */
-function miniFrame(ctx, it, t, x, y, w, h, V){
+function miniFrame(ctx, it, t, x, y, w, h, V, vid){
   ctx.fillStyle = "#000"; ctx.fillRect(x, y, w, h);
-  const th = thumbAt(it.tr, t);
-  if(!th || (th.img && !th.img.complete)){
+  const th = vid ? null : thumbAt(it.tr, t);
+  if(!vid && (!th || (th.img && !th.img.complete))){
     ctx.fillStyle = "#a6a8ae"; ctx.font = `600 ${Math.max(10, Math.round(h*0.09))}px ${MONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("Vignette en cours", x + w/2, y + h/2); return;
   }
-  const sw = thW(th), sh = thH(th), k = V ? Math.max(w/sw, h/sh) : Math.min(w/sw, h/sh), x0 = x + (w - sw*k)/2, y0 = y + (h - sh*k)/2;
+  const sw = vid ? vid.videoWidth : thW(th), sh = vid ? vid.videoHeight : thH(th), k = V ? Math.max(w/sw, h/sh) : Math.min(w/sw, h/sh), x0 = x + (w - sw*k)/2, y0 = y + (h - sh*k)/2;
   ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-  drawThumb(ctx, th, x0, y0, sw*k, sh*k);
+  if(vid) ctx.drawImage(vid, x0, y0, sw*k, sh*k); else drawThumb(ctx, th, x0, y0, sw*k, sh*k);
   fxApply(ctx, it.m, it.tr.lens, t, {x0:x0, y0:y0, k:k, sw:sw, sh:sh});
   ctx.restore();
 }
 /* le plan : une image (fraction f de la séquence, repère du pointeur en bas) ou trois (début, milieu, fin) */
-function miniPlan(cv, it, W, H, V, tri, f, live){
+function miniPlan(cv, it, W, H, V, tri, f, live, vid){
   const dpr = Math.min(2, window.devicePixelRatio || 1), n = tri ? 3 : 1, gap = tri ? Math.round(3*dpr) : 0;
   const fw = Math.max(16, Math.round((Math.max(40, cv.clientWidth)*dpr - gap*(n - 1))/n)), fh = Math.round(fw*H/W);
   if(cv.width !== fw*n + gap*(n - 1) || cv.height !== fh){ cv.width = fw*n + gap*(n - 1); cv.height = fh; }
   const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
-  (tri ? [0.04, 0.5, 0.96] : [f]).forEach((q, k) => { miniFrame(ctx, it, miniTime(it, q), k*(fw + gap), 0, fw, fh, V); });
+  (tri ? [0.04, 0.5, 0.96] : [f]).forEach((q, k) => { miniFrame(ctx, it, miniTime(it, q), k*(fw + gap), 0, fw, fh, V, vid); });
   if(!live) return;
   const t = miniTime(it, f), bh = Math.max(3, Math.round(3*dpr)), txt = clockAbs(S.base + t), fs = Math.round(11*dpr);
   ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, fh - bh, fw, bh); ctx.fillStyle = "#A8C8FB"; ctx.fillRect(0, fh - bh, fw*clamp(f, 0, 1), bh);
@@ -2672,12 +2677,40 @@ function drawMini(el){
   const cp = el.querySelector(".cvp"); cp._it = it; cp._dims = {W:W, H:H, V:V, tri:tri};
   miniPlan(cp, it, W, H, V, tri, 0.5, false);
 }
-/* survol à la souris, ou glissement du doigt (image seule), sur l'image du plan : elle suit le pointeur dans la séquence */
+/* survol à la souris, ou glissement du doigt (image seule), sur l'image du plan : elle suit le pointeur dans la séquence.
+   La vignette la plus proche s'affiche tout de suite (une toutes les 3 s : presque figée sur un passage court), puis
+   l'image exacte, lue dans la vidéo (proxy du PC ou fichier choisi) par un seul lecteur caché : une recherche à la fois,
+   la dernière position demandée relancée dès que la précédente est prête. */
 let miniRaf = 0, miniEv = null;
+const MV = {v:null, want:null, cv:null};      // cv : miniature où la dernière image lue a été dessinée
+function miniVid(){
+  if(MV.v) return MV.v;
+  const x = document.createElement("video"); x.muted = true; x.preload = "auto"; x.playsInline = true; x.setAttribute("playsinline", "");
+  x.addEventListener("seeked", miniVidDraw); x.addEventListener("loadeddata", miniVidSeek);
+  return (MV.v = x);
+}
+function miniVidSeek(){
+  const x = MV.v, w = MV.want; if(!x || !w) return;
+  if(x.getAttribute("data-u") !== w.url){ x.setAttribute("data-u", w.url); x.src = w.url; return; }      // loadeddata relance
+  if(x.readyState < 1 || x.seeking) return;                                                                 // seeked relance
+  if(Math.abs(x.currentTime - w.lt) < 0.02) miniVidDraw(); else x.currentTime = w.lt;
+}
+function miniVidDraw(){
+  const x = MV.v, w = MV.want; if(!x || !w) return;
+  if(x.getAttribute("data-u") !== w.url || Math.abs(x.currentTime - w.lt) > 0.05){ miniVidSeek(); return; }
+  const e = miniEv, cv = w.cv, d = cv._dims;
+  if(!e || e.cv !== cv || !cv._it || !d || !x.videoWidth || !document.body.contains(cv)) return;     // pointeur parti
+  miniPlan(cv, cv._it, d.W, d.H, d.V, false, w.f, true, x); MV.cv = cv;
+}
 function miniScrub(){
   miniRaf = 0; const e = miniEv; if(!e) return;
   const cv = e.cv, d = cv._dims; if(!cv._it || !d || d.tri || !document.body.contains(cv)) return;
-  const r = cv.getBoundingClientRect(); miniPlan(cv, cv._it, d.W, d.H, d.V, false, (e.x - r.left)/Math.max(1, r.width), true);
+  const r = cv.getBoundingClientRect(), f = clamp((e.x - r.left)/Math.max(1, r.width), 0, 1);
+  const t = miniTime(cv._it, f), c = clipAt(cv._it.tr, t), x = miniVid();
+  // en attendant l'image exacte : la dernière image lue dans le même fichier (plus proche qu'une vignette), sinon la vignette
+  miniPlan(cv, cv._it, d.W, d.H, d.V, false, f, true, c && x.getAttribute("data-u") === c.url && x.readyState >= 2 && MV.cv === cv ? x : null);
+  if(!c || !c.url) return;
+  MV.want = {cv:cv, f:f, url:c.url, lt:Math.max(0, t - c.s)}; miniVidSeek();
 }
 $("list").addEventListener("pointermove", e => {
   const cv = e.target.closest && e.target.closest(".cvp"); if(!cv || (e.pointerType !== "mouse" && !e.buttons && e.pressure === 0)) return;
@@ -2686,7 +2719,7 @@ $("list").addEventListener("pointermove", e => {
 $("list").addEventListener("pointerdown", e => { const cv = e.target.closest && e.target.closest(".cvp"); if(cv && e.pointerType !== "mouse"){ miniEv = {cv:cv, x:e.clientX}; if(!miniRaf) miniRaf = requestAnimationFrame(miniScrub); } });
 ["pointerleave", "pointerout", "pointercancel"].forEach(ev => $("list").addEventListener(ev, e => {
   const cv = e.target.closest && e.target.closest(".cvp"); if(!cv || !cv._it || (ev === "pointerout" && cv.contains(e.relatedTarget))) return;
-  miniEv = null; const d = cv._dims; if(d && !d.tri) miniPlan(cv, cv._it, d.W, d.H, d.V, false, 0.5, false);
+  miniEv = null; MV.want = null; MV.cv = null; const d = cv._dims; if(d && !d.tri) miniPlan(cv, cv._it, d.W, d.H, d.V, false, 0.5, false);
 }));
 /* commentaire interne et « ce qu'on voit » : une ligne au repos, la hauteur suit le texte (sans effet tant que l'onglet est masqué) */
 function growCom(t){ if(!t.offsetParent) return; t.style.height = "auto"; t.style.height = `${t.scrollHeight + 4}px`; }
@@ -3488,12 +3521,6 @@ $("list").addEventListener("click", e => {
   }
   const fxb = e.target.closest("[data-fx]");
   if(fxb){ const mf = S.markers.find(x => x.id === fxb.dataset.fx); if(mf) fxOpen(mf); }
-  const ph = e.target.closest("[data-photo]");
-  if(ph){
-    const mp = S.markers.find(x => x.id === ph.dataset.photo); if(!mp) return;
-    const ti = trackIdx(mp.cam), cams = camsFor(mp), tr = ti >= 0 && cams.some(x => x.i === ti) ? S.tracks[ti] : (cams[0] && cams[0].tr);
-    if(tr) captureAt(tr, mp.at - S.base); else toast("Pas d'image à ce moment.");
-  }
 });
 function getAuteur(){ return clean(S.meta.auteur || (() => { try { return localStorage.getItem("esam-auteur") || ""; } catch(e){ return ""; } })()); }
 $("auteur").addEventListener("input", function(){ S.meta.auteur = clean(this.value.trim()); try { localStorage.setItem("esam-auteur", S.meta.auteur); } catch(e){} persist(); });
@@ -4841,7 +4868,7 @@ const RSNAP = 8;      // aimantation : distance en pixels d'écran
 const RCOLS = [["Blanc","#ffffff"],["Jaune","#F9DD10"],["Bleu","#A8C8FB"],["Rouge","#E20C0F"],["Noir","#171618"]];
 /* éléments libres posés sur le réel : {id, kind, a (début en s du réel), d (durée, 0 = jusqu'à la fin), x, y, s, rot, c, texte, fond} */
 const RKINDS = {texte:"Texte", fleche:"Flèche", cercle:"Cercle", cadre:"Cadre"}, REDURS = [2,3,5,8,0];
-const REEL = {sel:null, mode:"cadrage", pane:null, playEnd:0, t:0, o:0, playing:false, cur:null, music:null, drag:null, raf:0, out:null, fonts:false, lsel:null, ldrag:null, boxes:[], guides:[], ptrs:{}, dim:null, grid:false};
+const REEL = {sel:null, fold:null, colBusy:false, mode:"cadrage", pane:null, playEnd:0, t:0, o:0, playing:false, cur:null, music:null, drag:null, raf:0, out:null, fonts:false, lsel:null, ldrag:null, boxes:[], guides:[], ptrs:{}, dim:null, grid:false};
 try { REEL.grid = localStorage.getItem("esam-grille") === "1"; } catch(e){}
 /* photos JPEG utilisables dans le réel : {name, t (heure de prise si connue), file (mode navigateur), thumb} */
 let PH = {list:[], img:{}, ready:{}, baked:{}};
@@ -5188,10 +5215,11 @@ function drawSpeed(ctx, W, H, vit){
   return null;
 }
 /* forme (flèche, cercle, cadre) centrée sur el.x, el.y, tournée de el.rot degrés : même trait au crayon que les retouches
-   (sketchShape), sans contour ; épaisseur 14 pour une image de 1080 de large */
+   (sketchShape), sans contour ; épaisseur 14 pour une image de 1080 de large. el.sx et el.sy (1 par défaut) étirent la
+   forme en largeur et en hauteur avant la rotation, sans épaissir le trait : longueur et pointe pour une flèche */
 function drawShape(ctx, W, H, el){
-  const u = W/1080*(el.s || 1), cx = el.x*W, cy = el.y*H, a = (el.rot || 0)*Math.PI/180, w = 14*u;
-  const g = {tip:160*u, L:320*u, hl:110*u, rx:160*u, ry:115*u, hw:170*u, hh:120*u};
+  const u = W/1080*(el.s || 1), cx = el.x*W, cy = el.y*H, a = (el.rot || 0)*Math.PI/180, w = 14*u, sx = el.sx || 1, sy = el.sy || 1;
+  const g = {tip:160*u*sx, L:320*u*sx, hl:110*u*sy, rx:160*u*sx, ry:115*u*sy, hw:170*u*sx, hh:120*u*sy};
   ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
   sketchShape(ctx, el.kind, el.c || "#F9DD10", w, fxSeed(el.id), g);
   ctx.restore();
@@ -5706,8 +5734,13 @@ function rTime(){
     if(document.activeElement !== sl) sl.value = Math.round(so/Math.max(0.1, d)*1000);
     return;
   }
-  const rg = rRange(it);
+  const rg = rRange(it), vt = $("rVitT"), m = rMarker(it);
   el.textContent = `${ms(Math.max(0, REEL.t - it.a))} / ${ms(it.z - it.a)}\nréel ${ms(o)} / ${ms(pl.total)}`;
+  if(vt && m){       // section Vitesse ouverte : l'instant du prochain changement et la vitesse en cours suivent la lecture
+    const t = clamp(REEL.t, it.a, it.z), cur = fxVitAt(m, t);
+    vt.textContent = t <= it.a + 0.3 ? "du début" : `de ${ms(t - it.a)}`;
+    $("rEdit").querySelectorAll("[data-rfxvit]").forEach(c => { if(c.dataset.rfxvit !== "clear") c.setAttribute("aria-pressed", String(+c.dataset.rfxvit === cur)); });
+  }
   if(document.activeElement !== sl) sl.value = Math.round((REEL.t - rg.lo)/Math.max(0.1, rg.hi - rg.lo)*1000);
 }
 /* barre de la séquence choisie : plage retenue en bleu dans sa marge, points de cadrage (ou du flou choisi) en noir */
@@ -5896,11 +5929,40 @@ function rTargetCtl(it){
   const fl = it.flous || [], z = rZoneSel(it);
   return `<div class="rtarget"><span class="lbl">Déplacer sur l'image</span><div class="chips"><button type="button" class="chip" data-rfsel="" aria-pressed="${!z}">La photo</button>${fl.map((f, i) => `<button type="button" class="chip" data-rfsel="${f.id}" aria-pressed="${f === z}">Flou ${i + 1}</button>`).join("")}<button type="button" class="chip" data-rfadd="1">+ Flou (visage, plaque)</button></div></div>`;
 }
-/* passage vidéo : début et fin dans le réel ; ses retouches (flous suivis, flèches, cercles, vitesse, couleurs) se règlent
-   dans le dialogue des retouches, communes à toutes les vidéos tirées du passage */
+/* volet Montage en sections repliées : on voit d'un coup d'oeil toute la palette d'outils, et seule la section choisie
+   (REEL.fold) est dépliée ; son résumé dit ce qui est réglé. Les retouches d'un passage (vitesse, couleurs, flous et formes
+   qui suivent) sont celles de m.fx : elles valent pour toutes les vidéos tirées du passage. */
+function rFold(key, title, sum, body){
+  return `<details class="shmore shfold rfold" name="rfold" data-rfold="${key}"${REEL.fold === key ? " open" : ""}><summary><span class="shk">${title}</span><span class="shv">${esc(sum || "")}</span></summary><div class="rfbody">${body}</div></details>`;
+}
+/* vitesse d'un passage dans le réel : changements de m.fx.vits (à partir d'un instant, communs à toutes les vidéos du
+   passage), puis accéléré de toute la séquence propre au réel (it.vit) */
+function rVitSum(it, m){
+  const vs = fxGet(m).vits.filter(p => p.t < it.z - 0.05), parts = [];
+  if(vs.length){ const v0 = fxVitAt(m, it.a); parts.push([v0].concat(vs.filter(p => p.t > it.a + 0.05).map(p => p.v)).map(v => v === 1 ? "normale" : `x${String(v).replace(".", ",")}`).join(" puis ")); }
+  if((it.vit || 1) > 1) parts.push(`accéléré x${it.vit} dans le réel`);
+  return parts.join(", ") || "normale";
+}
+function rVitCtl(it, m){
+  const t = clamp(REEL.t, it.a, it.z), cur = fxVitAt(m, t), vs = fxGet(m).vits.filter(p => p.t < it.z - 0.05 && p.t > it.a - 0.05);
+  const at = t <= it.a + 0.3 ? "du début" : `de ${ms(t - it.a)}`;
+  return `<div class="grp"><span class="lbl">À partir <span id="rVitT">${at}</span></span><div class="chips">${FX_SPEEDS.map(v => `<button type="button" class="chip" data-rfxvit="${v}" aria-pressed="${cur === v}">${v === 1 ? "Normale" : `x${String(v).replace(".", ",")}`}</button>`).join("")}</div><p class="hint">${vs.length ? `Changements : ${esc(vs.map(p => `${p.t <= it.a + 0.3 ? "début" : ms(p.t - it.a)} ${fxVitLbl(p.v).toLowerCase()}`).join(" ; "))}. ` : ""}Placez la lecture là où la vitesse change, puis choisissez : ralenti (x0,25, x0,5) ou accéléré (x2 à x8) jusqu'au changement suivant ; au début, le choix vaut pour toute la séquence. Vaut aussi pour la vidéo compilée.</p>${vs.length ? '<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rfxvit="clear">Vitesse normale partout</button></div>' : ""}</div><div class="grp"><span class="lbl">Accéléré de toute la séquence, dans le réel seulement</span><div class="chips">${RSPEEDS.map(v => `<button type="button" class="chip" data-rvit="${v}" aria-pressed="${(it.vit||1) === v}"${v > 1 ? ` aria-label="Accéléré x${v}"` : ''}>${v === 1 ? 'Non' : `x${v}`}</button>`).join("")}</div></div>`;
+}
+/* couleurs de la caméra de la séquence (mêmes réglages que dans les retouches, aperçu sur l'image du réel) */
+function rColCtl(m, tr){
+  const c = fxColOf(m, tr.lens) || {}, on = fxColOn(c);
+  return `<p class="hint" style="margin:0 0 4px">Pour ${esc(tr.name.toLowerCase())} dans ce passage : réel, story, LinkedIn, vidéo compilée et extraits.${REEL.colBusy ? " Mesure en cours..." : ""}</p>${FX_COLUI.map(q => `<div class="fxcolrow"><label class="lbl" for="rCol_${q[0]}">${q[1]} : <span id="rColV_${q[0]}">${fxColNum(c[q[0]])}</span></label><input type="range" class="rrange" id="rCol_${q[0]}" data-rcolk="${q[0]}" min="-100" max="100" step="5" value="${Math.round(+c[q[0]] || 0)}"></div>`).join("")}<div class="rbtns"><button type="button" class="btn small" data-rcolact="auto"${REEL.colBusy ? " disabled" : ""} title="Étire les niveaux mesurés sur cinq images du passage">Automatique</button><button type="button" class="btn small ghost" data-rcolact="neige" title="Ombres relevées, blancs gardés, un peu plus chaud">Neige / contre-jour</button><button type="button" class="btn small ghost" data-rcolact="zero"${on ? "" : " disabled"}>Remettre à zéro</button><button type="button" class="btn small ghost" data-rcolact="tous">Appliquer à tous les passages</button></div>`;
+}
+/* flous, flèches et cercles qui suivent : posés et suivis dans l'éditeur des retouches (image du passage seule) */
+function rFxSum(m){
+  const f = fxGet(m), nfl = f.formes.filter(x => x.kind === "fleche").length, nce = f.formes.length - nfl, out = [];
+  if(f.flous.length) out.push(`${f.flous.length} flou${f.flous.length > 1 ? "s" : ""}`);
+  if(nfl) out.push(`${nfl} flèche${nfl > 1 ? "s" : ""}`);
+  if(nce) out.push(`${nce} cercle${nce > 1 ? "s" : ""}`);
+  return out.join(", ");
+}
 function rFxCtl(m){
-  const sm = fxSummary(m);
-  return `<div class="rtarget"><div class="rbtns ract"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button><button type="button" class="btn small" data-rfx="1" title="Flous suivis, flèches, cercles, ralenti ou accéléré, couleurs">Retoucher</button></div><p class="hint">${sm ? `Retouches : ${esc(sm)}. Elles valent aussi pour la vidéo compilée.` : "Retoucher : flou sur un visage ou une plaque, flèche ou cercle qui suit l'animal, ralenti, couleurs."}</p></div>`;
+  return `<p class="hint" style="margin:0 0 8px">Un flou cache un visage ou une plaque ; une flèche ou un cercle montre l'animal. Chacun suit son sujet (suivi automatique ou au doigt) dans le réel et la vidéo compilée.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small" data-rfx="1">Poser ou modifier les flous, flèches et cercles</button></div>`;
 }
 /* réglages du flou choisi (photo) */
 function rFlouCtl(it){
@@ -5913,7 +5975,7 @@ function rNavHead(it, meta){
   const items = reelData().items, idx = items.indexOf(it), n = items.length;
   return `<div class="rsel rnav"><button type="button" class="ib" data-rnav="-1" aria-label="Séquence précédente"${idx > 0 ? '' : ' disabled'}>${ICON_LEFT}</button><div><b>${idx + 1}/${n}. ${esc(rLabel(it))}</b><small>${meta}</small></div><button type="button" class="ib" data-rnav="1" aria-label="Séquence suivante"${idx < n - 1 ? '' : ' disabled'}>${ICON_RIGHT}</button></div>`;
 }
-/* volet Montage : la séquence choisie (navigation, réglages), l'élément choisi sur l'image, puis tout ce qui est posé dessus */
+/* volet Montage : la séquence choisie (navigation), l'élément choisi sur l'image, puis les sections repliées (rFold) */
 function renderReelEdit(){
   const it = rSelItem(), box = $("rEdit");
   // libellé du canevas : ce que les flèches déplacent quand il a le focus
@@ -5921,21 +5983,38 @@ function renderReelEdit(){
   if(!it){ box.innerHTML = ""; return; }
   const z = rZoneSel(it), lb = REEL.lsel && rBoxOf(REEL.lsel);
   if(REEL.lsel && !lb) REEL.lsel = null;
-  const dup = `<div class="grp"><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rdup="${it.id}">${ICON_DUP} Dupliquer ce plan</button></div><p class="hint">Une copie juste après, avec sa propre plage, son cadrage, sa vitesse et son texte${it.photo ? "" : " ; les retouches du passage restent communes"}.</p></div>`;
+  if(z && it.photo) REEL.fold = "pflou";                 // un flou de photo choisi : sa section est ouverte
+  if(lb) REEL.fold = "elems";                             // un élément choisi sur l'image : ses réglages, dans sa section
+  const dup = `<div class="rbtns rdup"><button type="button" class="btn small ghost" data-rdup="${it.id}" title="Une copie juste après, avec sa propre plage, son cadrage, sa vitesse et son texte${it.photo ? "" : " ; les retouches du passage restent communes"}">${ICON_DUP} Dupliquer ce plan</button></div>`;
+  const zf = rZf(), zc = clamp(rCam(it, it.photo ? 0 : REEL.t).z, zf, RZMAX);
   let h = "", seq = "";
   if(it.photo){
     h = rNavHead(it, `Photo, ${len(rItemDur(it))} dans le réel`);
-    seq = `${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez la photo dans le cadre.</p>${rSizeCtl(it)}<div class="rbtns"><button type="button" class="btn small ghost" data-rpx="center">Photo au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}${dup}`;
+    const nfl = (it.flous || []).length;
+    seq = rFold("pdur", "Durée et zoom lent", `${rItemDur(it)} s, ${it.zoom !== false ? "zoom lent" : "fixe"}`, `<div class="grp" style="margin-top:0"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>`)
+      + rFold("cadre", "Cadrage", rZoomTxt(zc, zf), `<p class="hint" style="margin:0 0 8px">Glissez la photo dans le cadre.</p>${rSizeCtl(it)}<div class="rbtns"><button type="button" class="btn small ghost" data-rpx="center">Photo au centre</button></div>`)
+      + rFold("pflou", "Flous (visage, plaque)", nfl ? `${nfl} flou${nfl > 1 ? "s" : ""}` : "aucun", `${rTargetCtl(it)}${rFlouCtl(it)}`)
+      + rFold("txt", "Texte de la séquence", it.texte || "aucun", rTextCtl(it));
   } else {
     const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = rNbFlous(it);
     const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
     h = `${rNavHead(it, `${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel`)}${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}`;
-    seq = `${rFxCtl(m)}<div class="grp"><span class="lbl">Cadrage${nk ? ` (${nk} point${nk > 1 ? 's' : ''})` : ' (fixe, au centre)'}</span><p class="hint" style="margin:0 0 8px">Glissez l'image dans le cadre ; pendant la lecture, gardez le doigt dessus et suivez l'animal. Une autre taille posée à un autre instant fait un zoom pendant la séquence.</p>${rSizeCtl(it)}${nk ? `<div class="rbtns"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}</div>${cams.length > 1 ? `<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div>` : ''}<div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}"${s > 1 ? ` aria-label="Accéléré x${s}"` : ''}>${s === 1 ? 'Normale' : `x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}${dup}`;
+    seq = rFold("plage", "Début et fin", `${len(it.z - it.a)} de rush`, `<div class="rbtns ract" style="margin-top:0"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div><p class="hint">Placez la lecture, puis touchez Début ici ou Fin ici (touches I et O). La barre sous l'image montre 10 s de marge pour allonger la séquence.</p>`)
+      + rFold("cadre", "Cadrage", `${nk > 1 ? `suivi (${nk} points), ` : nk ? "" : "au centre, "}${rZoomTxt(zc, zf)}`, `<p class="hint" style="margin:0 0 8px">Glissez l'image dans le cadre ; pendant la lecture, gardez le doigt dessus et suivez l'animal. Une autre taille posée à un autre instant fait un zoom pendant la séquence.</p>${rSizeCtl(it)}${nk ? `<div class="rbtns"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}`)
+      + (cams.length > 1 ? rFold("cam", "Caméra", tr ? tr.name : "", `<div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div>`) : "")
+      + (m ? rFold("vit", "Vitesse", rVitSum(it, m), rVitCtl(it, m)) : "")
+      + (m && tr ? rFold("col", "Couleurs", fxColSum(fxColOf(m, tr.lens) || {}), rColCtl(m, tr)) : "")
+      + (m ? rFold("fx", "Flous, flèches, cercles qui suivent", rFxSum(m) || "aucun", rFxCtl(m)) : "")
+      + rFold("txt", "Texte de la séquence", it.texte || "aucun", rTextCtl(it));
   }
-  if(lb) h += `<div class="rblk relsel">${rElemCtl()}</div>`;
-  const ep = rElemsPanel();
+  h += dup;
+  const ep = rElemsPanel(lb ? `<div class="relsel">${rElemCtl()}</div>` : "");
   h += `<div class="rblk"><h4>Séquence</h4>${seq}</div>${ep ? `<div class="rblk"><h4>Sur l'image</h4>${ep}</div>` : ""}`;
   box.innerHTML = h;
+  // élément choisi à l'instant (sur l'image, dans la liste, ajouté) : ses réglages à la vue sur PC, où l'image reste à gauche
+  const rs = box.querySelector(".relsel");
+  if(rs && REEL.lselShown !== REEL.lsel && rWide()) rs.scrollIntoView({block:"nearest"});
+  REEL.lselShown = REEL.lsel;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -5950,7 +6029,7 @@ function renderMusic(){
   if(document.activeElement !== $("rMusOff")) $("rMusOff").value = r.musDebut || 0;
 }
 /* éléments posés sur l'image : ajout de textes et formes à l'instant affiché, liste de tout ce qui est posé, gabarit */
-function rElemsPanel(){
+function rElemsPanel(selHtml){
   const r = reelData();
   const pl = REEL.pl || reelPlan(false);
   if(!pl.segs.length) return "";
@@ -5959,11 +6038,13 @@ function rElemsPanel(){
   if(r.logo.mode !== "non") keys.push(["logo", "Logo"]);
   r.items.forEach((x, i) => { if(x.texte) keys.push([`txt:${x.id}`, `Texte du ${i + 1} : ${x.texte}`]); });
   r.elems.forEach(el => { keys.push([`el:${el.id}`, rElName(el)]); });
-  let h = `<div class="grp"><span class="lbl">Ajouter à ${ms(rCurO())}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div>`;
-  if(keys.length) h += `<span class="lbl" style="margin-top:12px;display:block">Posé sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === REEL.lsel}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div>`;
-  const gb = rGabFmt(r.fmt), fl = RFMTS[r.fmt].lib;
-  h += `</div><p class="hint">Touchez un élément sur l'image pour le déplacer ou le régler : il s'aimante au centre, aux tiers, aux marges et aux autres éléments (Alt, Maj ou un second doigt : sans aimant). Ailleurs sur l'image, le geste cadre la séquence. Image allégée : la vidéo finale sera nette.</p>`;
-  return `${h}<div class="grp"><span class="lbl">Gabarit ${esc(fl)}</span><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rgab="save">Enregistrer comme gabarit</button><button type="button" class="btn small ghost" data-rgab="apply"${gb ? '' : ' disabled'}>Appliquer le gabarit</button></div><p class="hint">${gb ? "Places, tailles et couleurs du titre, du logo et des textes de séquence, gardées dans ce navigateur pour toutes les interventions ; un nouveau réel les reçoit d'office." : "Enregistre les places, tailles et couleurs du titre, du logo et des textes de séquence pour les prochains réels à ce format."}</p></div>`;
+  let h = `<div class="grp" style="margin-top:0"><span class="lbl">Ajouter à ${ms(rCurO())}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div>`;
+  if(keys.length) h += `<span class="lbl" style="margin-top:12px;display:block">Posé sur l'image (toucher pour régler)</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === REEL.lsel}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div>`;
+  h += selHtml || "";
+  const gb = rGabFmt(r.fmt), fl = RFMTS[r.fmt].lib, ne = r.elems.length;
+  h += `</div><p class="hint">Touchez un élément sur l'image pour le déplacer ou le régler (taille, largeur, hauteur, inclinaison, couleur) : il s'aimante au centre, aux tiers, aux marges et aux autres éléments (Alt, Maj ou un second doigt : sans aimant). Ailleurs sur l'image, le geste cadre la séquence. Image allégée : la vidéo finale sera nette.</p>`;
+  return rFold("elems", "Texte, flèche, cercle, cadre", ne ? `${ne} élément${ne > 1 ? "s" : ""} posé${ne > 1 ? "s" : ""}` : "rien de posé", h)
+    + rFold("gab", `Gabarit ${esc(fl)}`, gb ? "enregistré" : "aucun", `<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rgab="save">Enregistrer comme gabarit</button><button type="button" class="btn small ghost" data-rgab="apply"${gb ? '' : ' disabled'}>Appliquer le gabarit</button></div><p class="hint">${gb ? "Places, tailles et couleurs du titre, du logo et des textes de séquence, gardées dans ce navigateur pour toutes les interventions ; un nouveau réel les reçoit d'office." : "Enregistre les places, tailles et couleurs du titre, du logo et des textes de séquence pour les prochains réels à ce format."}</p>`);
 }
 /* réglages de l'élément choisi sur l'image (titre, logo, texte d'une séquence, élément libre) */
 function rElemCtl(){
@@ -5974,7 +6055,12 @@ function rElemCtl(){
   let h = `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b><button type="button" class="btn small" data-runsel="1">Terminé</button></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
   if(el && el.kind === "texte") h += `<div class="grp"><label class="lbl" for="rElTxt">Texte</label><input class="field" id="rElTxt" maxlength="90" autocomplete="off" value="${esc(el.texte || "")}"></div>`;
   h += `<div class="grp"><label class="lbl" for="rElSize">Taille : <span id="rElSizeV">${Math.round((box.s || 1)*100)} %</span></label><input type="range" class="rrange" id="rElSize" min="40" max="300" step="5" value="${Math.round((box.s || 1)*100)}"></div>`;
-  if(el && el.kind !== "texte") h += `<div class="grp"><label class="lbl" for="rElRot">Orientation : <span id="rElRotV">${el.rot || 0}°</span></label><input type="range" class="rrange" id="rElRot" min="-180" max="180" step="5" value="${el.rot || 0}"></div>`;
+  if(el && el.kind !== "texte"){
+    const fl = el.kind === "fleche", pc = v => Math.round((v || 1)*100);
+    h += `<div class="grp"><label class="lbl" for="rElSx">${fl ? "Longueur" : "Largeur"} : <span id="rElSxV">${pc(el.sx)} %</span></label><input type="range" class="rrange" id="rElSx" min="30" max="300" step="5" value="${pc(el.sx)}"></div>`;
+    h += `<div class="grp"><label class="lbl" for="rElSy">${fl ? "Taille de la pointe" : "Hauteur"} : <span id="rElSyV">${pc(el.sy)} %</span></label><input type="range" class="rrange" id="rElSy" min="30" max="300" step="5" value="${pc(el.sy)}"></div>`;
+    h += `<div class="grp"><label class="lbl" for="rElRot">Inclinaison : <span id="rElRotV">${el.rot || 0}°</span></label><input type="range" class="rrange" id="rElRot" min="-180" max="180" step="5" value="${el.rot || 0}"><div class="chips" style="margin-top:6px">${[-90, -45, 0, 45, 90].map(d => `<button type="button" class="chip" data-rrot="${d}" aria-pressed="${(el.rot || 0) === d}">${d}°</button>`).join("")}</div></div>`;
+  }
   if(k !== "logo"){
     const cur = (box.c || (el && el.kind !== "texte" ? "#F9DD10" : "#ffffff")).toUpperCase();
     h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-rcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}" aria-label="${c[0]}" title="${c[0]}"><i style="background:${c[1]}"></i></button>`).join("")}</div></div>`;
@@ -6197,8 +6283,9 @@ $("rEdit").addEventListener("click", e => {
   }
   if(b.dataset.runsel){ REEL.lsel = null; renderReelEdit(); rDraw(); return; }
   const key = REEL.lsel, bx = key && rBoxOf(key), el = key && key.indexOf("el:") === 0 ? rElem(key.slice(3)) : null;
-  if(bx && (b.dataset.rreset || b.dataset.rcol || b.dataset.rfond != null || b.dataset.rown || b.dataset.relStart || b.dataset.relDur != null || b.dataset.relDel)){
-    if(b.dataset.rreset){ Object.assign(bx, {x:rDefBox(key).x, y:rDefBox(key).y, s:rDefBox(key).s}); if(key === "titre") bx.haut = true; }
+  if(bx && (b.dataset.rreset || b.dataset.rcol || b.dataset.rfond != null || b.dataset.rown || b.dataset.relStart || b.dataset.relDur != null || b.dataset.relDel || b.dataset.rrot != null)){
+    if(b.dataset.rreset){ Object.assign(bx, {x:rDefBox(key).x, y:rDefBox(key).y, s:rDefBox(key).s}); delete bx.sx; delete bx.sy; if(key === "titre") bx.haut = true; }
+    else if(b.dataset.rrot != null && el){ el.rot = +b.dataset.rrot; }
     else if(b.dataset.rcol){ bx.c = b.dataset.rcol; }
     else if(b.dataset.rfond != null){ bx.fond = b.dataset.rfond === "1"; }
     else if(b.dataset.rown){
@@ -6235,6 +6322,27 @@ $("rEdit").addEventListener("click", e => {
     fxOpen(m, tr.lens, () => { REEL.cur = null; rSave(); renderReel(); const s = rSelItem(); if(s) rSeekCadrage(s.photo ? 0 : REEL.t, false); });
     return;
   }
+  if(b.dataset.rfxvit || b.dataset.rcolact){
+    // retouches du passage (m.fx) réglées depuis le réel : vitesse à partir de l'instant affiché, couleurs de la caméra
+    const m = rMarker(it), tr = rTrack(it); if(!m || !tr) return;
+    if(b.dataset.rfxvit){
+      const before = JSON.stringify(fxGet(m).vits);
+      if(b.dataset.rfxvit === "clear"){ fxMake(m).vits = []; toast("Vitesse normale sur tout le passage.", "Annuler", () => { fxMake(m).vits = JSON.parse(before); rFxDone(); }); }
+      else fxVitSet(m, clamp(REEL.t, it.a, it.z), +b.dataset.rfxvit);
+      rFxDone(); return;
+    }
+    const a = b.dataset.rcolact, cur = fxColOf(m, tr.lens), before = fxColCopy(m);
+    if(a === "auto"){ rColAuto(it, m, tr); return; }
+    if(a === "neige") fxColSet(m, tr.lens, FX_COLPRE.neige);
+    else if(a === "zero"){ fxColSet(m, tr.lens, {lum:0, con:0, sat:0, temp:0}); toast("Couleurs remises à zéro.", "Annuler", () => { fxColBack(m, before); rColDone(); }); }
+    else if(a === "tous"){
+      const others = S.markers.filter(q => q !== m), saved = others.map(q => [q, q.fx && q.fx.couleurs ? fxColCopy(q) : null]);
+      others.forEach(q => { if(cur || fxColOf(q, tr.lens)) fxColSet(q, tr.lens, cur ? {lum:cur.lum, con:cur.con, sat:cur.sat, temp:cur.temp} : {lum:0, con:0, sat:0, temp:0}); });
+      toast(others.length ? `Couleurs de ${tr.name.toLowerCase()} ${cur ? "appliquées" : "remises à zéro"} dans ${others.length} autre${others.length > 1 ? "s" : ""} passage${others.length > 1 ? "s" : ""}.` : "Il n'y a pas d'autre passage.",
+        others.length ? "Annuler" : undefined, others.length ? () => { saved.forEach(q => { if(q[1]) fxColBack(q[0], q[1]); else if(q[0].fx) q[0].fx.couleurs = []; }); rColDone(); } : undefined);
+    }
+    rColDone(); return;
+  }
   if(b.dataset.rfsel != null){ REEL.fsel = b.dataset.rfsel || null; renderReelEdit(); rBar(); rDraw(); return; }
   if(b.dataset.rfadd){
     const prev = rZoneSel(it);
@@ -6256,6 +6364,54 @@ $("rEdit").addEventListener("click", e => {
   else return;
   rSave(); renderReel();
 });
+/* après un changement de vitesse du passage : durées, plan du réel et image recalculés, la séquence reste à l'instant affiché */
+function rFxDone(){ REEL.cur = null; rSave(); renderReel(); const s = rSelItem(); if(s && !s.photo) rSeekCadrage(REEL.t, false); }
+function rColDone(){ rSave(); renderReelEdit(); rDraw(); }
+/* couleurs automatiques depuis le réel : mêmes mesures que l'éditeur des retouches (fxColLevels), lues par un lecteur caché */
+async function rColAuto(it, m, tr){
+  if(REEL.colBusy) return;
+  const ts = [];
+  for(let i=0; i<5; i++){ const t = it.a + (it.z - it.a)*(i + 0.5)/5; if(clipAt(tr, t)) ts.push(t); }
+  if(!ts.length){ toast("Pas d'image à mesurer dans cette séquence."); return; }
+  REEL.colBusy = true; renderReelEdit();
+  const vid = document.createElement("video"); vid.muted = true; vid.preload = "auto"; vid.playsInline = true;
+  const hist = new Float64Array(256), cv = document.createElement("canvas"); cv.width = 160; cv.height = 90;
+  const cx = cv.getContext("2d", {willReadFrequently:true});
+  let n = 0;
+  const at = (url, t) => new Promise(res => {
+    let done = false; const fin = ok => { if(done) return; done = true; vid.removeEventListener("seeked", ok1); vid.removeEventListener("error", ko); clearTimeout(to); res(ok); };
+    const ok1 = () => fin(true), ko = () => fin(false), to = setTimeout(() => fin(false), 8000);
+    vid.addEventListener("seeked", ok1); vid.addEventListener("error", ko);
+    const go = () => { vid.currentTime = Math.max(0.001, t); };
+    if(vid.getAttribute("data-u") !== url){ vid.setAttribute("data-u", url); vid.src = url; vid.addEventListener("loadedmetadata", go, {once:true}); } else go();
+  });
+  try {
+    for(const t of ts){
+      const c = clipAt(tr, t); if(!c || !(await at(c.url, t - c.s))) continue;
+      cx.drawImage(vid, 0, 0, 160, 90);
+      const d = cx.getImageData(0, 0, 160, 90).data;
+      for(let i=0; i<d.length; i+=4){ hist[Math.round(0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2])]++; n++; }
+    }
+  } catch(e){ n = 0; }
+  vid.removeAttribute("src"); try { vid.load(); } catch(e){}
+  REEL.colBusy = false;
+  const r = fxColLevels(hist, n), before = fxColCopy(m);
+  if(r.err){ renderReelEdit(); toast(r.err); return; }
+  fxColSet(m, tr.lens, {lum:r.lum, con:r.con}); rColDone();
+  toast(r.lum || r.con ? `Automatique : luminosité ${fxColNum(r.lum)}, contraste ${fxColNum(r.con)}.` : "Automatique : l'image est déjà bien étalée, rien à changer.", "Annuler", () => { fxColBack(m, before); rColDone(); });
+}
+/* sections du volet Montage : une seule dépliée (attribut name, et ici pour les navigateurs qui l'ignorent) ; la section
+   dépliée est retenue (REEL.fold) pour survivre aux redessins. Ouvrir une autre section que celle d'un flou de photo ou d'un élément posé rend la main au cadrage. */
+$("rEdit").addEventListener("toggle", e => {
+  const d = e.target; if(!d.dataset || !d.dataset.rfold) return;
+  if(d.open){
+    REEL.fold = d.dataset.rfold;
+    $("rEdit").querySelectorAll("details.rfold[open]").forEach(x => { if(x !== d) x.open = false; });
+    if(d.dataset.rfold !== "pflou" && REEL.fsel){ REEL.fsel = null; rDraw(); }
+    if(d.dataset.rfold !== "elems" && REEL.lsel){ REEL.lsel = null; rDraw(); }
+    if(d.getBoundingClientRect().bottom > window.innerHeight) d.scrollIntoView({block:"nearest"});
+  } else if(REEL.fold === d.dataset.rfold) REEL.fold = null;
+}, true);
 /* gabarit du format en cours : enregistrer les places, tailles et couleurs du titre, du logo et des textes, ou les appliquer (annulable) */
 function rGabGo(what){
   const r = reelData(), fmt = r.fmt, lib = RFMTS[fmt].lib;
@@ -6283,10 +6439,22 @@ function rGabGo(what){
 }
 $("rEdit").addEventListener("input", e => {
   const id = e.target.id, key = REEL.lsel, bx = key && rBoxOf(key);
-  if(bx && (id === "rElSize" || id === "rElRot" || id === "rElTxt")){
+  if(bx && (id === "rElSize" || id === "rElRot" || id === "rElSx" || id === "rElSy" || id === "rElTxt")){
     if(id === "rElSize"){ bx.s = +e.target.value/100; $("rElSizeV").textContent = `${e.target.value} %`; }
-    else if(id === "rElRot"){ bx.rot = +e.target.value; $("rElRotV").textContent = `${e.target.value}°`; }
+    else if(id === "rElRot"){ bx.rot = +e.target.value; $("rElRotV").textContent = `${e.target.value}°`; $("rEdit").querySelectorAll("[data-rrot]").forEach(c => c.setAttribute("aria-pressed", String(+c.dataset.rrot === bx.rot))); }
+    else if(id === "rElSx" || id === "rElSy"){ const k = id === "rElSx" ? "sx" : "sy"; bx[k] = +e.target.value/100; if(bx[k] === 1) delete bx[k]; $(`${id}V`).textContent = `${e.target.value} %`; }
     else bx.texte = clean(e.target.value);
+    clearTimeout(REEL.inT); REEL.inT = setTimeout(rSave, 400);
+    rDraw(); return;
+  }
+  const ck = e.target.dataset && e.target.dataset.rcolk;
+  if(ck){
+    // couleurs : aperçu en direct sur l'image du réel pendant le glissement
+    const ci = rSelItem(), m = ci && !ci.photo ? rMarker(ci) : null, tr = ci && rTrack(ci); if(!m || !tr) return;
+    fxColSet(m, tr.lens, {[ck]:+e.target.value});
+    $(`rColV_${ck}`).textContent = fxColNum(e.target.value);
+    const sv = e.target.closest("details").querySelector(".shv"); if(sv) sv.textContent = fxColSum(fxColOf(m, tr.lens) || {});
+    const zb = $("rEdit").querySelector('[data-rcolact="zero"]'); if(zb) zb.disabled = !fxColOf(m, tr.lens);
     clearTimeout(REEL.inT); REEL.inT = setTimeout(rSave, 400);
     rDraw(); return;
   }
@@ -7084,7 +7252,19 @@ function fxSeekWait(t){
   });
 }
 /* réglage automatique : niveaux mesurés sur cinq images du passage (1 % et 99 % de la luminance), étirés vers 4 % et 96 %
-   par la luminosité et le contraste ; saturation et température restent comme elles sont */
+   par la luminosité et le contraste ; saturation et température restent comme elles sont. fxColLevels fait le calcul sur
+   l'histogramme (éditeur des retouches et volet Montage du réel) */
+function fxColLevels(hist, n){
+  const pct = q => { let acc = 0; for(let i=0; i<256; i++){ acc += hist[i]; if(acc >= q*n) return i/255; } return 1; };
+  const lo = n ? pct(0.01) : 0, hi = n ? pct(0.99) : 0;
+  if(!n || hi - lo < 0.08) return {err:n ? "Image trop uniforme : réglage automatique impossible." : "Images illisibles : réglage automatique impossible."};
+  const L0 = 0.04, H0 = 0.96, bc = (H0 - L0)/(hi - lo);
+  let c = clamp(2*(lo*bc + 0.5 - L0), 0.5, 1.5), b = bc/c;
+  if(c === 0.5 || c === 1.5) b = 0.5/((lo + hi)/2);          // contraste en butée : le milieu des niveaux revient au gris moyen
+  b = clamp(b, 0.5, 1.5);
+  const r5 = x => Math.round(x/5)*5;
+  return {lum:r5((b - 1)*200), con:r5((c - 1)*200)};
+}
 async function fxColAuto(){
   const m = FX.m, lens = FX.lens, tr = fxTrack(), rg = fxRange(), t0 = FX.t;
   if(!m || FX.colBusy) return;
@@ -7107,14 +7287,8 @@ async function fxColAuto(){
   FX.colBusy = false;
   if(FX.m !== m) return;
   fxSeek(t0, false);
-  const pct = q => { let acc = 0; for(let i=0; i<256; i++){ acc += hist[i]; if(acc >= q*n) return i/255; } return 1; };
-  const lo = n ? pct(0.01) : 0, hi = n ? pct(0.99) : 0;
-  if(!n || hi - lo < 0.08){ fxPanel(); toast(n ? "Image trop uniforme : réglage automatique impossible." : "Images illisibles : réglage automatique impossible."); return; }
-  const L0 = 0.04, H0 = 0.96, bc = (H0 - L0)/(hi - lo);
-  let c = clamp(2*(lo*bc + 0.5 - L0), 0.5, 1.5), b = bc/c;
-  if(c === 0.5 || c === 1.5) b = 0.5/((lo + hi)/2);          // contraste en butée : le milieu des niveaux revient au gris moyen
-  b = clamp(b, 0.5, 1.5);
-  const r5 = x => Math.round(x/5)*5, before = fxColCopy(m), lum = r5((b - 1)*200), con = r5((c - 1)*200);
+  const r = fxColLevels(hist, n), before = fxColCopy(m), lum = r.lum, con = r.con;
+  if(r.err){ fxPanel(); toast(r.err); return; }
   fxColSet(m, lens, {lum:lum, con:con});
   FX.colOpen = true; FX.colOff = false; fxSave(); fxRefresh();
   toast(lum || con ? `Automatique : luminosité ${fxColNum(lum)}, contraste ${fxColNum(con)}.` : "Automatique : l'image est déjà bien étalée, rien à changer.", "Annuler", () => { fxColBack(m, before); fxSave(); if(FX.m === m) fxRefresh(); });
