@@ -216,6 +216,24 @@ def test_miroir_story_cuts():
             assert [round(x, 3) for x in js] == [round(x, 3) for x in py], (durs, fin, js, py)
         b.close()
 
+def test_fiche_ancienne_avec_retex():
+    """Une fiche ancienne (section Chronologie RETEX, thèmes sous « Ce qu'on voit ») se reprend toujours."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  (Playwright absent : reprise de fiche non vérifiée)"); return
+    data = {"app": "esam-derushage", "v": 1, "base": 1789223405, "real": True, "meta": {"intervention": "Test", "version": 0.3, "log": []},
+            "offsets": {}, "markers": [{"id": "a1", "at": 1789223410, "to": 1789223420, "preset": "Décollage", "title": "Décollage",
+                                        "themes": ["Recherche"], "interest": 2, "sens": ["Aucune"], "note": "", "comment": "", "cam": "W"}]}
+    fiche = ("# Dérushage drone - Test\n\n### 1. 14:30:10 - Décollage #1\n\n- Ce qu'on voit : Recherche\n\n"
+             "## Chronologie RETEX\n\n| Indicateur | Valeur |\n|---|---|\n| Nombre de vols | 1 |\n\n"
+             "<!-- derushage-data " + json.dumps(data, ensure_ascii=False) + " -->")
+    with sync_playwright() as p:
+        b = p.chromium.launch(); pg = b.new_page()
+        pg.goto((RACINE / "index.html").as_uri())
+        assert pg.evaluate("t => window.ESAM_TEST.fiche(t)", fiche) == 1
+        b.close()
+
 if __name__ == "__main__":
     n = 0
     for name, fn in sorted(globals().items()):
