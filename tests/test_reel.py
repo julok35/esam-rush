@@ -36,11 +36,16 @@ async def navigateur(tmp, iv):
         async def at(t):
             await pg.evaluate(f"document.querySelector('#v').currentTime={t}"); await pg.wait_for_timeout(350)
         async def volet(n):
-            # sur téléphone, l'onglet Réel montre un volet à la fois (Montage, Aperçu, Habillage)
+            # sur téléphone, l'onglet Réel montre un volet à la fois (Montage, Passage, Habillage)
             if await pg.is_visible("#rPanes"): await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(200)
+        async def apercu():
+            # aperçu du réel : volet Habillage sur téléphone, choix Cadrage / Aperçu sur PC
+            if await pg.is_visible("#rMode"): await pg.click("#rMode .chip >> nth=1")
+            else: await volet(2)
+            await pg.wait_for_timeout(500)
         for a, z in ((3, 80), (40, 55)):
             await at(a); await pg.click("#mkS"); await at(z); await pg.click("#mkE")
-            if await pg.is_visible("#sheet"): await pg.click("#shCancel")
+            if await pg.is_visible("#sheet"): await pg.click("#shSave")
         await at(70); await pg.click("#mkP")
         if await pg.is_visible("#sheet"): await pg.click("#shSave")
         await pg.click("#tabReel"); await pg.wait_for_timeout(500)
@@ -95,6 +100,8 @@ async def navigateur(tmp, iv):
         await pg.screenshot(path=str(tmp / "r1c_photo.png"))
         await pg.screenshot(path=str(tmp / "r1_cadrage.png"))
         await volet(2); await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
+        # logo, carton de fin et musique sont repliés sous le titre et l'aperçu
+        if not await pg.is_visible("#rLogo"): await pg.click("#rHabSum"); await pg.wait_for_timeout(200)
         await pg.set_input_files("#rMusIn", str(tmp / "musique.mp3"))
         await pg.wait_for_function("document.getElementById('rMusInfo').textContent.indexOf('envoyée') >= 0", timeout=10000)
         await pg.fill("#rMusOff", "2")
@@ -120,7 +127,7 @@ async def navigateur(tmp, iv):
         await pg.mouse.move(box["x"] + box["width"] * 0.35, box["y"] + box["height"] * 0.62, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1e_formes.png"))
         await pg.click('#rEdit [data-runsel]')
-        await volet(1); await pg.click("#rMode .chip >> nth=1"); await pg.wait_for_timeout(500)
+        await apercu()
         await pg.click("#rPlay"); await pg.wait_for_timeout(1800); await pg.click("#rPlay")
         await pg.wait_for_timeout(200)
         print("aperçu :", (await pg.inner_text("#rTime")).replace("\n", " "), "|", await pg.inner_text("#rInfo"))

@@ -148,6 +148,14 @@ textarea.field{min-height:70px;resize:vertical}
 @media (max-width:520px){ .mcomp .mvl{display:none} .mcomp .mvs{display:inline} }
 .msave{flex:none;font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:0 2px;min-height:24px;white-space:nowrap;text-decoration:underline dotted;text-underline-offset:3px}
 .msave.err{color:var(--red);text-decoration-style:solid}
+/* téléphone : le nom et l'état de l'enregistrement sur une ligne ; dates et durée compilée sont dans le Sommaire */
+@media (max-width:699px){
+  .mission{display:flex;align-items:center;gap:10px;padding:4px 14px}
+  .mission .mname{flex:1;min-width:0;width:auto;font-size:22px;min-height:40px;text-overflow:ellipsis}
+  .mmeta,.mcomp{display:none}
+  .mline{flex:none;max-width:48%;margin:0;min-width:0}
+  .msave{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+}
 /* « Vidéo compilée » n'a pas de sens dans l'onglet Réel */
 .mission:has(~ #reel:not([hidden])) .mcomp{visibility:hidden}
 
@@ -194,7 +202,15 @@ textarea.field{min-height:70px;resize:vertical}
 .inwin.pend{border:2px dashed var(--ink);color:var(--ink)}
 .inwin .iwl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3}
 .inwin .iwl small{display:block;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
-.inwin .iwb{display:flex;gap:6px;flex:none}
+.inwin .iwb{display:flex;gap:6px;flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.inwin .iwb::-webkit-scrollbar{display:none}
+.inwin .iwb>*{flex:none}
+.inwin .chip{min-height:44px;padding:6px 12px;white-space:nowrap}
+.inwin .namesel{min-height:44px;font-size:14px}
+/* marqueur que l'on vient de poser : ses noms courants à toucher, sans ouvrir la fiche */
+.inwin.new{border:2px solid var(--ink);color:var(--ink)}
+.inwin.new .iwl{flex:none}
+.inwin.new .iwb{flex:1 1 auto;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
 .inwin .btn{min-height:44px;padding:4px 12px;font-size:13px;border-width:1.5px}
 .inwin.on .btn{background:var(--bg);color:var(--ink);border-color:var(--onblue)}
 /* téléphone : le texte sur une ligne, les boutons dessous (défilement horizontal s'ils débordent) */
@@ -204,26 +220,26 @@ textarea.field{min-height:70px;resize:vertical}
   .inwin .iwl small{display:inline;margin-left:6px}
   .inwin.empty .iwl{white-space:normal}
   .inwin.empty .iwl small{display:block;margin-left:0}
-  .inwin .iwb{overflow-x:auto;scrollbar-width:none;padding-right:4px}
-  .inwin .iwb::-webkit-scrollbar{display:none}
+  .inwin .iwb{padding-right:4px}
+  .inwin.new .iwb{padding-right:28px}
   .inwin .iwb:empty{display:none}
 }
 
-/* ---------- timeline ---------- */
-.tl{padding:8px 0 4px}
-.tlhead{display:flex;align-items:center;justify-content:space-between;padding:0 16px 6px;font-weight:700;font-size:13px}
-.tlhead .tp{font-weight:500;color:var(--muted);font-size:12px;margin-left:8px}
-.zoom{display:flex;align-items:center;gap:6px}
-.zoom .btn{min-height:44px;min-width:44px;padding:2px 8px}
-.zoom span{min-width:34px;text-align:center;font-size:13px}
+/* ---------- timeline ----------
+   Pas de rangée de titre : le zoom occupe le coin au-dessus des noms de pistes, à la hauteur de la règle (--rh). */
+.tl{--rh:44px;padding:8px 0 4px;position:relative}
+.tl .tp{margin:4px 16px 0;font-weight:500;color:var(--muted);font-size:12px}
+.tl .tp:empty{display:none}
+.zoom{display:flex;align-items:center;justify-content:center;gap:2px;height:var(--rh);border-bottom:1px solid var(--line)}
+.zoom .btn{min-height:44px;height:44px;min-width:44px;width:44px;padding:0;font-size:20px;line-height:1;border-color:transparent}
+.zoom .btn:disabled{opacity:.35;border-color:transparent;background:none}
 .tlgrid{display:grid;grid-template-columns:92px 1fr}
-.labels{border-right:1px solid var(--line)}
-.labels .rsp{height:40px}
+.tlcol{border-right:1px solid var(--line);min-width:0}
 .lab{height:var(--lh);display:flex;align-items:center;padding:0 8px 0 12px;font-size:12px;font-weight:600;border:0;background:none;width:100%;text-align:left;border-top:1px solid var(--line)}
 .lab[aria-pressed="true"]{background:var(--blue);color:var(--onblue);font-weight:700;box-shadow:inset 0 0 0 2px var(--onblue)}
 .scroller{overflow-x:auto;overflow-y:hidden;position:relative;-webkit-overflow-scrolling:touch}
 .inner{position:relative;min-width:100%}
-.ruler{position:relative;height:40px;touch-action:none;cursor:ew-resize;border-bottom:1px solid var(--line)}
+.ruler{position:relative;height:var(--rh);touch-action:none;cursor:ew-resize;border-bottom:1px solid var(--line)}
 .tick{position:absolute;top:0;height:100%;border-left:1px solid var(--line);font-size:12px;line-height:14px;padding:2px 0 0 3px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 /* pan-x pan-y : un balayage vertical parti d'une piste fait défiler la page ; le pincement reste à l'appli (pas de zoom du navigateur) */
 .lane{position:relative;height:var(--lh);border-top:1px solid var(--line);background:var(--soft);touch-action:pan-x pan-y}
@@ -232,22 +248,35 @@ textarea.field{min-height:70px;resize:vertical}
 .mlayer{position:absolute;inset:0;pointer-events:none}
 .mi{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--blue)}
 .mr{position:absolute;top:0;bottom:0;background:var(--band);border-left:2px solid var(--blue);border-right:2px solid var(--blue)}
+.mr.sel{border-color:var(--ink)}
 .mr.pend{border:2px dashed var(--ink);background:transparent}
-/* pastille dans la moitié basse de la règle (sous les heures) ; zone tactile de 44 px par ::before */
-.mh{position:absolute;top:17px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:0;z-index:3}
-.mh::before{content:"";position:absolute;left:-11px;right:-11px;top:-15px;bottom:-9px}
-.mh.sens{background:var(--yellow)}
-.eg{position:absolute;top:40px;bottom:0;width:22px;margin-left:-11px;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2}
-.eg::before{content:"";position:absolute;top:0;bottom:0;left:-11px;right:-11px}
-.eg.l{left:0}
-.eg.r{left:100%}
-.eg::after{content:"";position:absolute;left:8px;top:30%;bottom:30%;width:6px;border-radius:6px;background:var(--blue);border:1.5px solid var(--onblue)}
+/* pastille dans la moitié basse de la règle (sous les heures). renderMarkers les espace d'au moins 44 px (MH_GAP) :
+   la zone tactile (::before, 44 x 44) d'une pastille ne recouvre jamais celle d'une voisine. Les pastilles plus proches
+   sont regroupées (.mh.grp, « 3-6 ») : la toucher zoome jusqu'à les séparer, ou les liste (#mhPop) si elles restent collées. */
+.mh{position:absolute;top:18px;height:24px;min-width:24px;margin-left:-12px;border-radius:12px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:0 4px;z-index:3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mh::before{content:"";position:absolute;left:50%;width:max(44px,100%);transform:translateX(-50%);top:-18px;bottom:-2px}
+.mh.grp{background:var(--bg);color:var(--ink);border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.mh.sel{outline:3px solid var(--ink);outline-offset:1px}
+/* sensibilité : jaune ET forme carrée (comme les vignettes de la planche), jamais la couleur seule */
+.mh.sens{background:var(--yellow);color:var(--onblue);border-radius:4px}
+/* poignées de bord : 44 px de large, surtout à l'extérieur du passage (--in px à l'intérieur), pour qu'un passage étroit
+   garde deux poignées séparées ; renderMarkers n'affiche pas une poignée qui toucherait une autre */
+.eg{position:absolute;top:var(--rh);bottom:0;pointer-events:auto;touch-action:none;cursor:ew-resize;z-index:2}
+.eg::after{content:"";position:absolute;top:28%;bottom:28%;width:8px;border-radius:6px;background:var(--blue);border:1.5px solid var(--onblue)}
+.eg.l::after{right:calc(var(--in) + 1px)}
+.eg.r::after{left:calc(var(--in) + 1px)}
+.mr.sel .eg::after{background:var(--ink);border-color:var(--bg)}
+.mhpop{position:absolute;z-index:30;left:8px;right:8px;top:calc(var(--rh) + 8px);max-width:420px;max-height:60vh;overflow:auto;background:var(--bg);border:2px solid var(--ink);border-radius:10px;padding:6px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.mhpop button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 8px;border:0;border-top:1px solid var(--line);background:none;text-align:left;font-size:14px;font-weight:600;color:var(--ink)}
+.mhpop button:first-child{border-top:0}
+.mhpop .n{flex:none;min-width:24px;height:24px;border-radius:12px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.mhpop .n.sens{background:var(--yellow);border-radius:4px}
+.mhpop small{display:block;font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
 .ph{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
 .ph::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:var(--ink)}
 .hov{position:fixed;z-index:40;background:var(--onblue);color:var(--onstage);border-radius:10px;padding:4px;pointer-events:none;font-size:12px;font-weight:600}
 .hov canvas{display:block;border-radius:6px;background:var(--stage)}
 .hov div{padding:4px 4px 2px}
-.tlhint{margin:6px 16px 0;font-size:12px;color:var(--muted)}
 
 /* ---------- colonne de droite sur PC : marqueurs, raccourcis, pistes ---------- */
 .sidelist{display:none}
@@ -307,8 +336,8 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   .mbig{padding:8px 12px 8px 0}
   .mb{min-height:44px;flex-direction:row;gap:8px}
   .mb .ic{font-size:18px}
-  /* scène : ce qui reste de la hauteur après l'en-tête, la mission, les commandes, le bandeau, la tête de timeline et quatre pistes */
-  .stage{max-height:calc(100vh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh) - 40px);max-height:calc(100dvh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh) - 40px);min-height:240px}
+  /* scène : ce qui reste de la hauteur après l'en-tête, la mission, les commandes, le bandeau, la règle et quatre pistes */
+  .stage{max-height:calc(100vh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh));max-height:calc(100dvh - var(--top) - 60px - 60px - 64px - 100px - 4*var(--lh));min-height:240px}
   .keys{display:block}
   .sidelist{display:block;padding:12px}
   .sidelist h3{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:0 0 8px}
@@ -324,33 +353,31 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
 }
 
 /* ---------- sommaire ---------- */
-.sumhead{padding:16px}
-.sumhead label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
-.flight{font-size:13px;color:var(--muted);margin:10px 0 14px}
+.sumhead{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.sumgo{width:100%}
+.sumfiche .btn{flex:1}
+.sumaut{display:flex;align-items:center;gap:10px}
+.sumaut label{flex:none;font-weight:700;font-size:13px}
+.sumaut .field{flex:1;min-width:0;padding:8px 12px}
+.flight{font-size:12px;color:var(--muted)}
 .list{list-style:none;margin:0;padding:0 16px 30px}
-.card{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
-.card .idx{grid-row:1;grid-column:1;width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-top:4px}
-.card .when{font-family:Anton,Impact,sans-serif;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
-.card .ttl{font-weight:700;font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+/* carte d'un marqueur : quatre rangées au plus sur téléphone (heure, nom et caméra, commentaire, actions) */
+.card{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.chead{display:flex;align-items:center;gap:10px;min-width:0}
+.card .idx{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.card .idx.sens{background:var(--yellow);border-radius:6px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
+.card .when{font-family:Anton,Impact,sans-serif;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card .cdur{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.card .ttl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
+.card .namesel,.card .camsel{width:100%;min-height:44px;font-size:14px;padding:8px 10px}
+.card .camsel.none{display:flex;align-items:center}
 .card .meta{font-size:13px;color:var(--muted)}
-.card .sensbox{background:var(--paleyellow);border-left:5px solid var(--yellow);padding:6px 10px;font-size:13px;font-weight:600;border-radius:0 6px 6px 0;margin-top:4px}
-.card .note{font-size:13px;margin-top:2px}
-.card .cams{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.card>:not(.idx){grid-column:2;min-width:0}       /* une carte peut avoir 5 à 9 lignes : tout reste dans la colonne de droite */
-.card .ttl{gap:8px}
-.card .ttl .camlbl{margin-left:4px}
-.card .camw{display:inline-flex;align-items:center;gap:8px}
-.card .cams [data-go]{gap:6px}
-.card .cams .aux{margin-left:auto;display:flex;gap:6px}
-@media (max-width:1099px){
-  .card .namesel,.card .camsel{min-height:44px;font-size:14px;padding:8px 10px}
-  .card .namesel{flex:1 1 100%}
-  .card .ttl .camlbl{margin-left:0}
-  .card .cams .btn{min-height:44px;padding:8px 14px}
-}
-.icom{display:block;margin-top:8px}
-.icom span{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
-.icom textarea{min-height:44px;font-size:14px;padding:8px 10px}
+.card .sensbox{background:var(--paleyellow);border-left:5px solid var(--yellow);padding:6px 10px;font-size:13px;font-weight:600;border-radius:0 6px 6px 0}
+.card .note{font-size:13px}
+.card .cams{display:flex;gap:6px}
+.card .cams .btn{flex:1 1 0;min-width:0;padding:6px 4px;gap:5px;white-space:nowrap}
+.icom{display:block}
+.icom textarea{display:block;min-height:44px;height:44px;font-size:14px;padding:10px;line-height:1.4;resize:none;overflow:hidden}
 .emptylist{padding:10px 16px 40px;color:var(--muted);max-width:52ch}
 .chrono{margin:0 16px 8px;border:1px solid var(--line);border-radius:10px;padding:14px}
 .chrono h3{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:0 0 10px}
@@ -368,8 +395,16 @@ details.tracks summary{padding:12px 0;font-weight:600;cursor:pointer}
   #sum:not([hidden]){display:grid;grid-template-columns:420px minmax(0,1fr);align-items:start}
   .sumside{grid-column:1;grid-row:1 / span 2;position:sticky;top:var(--top);max-height:calc(100vh - var(--top));overflow:auto;border-right:1px solid var(--line);padding-bottom:16px}
   #sum>.list,#sum>.emptylist{grid-column:2;padding-left:28px;padding-right:28px}
-  .list{max-width:980px}
-  .card .icom textarea{max-width:72ch}
+  .list{max-width:1040px}
+  /* PC : heure, nom et caméra sur une ligne ; commentaire et actions sur la suivante */
+  .card{grid-template-columns:250px minmax(0,1fr) auto;gap:6px 14px;padding:10px 0;align-items:center}
+  .card .ttl{grid-column:2 / -1;grid-template-columns:minmax(0,240px) minmax(0,180px)}
+  .card .namesel,.card .camsel{min-height:38px;padding:6px 10px}
+  .card .sensbox,.card .meta,.card .note{grid-column:1 / -1}
+  .card .icom{grid-column:1 / 3}
+  .card .icom textarea{min-height:38px;height:38px;padding:7px 10px}
+  .card .cams{grid-column:3}
+  .card .cams .btn{flex:none;padding:6px 12px}
   .chrono{margin:0 16px 8px}
 }
 
@@ -391,7 +426,8 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .helpin kbd{font-family:inherit;font-weight:700;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:0 5px;background:var(--soft)}
 .helpver{font-size:13px;color:var(--muted);margin:0}
 .helpin h3:focus{outline:none}
-/* fiche de marqueur : le cas courant (nommer, enregistrer) tient sans défiler ; boutons collés en bas */
+/* fiche de marqueur : tient sans défiler sur téléphone ; groupes peu utilisés repliés avec leur état en résumé ;
+   la sensibilité reste dépliée ; Supprimer et Terminé collés en bas (fermer garde les changements) */
 #sheet{max-height:92vh;max-height:92dvh}
 #sheet .sheetin{padding-bottom:0}
 .shhead{display:flex;align-items:flex-start;gap:8px}
@@ -399,13 +435,22 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .shx{flex:none;width:44px;height:44px;margin:-8px -8px 0 0;border:0;border-radius:50%;background:none;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
 .shx:hover{background:var(--soft)}
 #sheet .grp{margin:12px 0}
+#sheet>.sheetin>h3{margin:4px 0 6px}
+.shfold{border-top:1px solid var(--line)}
+.shfold>summary{gap:10px}
+.shfold>summary .shk{flex:none}
+.shfold>summary .shv{flex:1;min-width:0;text-align:right;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shfold>summary .shv.todo{color:var(--red);font-weight:700}
+.shfold[open]{padding-bottom:6px}
+#sheet .shsens{border:2px solid transparent;border-radius:10px;padding:8px 10px;margin:8px -12px}
+.shsens.on{background:var(--paleyellow);border-color:var(--yellow)}
+.shsens.on .lbl::after{content:" (à vérifier)"}
+@media (min-width:700px){ .shpair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px} }
 .shmore{margin:10px 0 0}
 .shmore>summary{display:flex;align-items:center;min-height:44px;font-weight:600;font-size:14px;cursor:pointer}
 .shmore[open]>summary{margin-bottom:4px}
 .shmore>summary::before{content:"";flex:none;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin:0 12px 0 4px}
 .shmore[open]>summary::before{transform:rotate(45deg)}
-.shwhen>summary{font-weight:600;font-size:14px;color:var(--ink)}
-.shwhen>summary .hint{margin-left:6px;font-weight:500}
 .shsub{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px}
 .shsub:first-child{margin-top:0}
 #sheet .sheetbtns{position:sticky;bottom:0;z-index:2;background:var(--bg);margin:14px -18px 0;padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
@@ -433,21 +478,30 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 /* bouton « Enregistrer » toujours visible, même sous une vidéo verticale haute */
 #cmpSetup .sheetbtns, #cmpDone .sheetbtns{position:sticky;bottom:0;background:var(--bg);padding:10px 0;margin-top:8px;z-index:1}
 
-/* ---------- planche ---------- */
-.bhead{padding:14px 16px 6px;display:flex;flex-direction:column;gap:10px}
-.bhead h2,.srvh h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;line-height:1.1;margin:0}
-.bhead .hint{margin:0}
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:8px 16px 30px}
-.tile{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--soft);cursor:pointer}
+/* ---------- planche ----------
+   Une seule rangée avant les vignettes (piste, intervalle) ; l'explication est dans l'aide. Heure et bouton Repère
+   posés sur l'image : pas de barre sous chaque vignette. */
+.bhead{padding:10px 16px 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.srvh h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;line-height:1.1;margin:0}
+.bsel{flex:0 1 auto;min-width:0;display:flex}
+.bsel .namesel{min-height:44px;max-width:100%;font-size:14px}
+.bcount{font-size:12px;font-weight:600;color:var(--muted);margin-left:auto;white-space:nowrap}
+@media (max-width:520px){ .bcount{display:none} .bsel{flex:1 1 0} .bsel .namesel{width:100%} }
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:8px 16px 30px}
+.tile{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--stage);cursor:pointer}
 .tile .tgo{display:block;width:100%;padding:0;border:0;background:none;border-radius:0}
 .tile .tgo:focus-visible{outline-offset:-3px}
 .tile canvas{display:block;width:100%;aspect-ratio:16/9;background:var(--stage)}
-.tbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.tbar .btn{min-height:30px;padding:2px 8px;font-size:12px}
-.badges{position:absolute;top:6px;left:6px;display:flex;gap:4px}
-.badges b{width:22px;height:22px;border-radius:50%;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;display:flex;align-items:center;justify-content:center}
-.badges b.sens{background:var(--yellow);border-radius:6px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
-@media (max-width:1099px){ .tbar .btn{min-height:44px;padding:4px 12px} }
+.tile .tck{position:absolute;left:4px;bottom:4px;background:var(--onblue);color:var(--onstage);border-radius:6px;padding:1px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+/* bouton « + Repère » : zone de 44 px de haut dans le coin haut droit, étiquette visible plus petite */
+.tile .tmk{position:absolute;top:0;right:0;min-width:44px;height:44px;padding:0;border:0;background:none;display:flex;align-items:flex-start;justify-content:flex-end}
+.tile .tmk span{margin:5px 5px 0 0;height:28px;padding:0 8px;border-radius:8px;background:var(--bg);color:var(--ink);border:1.5px solid var(--ink);font-size:12px;font-weight:700;line-height:1;display:flex;align-items:center;white-space:nowrap}
+.tile .tmk:hover span{background:var(--blue);color:var(--onblue)}
+.tile .tmk:focus-visible{outline-offset:-3px}
+.badges{position:absolute;top:6px;left:6px;right:84px;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
+.badges b{min-width:22px;height:22px;border-radius:11px;padding:0 4px;background:var(--blue);color:var(--onblue);border:2px solid var(--onblue);font-size:12px;display:flex;align-items:center;justify-content:center}
+.badges b.sens{background:var(--yellow);border-radius:4px}      /* forme carrée : la sensibilité ne repose pas sur la seule couleur */
+.badges b.more{background:var(--bg);color:var(--ink);border-color:var(--ink)}
 
 /* ---------- mode PC : liste des interventions ---------- */
 body.srv .empty{max-width:760px}
@@ -479,14 +533,23 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rmode{padding:0 0 8px}
 .rpanes{display:none}
 .rpanes .chip[aria-selected="true"]{background:var(--blue);color:var(--onblue);border-color:var(--onblue)}
-/* téléphone : un volet à la fois (Montage, Passage, Habillage), la barre « Créer » reste visible partout */
+/* téléphone : un volet à la fois, la barre « Créer » reste visible partout. Le volet choisit aussi le mode de l'image
+   (rPane) : Passage = cadrage du passage choisi, Habillage = aperçu du réel avec titre, logo et éléments ; pas de 3e rangée de choix.
+   Ordre du volet Habillage : titre d'accroche, aperçu (où il s'affiche), éléments sur l'image, puis logo, carton de fin et musique repliés. */
 @media (max-width:1099px){
   .rpanes{display:flex;width:100%;flex-wrap:nowrap}
   .rpanes .chip{flex:1}
-  #reel[data-pane="montage"] .rmain, #reel[data-pane="montage"] #rPaneHab, #reel[data-pane="passage"] #rPaneMontage, #reel[data-pane="passage"] #rPaneHab, #reel[data-pane="habillage"] .rmain, #reel[data-pane="habillage"] #rPaneMontage{display:none}
-  /* hors du volet Montage, le détail du réel s'efface : une ligne de moins au-dessus de l'image */
-  #reel:not([data-pane="montage"]) #rInfo{display:none}
-  .rside .rh:first-child{margin-top:4px}
+  .rgrid{display:flex;flex-direction:column}
+  .rside{display:contents}
+  #rPaneTitre{order:-1}
+  .rmode, #reel .rh{display:none}
+  #reel[data-pane="montage"] .rmain, #reel[data-pane="montage"] #rPaneTitre, #reel[data-pane="montage"] #rPaneHab, #reel[data-pane="passage"] #rPaneMontage, #reel[data-pane="passage"] #rPaneTitre, #reel[data-pane="passage"] #rPaneHab, #reel[data-pane="habillage"] #rPaneMontage{display:none}
+  /* hors du volet Montage, la durée du réel s'efface : l'image monte d'autant (elle reste sur le bouton « Créer ») */
+  #reel:not([data-pane="montage"]) .rtot{display:none}
+  #reel:not([data-pane="montage"]) .rhead{padding-top:8px}
+  #rPaneTitre .grp{margin:4px 0 12px}
+  /* aperçu un peu moins haut dans Habillage : titre et réglages de l'élément choisi restent près de l'image */
+  #reel[data-pane="habillage"] .rstage.v canvas{width:min(100%, calc(min(54vh,560px)*var(--rar,.5625)))}
 }
 .rtot b{font-family:Anton,Impact,sans-serif;font-size:22px;font-weight:400;display:block;line-height:1.15}
 .rtot small{display:block;font-size:12px;color:var(--muted)}
@@ -515,10 +578,17 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .redit:empty{display:none}
 .redit .rsel{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
 .redit .rsel b{font-size:16px}
+/* en-tête du passage choisi : précédent, nom et durée, suivant (passer au passage suivant sans revenir au Montage) */
+.redit .rnav{margin-top:8px}
+.redit .rnav>div{flex:1;min-width:0;text-align:center}
+.redit .rnav b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.redit .rnav small{display:block;font-size:12px;color:var(--muted)}
 .redit .hint{margin:8px 0 0}
 .rtarget{margin-top:10px}
 .rtarget .lbl{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
 .rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ract .btn{flex:1 1 0;min-width:0;white-space:nowrap;padding-left:6px;padding-right:6px}
+.rtarget .hint{margin:6px 0 0}
 .rh{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:22px;margin:22px 0 8px}
 .rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px}
 .rlist:empty{display:none}
@@ -533,11 +603,27 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rlist .rtx{flex:1;min-width:0;text-align:left;background:none;border:0;padding:6px 2px;color:inherit;font:inherit;cursor:pointer;min-height:44px}
 .rlist .rtx b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rlist .rtx small{display:block;font-size:12px;color:var(--muted)}
-.rlist .ib{flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
-.rlist .ib:disabled{opacity:.3}
+.rlist .ib, .redit .ib{flex:none;width:44px;height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.rlist .ib:disabled, .redit .ib:disabled{opacity:.3}
+/* une ligne du montage ouvre le passage (chevron) ; une ligne à ajouter porte un « + » ; les flèches et la croix
+   n'apparaissent qu'avec « Ordre et retrait » (classe order) */
+.rlist .rtx{position:relative;padding-right:30px}
+.rlist .rtx::after{content:"";position:absolute;right:10px;top:50%;width:8px;height:8px;margin-top:-5px;border-right:2.4px solid var(--muted);border-top:2.4px solid var(--muted);transform:rotate(45deg)}
+.rlist.order .rtx{padding-right:2px}
+.rlist.order .rtx::after{display:none}
+.rlist.add .rtx::after{content:"+";border:0;transform:none;width:26px;height:26px;margin-top:-13px;right:2px;border-radius:50%;background:var(--blue);color:var(--onblue);font-size:20px;font-weight:700;line-height:26px;text-align:center}
+.rlhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0 8px}
+.rlhead .lbl{font-weight:700;font-size:13px}
+.rlhead .btn{flex:none}
 .rlist.add .rn{background:var(--soft);color:var(--ink);border:1.5px dashed var(--muted)}
 .rlist.add .rn.sens{background:var(--yellow);color:var(--onblue);border:2px solid var(--onblue)}
 .radd{margin-top:10px}
+.rmore{border-top:1px solid var(--line);margin-top:14px}
+.rmore summary{flex-wrap:wrap;row-gap:0}
+.rmore summary small{flex-basis:100%;padding-left:13px;font-weight:400;font-size:12px;color:var(--muted)}
+.rtitreopt{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rtitreopt .lbl{font-weight:700;font-size:13px;flex:none}
+#rPaneTitre .rlhead{margin:0 0 6px;min-height:var(--tap,44px)}
 .radd summary{font-weight:600;font-size:14px;cursor:pointer;padding:8px 0;min-height:44px;display:flex;align-items:center;gap:6px}
 .radd summary::before{content:"";width:0;height:0;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
 .radd[open] summary::before{transform:rotate(90deg)}
@@ -546,9 +632,12 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
 .rnone{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:4px}
 .rnone p{margin:0 0 12px;max-width:52ch}
 .rrange{width:100%;accent-color:var(--blue);height:32px}
-.chip.rcol i{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:6px;vertical-align:-2px;border:1.5px solid var(--line)}
+.chip.rcol{width:44px;min-width:44px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.chip.rcol i{display:block;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)}
 .relems .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rphotos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+/* photos à ajouter : une bande qui défile de côté, une seule rangée de hauteur */
+.rphotos{list-style:none;margin:0;padding:0 0 4px;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity}
+.rphotos li{flex:0 0 104px;scroll-snap-align:start}
 .rphotos:empty{display:none}
 .rphotos button{width:100%;padding:0;border:1.5px solid var(--line);border-radius:10px;background:var(--soft);color:var(--ink);overflow:hidden;cursor:pointer;display:block}
 .rphotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--stage)}
@@ -569,6 +658,11 @@ body.srv label[for="fileIn"], body.srv label[for="mdIn"]{display:none!important}
   .rside{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--top) + 12px);max-height:calc(100vh - var(--top) - 72px);max-height:calc(100dvh - var(--top) - 72px);overflow:auto;padding:10px 6px 0 0}
   .rside .rh:first-child{margin-top:0}
   .rstage.v canvas{width:min(100%, calc(min(70vh,760px)*var(--rar,.5625)))}
+  /* aperçu : l'image est verticale, les réglages de ce qui est posé dessus prennent la place libre à sa droite */
+  #reel[data-mode="apercu"] .rmain{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,330px);column-gap:24px;align-items:start}
+  #reel[data-mode="apercu"] .rmain>*{grid-column:1}
+  #reel[data-mode="apercu"] #rEdit{grid-column:2;grid-row:1 / span 4;border-top:0}
+  #reel[data-mode="apercu"] #rEdit>.grp:first-child, #reel[data-mode="apercu"] #rEdit>.rsel:first-child{margin-top:0}
   .rstage.h canvas{max-height:62vh;width:auto;max-width:100%}
 }
 /* ---------- retouches d'un passage (dialogue #fx) : image en haut, réglages défilants dessous ; deux colonnes sur PC ---------- */
@@ -755,17 +849,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <div class="inwin" id="inWin"><span class="iwl" id="inWinTxt"></span><span class="iwb" id="inWinBtns"></span></div>
       </div>
 
-      <div class="tl">
-        <div class="tlhead">
-          <span>Pistes<span class="tp" id="thumbProg"></span></span>
-          <div class="zoom">
-            <button class="btn small ghost" id="zOut" aria-label="Dézoomer">-</button>
-            <span id="zLvl">x1</span>
-            <button class="btn small ghost" id="zIn" aria-label="Zoomer">+</button>
-          </div>
-        </div>
+      <div class="tl" role="group" aria-label="Pistes">
         <div class="tlgrid">
-          <div class="labels" id="labels"></div>
+          <div class="tlcol">
+            <div class="zoom">
+              <button class="btn small ghost" id="zOut" aria-label="Dézoomer" title="Dézoomer (revient au zoom d'avant un zoom automatique)">-</button>
+              <button class="btn small ghost" id="zIn" aria-label="Zoomer" title="Zoomer">+</button>
+              <span class="vh" id="zLvl" aria-live="polite">x1</span>
+            </div>
+            <div class="labels" id="labels"></div>
+          </div>
           <div class="scroller" id="scroller">
             <div class="inner" id="inner">
               <div class="ruler" id="ruler"></div>
@@ -775,7 +868,8 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
             </div>
           </div>
         </div>
-        <p class="tlhint" id="tlHint">Glissez les poignées d'un passage pour ajuster son début ou sa fin. Zoom avec - et + ou en pinçant les pistes.</p>
+        <p class="tp" id="thumbProg"></p>
+        <div class="mhpop" id="mhPop" role="menu" aria-label="Marqueurs regroupés" hidden></div>
       </div>
     </div>
 
@@ -800,7 +894,6 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         <summary>Plus d'options</summary>
         <div class="foot">
           <label class="btn small ghost" for="fileIn">Ajouter des vidéos</label>
-          <button class="btn small ghost" id="reset">Changer d'intervention</button>
           <button type="button" class="btn small ghost" id="themeBtn">Thème : automatique</button>
         </div>
         <div class="olbl">Fichiers et calage des pistes</div>
@@ -811,12 +904,11 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
   </section>
 
   <section id="board" hidden role="tabpanel" aria-labelledby="tabBoard">
-    <h2 class="vh">Planche</h2>
+    <h2 class="vh">Planche de vignettes</h2>
     <div class="bhead">
-      <h2>Planche de vignettes</h2>
-      <div class="chips" id="bTracks"></div>
-      <div class="chips" id="bStep"></div>
-      <p class="hint" id="bHint">Une vignette par intervalle sur toute la durée de l'intervention. Touchez une vignette pour y aller, ou Marquer pour poser un repère à cet instant. Les numéros renvoient aux marqueurs ; carré jaune : passage sensible.</p>
+      <label class="bsel"><span class="vh">Piste</span><select class="namesel" id="bTracks"></select></label>
+      <label class="bsel"><span class="vh">Intervalle entre deux vignettes</span><select class="namesel" id="bStep"></select></label>
+      <span class="bcount" id="bCount"></span>
     </div>
     <div class="bgrid" id="bGrid"></div>
   </section>
@@ -825,14 +917,16 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <h2 class="vh">Sommaire</h2>
     <div class="sumside">
     <div class="sumhead">
-      <label for="auteur">Auteur de la vidéo compilée (signe les commentaires internes)</label>
-      <input class="field" id="auteur" placeholder="Ex. : Julien de Feydeau" autocomplete="name">
-      <div class="flight" id="flight"></div>
-      <div class="actions">
-        <button class="btn primary" id="cmpOpen" aria-describedby="emptyList">Créer la vidéo compilée</button>
-        <button class="btn" id="exp" aria-describedby="emptyList">Exporter la fiche</button>
-        <label class="btn ghost" for="mdIn">Reprendre une fiche</label>
+      <button class="btn primary sumgo" id="cmpOpen" aria-describedby="emptyList">Créer la vidéo compilée</button>
+      <div class="actions sumfiche">
+        <button class="btn small" id="exp" aria-describedby="emptyList">Exporter la fiche</button>
+        <label class="btn small ghost" for="mdIn">Reprendre une fiche</label>
       </div>
+      <div class="sumaut">
+        <label for="auteur">Auteur</label>
+        <input class="field" id="auteur" placeholder="Signe les commentaires internes" autocomplete="name">
+      </div>
+      <div class="flight" id="flight"></div>
     </div>
     <details class="chrono" id="chrono" hidden></details>
     </div>
@@ -863,32 +957,37 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <div class="rside">
       <div id="rPaneMontage">
       <h3 class="rh">Montage</h3>
+      <div class="rnone" id="rNone" hidden>
+        <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
+        <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
+      </div>
+      <div class="rlhead" id="rListHead" hidden><span class="lbl" id="rListLbl">Dans le réel</span><button type="button" class="btn small ghost" id="rOrder" aria-pressed="false">Ordre et retrait</button></div>
+      <ol class="rlist" id="rList" aria-labelledby="rListLbl"></ol>
+      <div class="radd" id="rAddBox" hidden>
+        <div class="rlhead"><span class="lbl" id="rAddSum">Passages à ajouter</span><button type="button" class="btn small" id="rAddAll">Tout ajouter</button></div>
+        <ul class="rlist add" id="rAdd" aria-labelledby="rAddSum"></ul>
+      </div>
+      <div class="radd" id="rPhBox">
+        <div class="rlhead"><span class="lbl" id="rPhSum">Photos</span><label class="btn small ghost" for="rPhotoIn" id="rPhPick">Choisir des photos JPEG</label></div>
+        <ul class="rphotos" id="rPhList" aria-labelledby="rPhSum"></ul>
+        <p class="hint" id="rPhEmpty" hidden></p>
+      </div>
       <div class="grp rfmt">
         <span class="lbl" id="rFmtLbl">Format de la vidéo</span>
         <div class="chips" id="rFmt" role="group" aria-labelledby="rFmtLbl"></div>
         <p class="hint" id="rFmtHint"></p>
       </div>
-      <div class="rnone" id="rNone" hidden>
-        <p>Le réel se monte à partir des passages marqués dans Visionner : pendant la lecture, touchez Début puis Fin, puis revenez ici pour les ajouter.</p>
-        <button type="button" class="btn primary" id="rGoView">Aller à Visionner</button>
       </div>
-      <ol class="rlist" id="rList"></ol>
-      <details class="radd" id="rAddBox"><summary id="rAddSum">Ajouter des passages</summary><ul class="rlist add" id="rAdd"></ul></details>
-      <details class="radd" id="rPhBox"><summary id="rPhSum">Ajouter des photos</summary>
-        <ul class="rphotos" id="rPhList"></ul>
-        <p class="hint" id="rPhEmpty" hidden></p>
-        <div class="actions" style="margin-top:8px" id="rPhPick"><label class="btn small ghost" for="rPhotoIn">Choisir des photos JPEG</label></div>
-      </details>
-      </div>
-      <div id="rPaneHab">
+      <div id="rPaneTitre">
       <h3 class="rh">Habillage</h3>
       <div class="grp">
-        <label class="lbl" for="rTitre">Titre d'accroche</label>
+        <div class="rlhead"><label class="lbl" for="rTitre">Titre d'accroche</label><button type="button" class="btn small ghost" id="rTitrePlace">Placer, taille, couleur</button></div>
         <input class="field" id="rTitre" maxlength="70" autocomplete="off" placeholder="Ex. : Perdu depuis 3 jours, retrouvé par le drone">
-        <span class="lbl" style="margin-top:10px;display:block">Durée du titre</span>
-        <div class="chips" id="rTitreDur"></div>
-        <div class="rbtns"><button type="button" class="btn small ghost" id="rTitrePlace">Placer, taille et couleur</button></div>
+        <div class="rtitreopt" id="rTitreOpt"><span class="lbl">Affiché</span><div class="chips" id="rTitreDur" role="group" aria-label="Durée du titre"></div></div>
       </div>
+      </div>
+      <details class="radd rmore" id="rPaneHab">
+      <summary id="rHabSum"><span>Logo, carton de fin, musique</span><small id="rHabInfo"></small></summary>
       <div class="grp">
         <span class="lbl">Logo ESAM</span>
         <div class="chips" id="rLogo"></div>
@@ -915,7 +1014,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
         </div>
         <p class="hint">Uniquement une musique libre de droits ou dont l'ESAM a les droits. Sinon, publiez sans musique et ajoutez-la dans Instagram ou Facebook.</p>
       </div>
-      </div>
+      </details>
       <div class="rexport">
         <div class="senswarn" id="rSensW" hidden></div>
         <button type="button" class="btn primary" id="rGoReel">Créer le réel</button>
@@ -930,23 +1029,22 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 
 <dialog class="sheet" id="sheet" aria-labelledby="shTitle">
   <form method="dialog" class="sheetin" id="sheetForm">
-    <div class="shhead">
-      <h3 id="shTitle">Nouveau repère</h3>
-      <button type="button" class="shx" id="shClose" aria-label="Fermer sans enregistrer"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h3 id="shTitle">Passage</h3>
+    <details class="shmore shfold" id="shWhenBox"><summary><span class="shk" id="shWhenK">Moment</span><span class="shv" id="shWhen"></span></summary><div id="shAdj"></div></details>
+    <details class="shmore shfold" id="shNameBox"><summary><span class="shk">Nom</span><span class="shv" id="shNameSum"></span></summary>
+      <div id="shNames">
+        <div class="chips" id="shPresets" role="group" aria-label="Noms courants"></div>
+        <details class="shmore" id="shMoreNames"><summary id="shMoreNamesSum">Autres noms</summary><div id="shPresetsMore"></div></details>
+        <input class="field" id="shName" placeholder="Ou saisissez un titre libre" aria-label="Titre libre" autocomplete="off" style="margin-top:8px">
+      </div>
+    </details>
+    <div class="grp shsens" id="shSensBox"><span class="lbl" id="shSensLbl">Sensibilité avant diffusion</span><div class="chips" id="shSens" role="group" aria-labelledby="shSensLbl"></div></div>
+    <div class="shpair">
+      <div class="grp"><span class="lbl" id="shCamLbl">Caméra pour la vidéo compilée</span><div class="chips" id="shCam" role="group" aria-labelledby="shCamLbl"></div></div>
+      <div class="grp"><span class="lbl" id="shIntLbl">Intérêt pour la com</span><div class="chips" id="shInt" role="group" aria-labelledby="shIntLbl"></div></div>
     </div>
-    <details class="shmore shwhen" id="shWhenBox"><summary><span id="shWhen"></span><span class="hint">Ajuster</span></summary><div id="shAdj"></div></details>
-    <div class="grp" id="shNames">
-      <span class="lbl" id="shNameLbl">Nom</span>
-      <div class="chips" id="shPresets" role="group" aria-labelledby="shNameLbl"></div>
-      <details class="shmore" id="shMoreNames"><summary id="shMoreNamesSum">Autres noms</summary><div id="shPresetsMore"></div></details>
-      <input class="field" id="shName" placeholder="Ou saisissez un titre libre" aria-label="Titre libre" autocomplete="off" style="margin-top:8px">
-    </div>
-    <div class="grp"><span class="lbl" id="shSensLbl">Sensibilité avant diffusion</span><div class="chips" id="shSens" role="group" aria-labelledby="shSensLbl"></div>
-      <div id="shSensMiss" hidden></div></div>
-    <div class="grp"><span class="lbl">Caméra pour la vidéo compilée</span><div class="chips" id="shCam"></div></div>
-    <div class="grp"><span class="lbl">Intérêt pour la com</span><div class="chips" id="shInt"></div></div>
-    <details class="shmore" id="shMore"><summary id="shMoreSum">Ce qu'on voit, texte du carton, commentaire interne</summary>
-    <div class="grp"><span class="lbl">Ce qu'on voit</span><div class="chips" id="shThemes"></div></div>
+    <details class="shmore shfold" id="shMore"><summary><span class="shk">Thèmes, carton, commentaire</span><span class="shv" id="shMoreSum"></span></summary>
+    <div class="grp"><span class="lbl" id="shThemesLbl">Ce qu'on voit</span><div class="chips" id="shThemes" role="group" aria-labelledby="shThemesLbl"></div></div>
     <div class="grp">
       <label class="lbl" for="shNote">Texte du carton (visible dans la vidéo compilée)</label>
       <textarea class="field" id="shNote" placeholder="Ex. : le chien est repéré en thermique au bord du torrent"></textarea>
@@ -958,8 +1056,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     </details>
     <div class="sheetbtns">
       <button type="button" class="btn ghost" id="shDel" hidden>Supprimer</button>
-      <button type="button" class="btn ghost" id="shCancel">Annuler</button>
-      <button type="button" class="btn primary grow" id="shSave">Enregistrer</button>
+      <button type="button" class="btn primary grow" id="shSave">Terminé</button>
     </div>
   </form>
 </dialog>
@@ -982,22 +1079,24 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
     <p class="helpver" id="helpVer"></p>
     <h4>Visionner</h4>
     <ul>
-      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Touchez un numéro sur les pistes pour nommer ou modifier le marqueur.</li>
-      <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer.</li>
+      <li><b>Début</b> puis <b>Fin</b> posent un passage, <b>Repère</b> marque un instant. Juste après, touchez son nom dans le bandeau sous les boutons, sans arrêter la lecture ; <b>Autre...</b>, ou le numéro du marqueur sur les pistes, ouvre la fiche complète : sensibilité, caméra et intérêt en vue ; moment, nom, thèmes, carton et commentaire repliés, avec leur état à droite. La fiche s'enregistre en se fermant (<b>Terminé</b>, <kbd>Échap</kbd> ou un appui à côté) ; <b>Annuler</b> dans le message qui suit la remet comme avant.</li>
+      <li>Sur les pistes, glissez les bords d'un passage pour ajuster son début ou sa fin. Pincez à deux doigts pour zoomer, ou touchez <b>+</b> et <b>-</b> au-dessus des noms de pistes.</li>
+      <li>Les numéros trop proches pour être touchés un par un sont regroupés (« 3-6 ») : touchez le groupe pour zoomer jusqu'à les séparer, ou choisir dans la liste s'ils sont presque au même instant. Toucher le numéro d'un passage court zoome aussi dessus pour régler ses bords ; <b>-</b> ramène au zoom d'avant. Carré jaune : marqueur sensible.</li>
       <li>Appui long sur <b>x16</b> : choisir la vitesse de lecture rapide.</li>
       <li>Au clavier (PC) : <kbd>Espace</kbd> lecture, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> recul, pause, lecture rapide, <kbd>Flèches</kbd> 5 s (avec <kbd>Maj</kbd> : 1 min), <kbd>,</kbd> <kbd>.</kbd> image par image, <kbd>I</kbd> début, <kbd>O</kbd> fin, <kbd>R</kbd> début puis fin, <kbd>M</kbd> repère, <kbd>P</kbd> photo, <kbd>1</kbd> à <kbd>9</kbd> piste.</li>
     </ul>
     <h4>Planche</h4>
-    <ul><li>Une vignette par intervalle sur la piste choisie. Touchez une vignette pour y aller dans Visionner, ou <b>Marquer</b> pour poser un repère à cet instant.</li></ul>
+    <ul><li>Une vignette par intervalle (10 s à 5 min) sur la piste choisie, sur toute la durée de l'intervention. Touchez une vignette pour y aller dans Visionner, ou <b>+ Repère</b> pour poser un repère à cet instant. Les numéros renvoient aux marqueurs (trois au plus, puis « +n ») ; carré jaune : marqueur sensible.</li></ul>
     <h4>Sommaire</h4>
     <ul>
-      <li>Tous les marqueurs dans l'ordre, avec la caméra retenue pour la vidéo compilée et le commentaire interne (jamais incrusté dans la vidéo).</li>
+      <li>Tous les marqueurs dans l'ordre : nom, caméra retenue pour la vidéo compilée et commentaire interne (jamais incrusté dans la vidéo) se règlent sur la carte ; <b>Modifier</b> ouvre le reste (sensibilité, intérêt, texte du carton).</li>
       <li>La chronologie RETEX (retour d'expérience) calcule les délais à partir des marqueurs nommés Décollage, Bonne piste, Confirmation, Secours arrivée, etc.</li>
       <li><b>Retoucher</b> un passage : flous qui suivent un visage ou une plaque (suivi automatique ou au doigt), flèches et cercles qui suivent l'animal, ralenti ou accéléré à partir d'un instant. Les retouches valent pour la vidéo compilée, les extraits et le réel.</li>
-      <li><b>Créer la vidéo compilée</b>, habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
+      <li><b>Créer la vidéo compilée</b> : format, marge et heure incrustée sont repliés sous « Réglages ». Habillage « Aucun » : les passages sortent bruts, sans carton, sans heure et sans logo, en une vidéo ou un fichier par passage. C'est le réglage d'office quand on repart d'une vidéo compilée pour en extraire des morceaux.</li>
     </ul>
     <h4>Réel</h4>
-    <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), ajoutés depuis « Ajouter des passages », plus les photos de l'intervention.</li></ul>
+    <ul><li>Le réel et la story se montent à partir des marqueurs : les passages, et les repères (6 s autour de l'instant), touchés dans « Passages à ajouter » (ou <b>Tout ajouter</b>), plus les photos de l'intervention. <b>Ordre et retrait</b> fait apparaître les flèches et la croix de chaque ligne.</li>
+      <li>Sur téléphone, trois volets : <b>Montage</b>, <b>Passage</b> (cadrage du passage touché ; les flèches de l'en-tête passent au précédent ou au suivant), <b>Habillage</b> (titre d'accroche, aperçu du réel et tout ce qui est posé dessus ; logo, carton de fin et musique sont repliés dessous). Sur PC, « Cadrage » et « Aperçu du réel » au-dessus de l'image ; toucher le titre montre l'aperçu.</li></ul>
     <h4>Revenir</h4>
     <ul><li id="helpHome">Le logo en haut à gauche ramène à l'accueil. Vos marqueurs restent gardés dans ce navigateur.</li></ul>
     <div class="sheetbtns"><button type="button" class="btn primary grow" id="helpClose">Fermer</button></div>
@@ -1035,11 +1134,13 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
       <p style="margin:0 0 12px;font-size:14px" id="cmpLead"></p>
       <div class="grp"><span class="lbl">Habillage</span><div class="chips" id="cmpHab"></div></div>
       <ul class="cmplist" id="cmpList"></ul>
-      <div class="grp"><span class="lbl">Résolution</span><div id="cmpResInfo" style="font-size:14px"></div></div>
-      <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
-      <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
-      <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
       <div class="grp" id="cmpSepBox"><span class="lbl">Fichiers produits</span><div class="chips" id="cmpSep"></div></div>
+      <details class="shmore" id="cmpOpts"><summary id="cmpOptsSum">Réglages</summary>
+      <div class="grp"><span class="lbl">Format</span><div class="chips" id="cmpFmt"></div></div>
+      <div class="grp"><span class="lbl">Marge ajoutée avant et après chaque passage</span><div class="chips" id="cmpWin"></div></div>
+      <div class="grp"><span class="lbl">Heure incrustée sur les images</span><div class="chips" id="cmpClock"></div></div>
+      <div class="grp"><span class="lbl">Résolution</span><div id="cmpResInfo" style="font-size:14px"></div></div>
+      </details>
       <div class="senswarn" id="cmpSensW" hidden></div>
       <p class="warn" id="cmpEst"></p>
       <div class="sheetbtns">
@@ -1075,7 +1176,7 @@ dialog.sheet{border:var(--dlgedge);box-shadow:var(--dlgshadow)}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "0.19";
+const APP_VERSION = "0.21";
 const LENS = {W:"Grand angle", Z:"Zoom", T:"Thermique", V:"Visible", S:"Écran", N:"Nuit"};
 const ORDER = ["S","W","Z","T","V","N"];        // ordre d'affichage des pistes : l'écran de la radiocommande en premier
 const CAM_PRIO = ["W","Z","T","V","N","S"];     // caméra prise par défaut quand le choix du passage n'a pas d'image (compilation, réel, photo)
@@ -1101,7 +1202,7 @@ const v = $("v");
 
 const S = {
   clips: [], tracks: [], active: 0, t: 0, base: 0, dur: 0, real: true,
-  cur: null, zoom: 1, rate: 1, pending: null, stopAt: null,
+  cur: null, zoom: 1, rate: 1, pending: null, fresh: null, stopAt: null,
   markers: [], meta: {intervention: "", version: 0, log: []}, offsets: {}, key: null
 };
 let pendingSeek = null, raf = 0, dl = null;
@@ -1223,7 +1324,7 @@ async function writeFiche(manual){
       }
     }
     const d = new Date();
-    setSave(`Fiche v${S.meta.version.toFixed(1)} enregistrée automatiquement à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} dans ${ficheDest()} (${name})`, false, `Fiche enregistrée ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setSave(`Fiche v${S.meta.version.toFixed(1)} enregistrée automatiquement à ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} dans ${ficheDest()} (${name})`, false, `Enregistré ${pad(d.getHours())}:${pad(d.getMinutes())}`);
     if(manual) toast(`Fiche v${S.meta.version.toFixed(1)} enregistrée dans ${ficheDest()}.`);
     return true;
   } catch(e){
@@ -1744,9 +1845,12 @@ function tickStep(p){
 function renderTimeline(){
   const p = pps(), W = Math.max(S.dur * p, $("scroller").clientWidth);
   $("inner").style.width = `${W}px`;
-  $("zLvl").textContent = `x${S.zoom % 1 ? S.zoom.toFixed(1).replace(".", ",") : S.zoom}`;
+  const zl = S.zoom >= 10 || !(S.zoom % 1) ? Math.round(S.zoom) : S.zoom.toFixed(1).replace(".", ",");
+  $("zLvl").textContent = S.zoom > 1 ? `Zoom x${zl}` : "Toute l'intervention";
+  $("zOut").disabled = S.zoom <= 1; $("zIn").disabled = S.zoom >= zMax();
+  $("zOut").setAttribute("aria-label", S.zoom > 1 ? `Dézoomer (zoom x${zl})` : "Dézoomer");
   // labels
-  let lab = '<div class="rsp"></div>';
+  let lab = "";
   S.tracks.forEach((t, i) => { lab += `<button class="lab" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`; });
   $("labels").innerHTML = lab;
 
@@ -1830,25 +1934,86 @@ document.addEventListener("change", e => {
 document.addEventListener("change", e => {
   const el = e.target; if(!el.dataset || !el.dataset.name) return;
   const m = S.markers.find(x => x.id === el.dataset.name); if(!m || el.value === "__custom") return;
-  m.preset = el.value || null; m.title = el.value || "";
-  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  nameMarker(m, el.value);
 });
 function renderSideList(){
   const el = $("sideList"); if(!el) return;
   const list = sorted();
-  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Détails du ${kindName(m).toLowerCase()} ${i+1}" title="Détails">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
+  el.innerHTML = `<h3>Marqueurs (${list.length})</h3>${list.length ? list.map((m, i) => `<div class="srow" data-seek="${m.id}"><button type="button" class="sgo" data-seek="${m.id}" aria-label="Aller au ${kindName(m).toLowerCase()} ${i+1}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}"><span class="n${isSens(m)?' sens':''}">${i+1}</span><span class="t">${clockAbs(m.at)}${m.to != null ? `<br><small>${len(m.to-m.at)}</small>` : ''}</span></button><span class="sel2">${nameSelect(m)}${camSelect(m)}</span><button type="button" class="btn small ghost" data-sedit="${m.id}" aria-label="Modifier le ${kindName(m).toLowerCase()} ${i+1}" title="Modifier (nom libre, sensibilité, texte du carton)">${ICON_EDIT}</button></div>`).join("") : '<p class="empty2">Utilisez Début, Fin et Repère sous la vidéo (touches I, O et M). Nommez les marqueurs ici ensuite, à votre rythme.</p>'}`;
 }
 function isSens(m){ return m.sens && m.sens.length && m.sens[0] !== NONE; }
-/* position d'une pastille : jamais rognée par les bords de la timeline (11 px = demi-pastille) */
-function mhX(x){ const W = $("inner").offsetWidth || S.dur*pps(); return clamp(x, 11, Math.max(11, W - 11)); }
+/* ---------- pastilles et poignées des marqueurs ----------
+   Les pastilles numérotées sont espacées d'au moins MH_GAP px (zone tactile de 44 px) : celles qui seraient plus proches
+   forment un groupe (« 3-6 »). Toucher un groupe zoome assez pour les séparer (le zoom d'avant revient par -), ou, si même
+   le zoom maximal ne suffit pas, ouvre la liste #mhPop. Toucher une pastille ouvre la fiche ; si le passage est trop
+   étroit pour régler ses bords, la timeline zoome dessus en arrière-plan (TL.sel garde le marqueur visé). */
+const MH_GAP = 44, EG_OUT = 34, EG_IN = 10;
+const TL = {sel:null, back:null, auto:0};
+/* zoom maximal : x64, ou 30 px par seconde sur une longue intervention (un vol de 3 h doit pouvoir séparer deux repères à 2 s) */
+function zMax(){ const w = $("scroller").clientWidth || 300; return Math.max(64, Math.ceil(30*S.dur/w)); }
+/* position d'une pastille : jamais rognée par les bords de la timeline (demi-largeur w/2) */
+function mhX(x, w){ const h = (w || 24)/2, W = $("inner").offsetWidth || S.dur*pps(); return clamp(x, h, Math.max(h, W - h)); }
+function mhW(txt){ return Math.max(24, 10 + 7.5*String(txt).length); }
+/* regroupe les pastilles trop proches : liste triée -> [{a, b, x, w}] (indices a..b dans sorted()) */
+function mhLayout(list, p){
+  let g = list.map((m, i) => ({a:i, b:i, x0:(m.at - S.base)*p, x1:(m.at - S.base)*p}));
+  const lab = o => o.a === o.b ? `${o.a+1}` : `${o.a+1}-${o.b+1}`;
+  let merged = true;
+  while(merged){
+    merged = false;
+    const out = [];
+    g.forEach(o => {
+      const q = out[out.length-1];
+      if(q){
+        const cq = (q.x0 + q.x1)/2, co = (o.x0 + o.x1)/2, need = Math.max(MH_GAP, (mhW(lab(q)) + mhW(lab(o)))/2 + 6);
+        if(co - cq < need){ q.b = o.b; q.x1 = o.x1; merged = true; return; }
+      }
+      out.push(Object.assign({}, o));
+    });
+    g = out;
+  }
+  return g.map(o => { const t = lab(o); return {a:o.a, b:o.b, txt:t, w:mhW(t), x:(o.x0 + o.x1)/2}; });
+}
+/* poignées de bord : celle du marqueur visé d'abord, puis des passages les plus larges ; une poignée dont la zone toucherait
+   une poignée déjà posée n'est pas affichée (zone : EG_OUT px dehors, au plus EG_IN px dedans) */
+function egLayout(list, p){
+  const zones = [], keep = {};
+  const order = list.filter(m => m.to != null).sort((a, b) => (b.id === TL.sel) - (a.id === TL.sel) || (b.to - b.at) - (a.to - a.at));
+  order.forEach(m => {
+    const x = (m.at - S.base)*p, w = Math.max(0, (m.to - m.at)*p), inn = Math.min(EG_IN, Math.floor(w/2));
+    const zl = [x - EG_OUT, x + inn], zr = [x + w - inn, x + w + EG_OUT];
+    const free = z => !zones.some(o => z[0] < o[1] && z[1] > o[0]);
+    const k = {inn:inn};
+    if(free(zl)){ zones.push(zl); k.l = true; }
+    if(free(zr)){ zones.push(zr); k.r = true; }
+    keep[m.id] = k;
+  });
+  return keep;
+}
 function renderMarkers(){
-  const p = pps();
+  const p = pps(), list = sorted();
+  if(TL.sel && !S.markers.some(m => m.id === TL.sel)) TL.sel = null;
+  const eg = egLayout(list, p);
   let html = "";
-  sorted().forEach((m, i) => {
-    const x = (m.at - S.base)*p;
-    if(m.to != null) html += `<div class="mr" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px"><span class="eg l" data-id="${m.id}" data-edge="l" title="Glisser pour ajuster le début"></span><span class="eg r" data-id="${m.id}" data-edge="r" title="Glisser pour ajuster la fin"></span></div>`;
+  list.forEach(m => {
+    const x = (m.at - S.base)*p, sel = m.id === TL.sel ? " sel" : "";
+    if(m.to != null){
+      const k = eg[m.id], st = `--in:${k.inn}px;width:${EG_OUT + k.inn}px`;
+      html += `<div class="mr${sel}" data-id="${m.id}" style="left:${x}px;width:${Math.max(3,(m.to-m.at)*p)}px">`
+        + (k.l ? `<span class="eg l" data-id="${m.id}" data-edge="l" style="left:-${EG_OUT}px;${st}" title="Glisser pour ajuster le début"></span>` : "")
+        + (k.r ? `<span class="eg r" data-id="${m.id}" data-edge="r" style="left:calc(100% - ${k.inn}px);${st}" title="Glisser pour ajuster la fin"></span>` : "")
+        + "</div>";
+    }
     else html += `<div class="mi" style="left:${x}px"></div>`;
-    html += `<button type="button" class="mh${isSens(m)?" sens":""}" data-id="${m.id}" style="left:${mhX(x)}px" aria-label="${kindName(m)} ${i+1} : ${esc(label(m))}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}">${i+1}</button>`;
+  });
+  mhLayout(list, p).forEach(g => {
+    const ms2 = list.slice(g.a, g.b + 1), sens = ms2.some(isSens) ? " sens" : "", st = `left:${mhX(g.x, g.w)}px;margin-left:-${g.w/2}px;width:${g.w}px`;
+    if(g.a === g.b){
+      const m = ms2[0];
+      html += `<button type="button" class="mh${sens}${m.id === TL.sel ? " sel" : ""}" data-id="${m.id}" style="${st}" aria-label="${kindName(m)} ${g.a+1} : ${esc(label(m))}, ${clockAbs(m.at)}${isSens(m) ? ", sensible" : ""}">${g.txt}</button>`;
+    } else {
+      html += `<button type="button" class="mh grp${sens}" data-grp="${g.a}-${g.b}" style="${st}" aria-haspopup="menu" aria-label="Marqueurs ${g.a+1} à ${g.b+1}, ${clockAbs(ms2[0].at)} à ${clockAbs(ms2[ms2.length-1].at)}${sens ? ", dont sensible" : ""} : toucher pour les séparer">${g.txt}</button>`;
+    }
   });
   html += '<div class="mr pend" id="pendBand" hidden></div>';
   $("mlayer").innerHTML = html;
@@ -1856,7 +2021,76 @@ function renderMarkers(){
   $("count").textContent = S.markers.length;
   renderComp();inWinKey = "";if(S.clips.length) renderInWin();
 }
+/* zoom automatique : z (borné), centré sur l'instant t (secondes de timeline). Le zoom d'avant est gardé pour -. */
+function zoomTo(z, t){
+  z = clamp(z, 1, zMax());
+  if(z <= S.zoom*1.05){ const sc0 = $("scroller"); sc0.scrollLeft = Math.max(0, t*pps() - sc0.clientWidth/2); return; }
+  if(!TL.back || TL.auto !== S.zoom) TL.back = S.zoom;
+  S.zoom = z; TL.auto = z; renderTimeline();
+  const sc = $("scroller"); sc.scrollLeft = Math.max(0, t*pps() - sc.clientWidth/2);
+}
+/* groupe de pastilles : zoom qui le montre en entier (s'il est large), sinon qui sépare ses pastilles ; si le zoom maximal
+   ne suffit pas (marqueurs presque au même instant), liste à choisir */
+function openGroup(a, b){
+  hideGroupPop();
+  const list = sorted().slice(a, b + 1); if(!list.length) return;
+  const base = ($("scroller").clientWidth || 300)/S.dur;
+  let dmin = Infinity;
+  for(let i=1;i<list.length;i++) dmin = Math.min(dmin, list[i].at - list[i-1].at);
+  const t0 = list[0].at - S.base, t1 = list[list.length-1].at - S.base;
+  const need = (MH_GAP + 8)/Math.max(dmin, 1e-3)/base, fit = 0.8*($("scroller").clientWidth || 300)/Math.max(t1 - t0, 1e-3)/base;
+  // d'abord montrer tout le groupe (il se scinde en groupes plus petits), puis, quand il tient déjà dans la vue, séparer
+  const z0 = S.zoom, z = Math.min(zMax(), fit > z0*1.3 ? Math.min(fit, need*1.5) : need);
+  zoomTo(z, (t0 + t1)/2);
+  // zoom sans effet, ou zoom maximal atteint sans les séparer : liste à choisir
+  if(z <= z0*1.05 || (need > zMax() && z >= zMax())){ showGroupPop(list, grpBtn(a)); return; }
+  const f = $("mlayer").querySelector(`.mh[data-id="${list[0].id}"]`) || grpBtn(a); if(f) f.focus();
+}
+/* bouton du groupe qui contient la pastille d'indice a, après un nouveau rendu */
+function grpBtn(a){ return [...$("mlayer").querySelectorAll(".mh.grp")].find(b => { const r = b.dataset.grp.split("-"); return +r[0] <= a && a <= +r[1]; }) || null; }
+function showGroupPop(list, btn){
+  const all = sorted(), pop = $("mhPop");
+  pop.innerHTML = list.map(m => { const n = all.indexOf(m) + 1;
+    return `<button type="button" role="menuitem" data-id="${m.id}"><span class="n${isSens(m) ? " sens" : ""}">${n}</span><span>${esc(label(m))}<small>${kindName(m)}, ${clockAbs(m.at)}${m.to != null ? `, ${len(m.to - m.at)}` : ""}${isSens(m) ? ", sensible" : ""}</small></span></button>`; }).join("");
+  pop.hidden = false; MHPOP.btn = btn || null;
+  if(btn) btn.setAttribute("aria-expanded", "true");
+  pop.firstElementChild.focus();
+}
+const MHPOP = {btn:null};
+function hideGroupPop(focusBtn){
+  const pop = $("mhPop"); if(pop.hidden) return;
+  pop.hidden = true;
+  const b = MHPOP.btn && document.contains(MHPOP.btn) ? MHPOP.btn : null; MHPOP.btn = null;
+  if(b){ b.setAttribute("aria-expanded", "false"); if(focusBtn) b.focus(); }
+}
+/* pastille d'un marqueur : y aller, le viser (ses poignées passent devant), zoomer si le passage est trop étroit
+   pour régler ses bords (2 x 44 px), puis ouvrir sa fiche */
+function pickMarker(m){
+  hideGroupPop();
+  TL.sel = m.id;
+  seek(m.at - S.base, false);
+  const p = pps(), w = m.to != null ? (m.to - m.at)*p : 0;
+  if(m.to != null && w < 2*MH_GAP){
+    const base = ($("scroller").clientWidth || 300)/S.dur;
+    zoomTo(0.45*($("scroller").clientWidth || 300)/Math.max(m.to - m.at, 1)/base, (m.at + m.to)/2 - S.base);
+  }
+  renderMarkers();
+  openSheet(m, false);
+}
 let inWinKey = "";
+/* marqueur que l'on vient de poser (S.fresh = {id, t, named}) : le bandeau propose ses noms courants pendant 20 s,
+   lecture en cours ou non ; une fois nommé, il affiche le nom 2,5 s puis reprend son état habituel */
+const FRESH_MS = 20000, NAMED_MS = 2500;
+function freshMarker(){
+  const f = S.fresh; if(!f) return null;
+  const m = S.markers.find(x => x.id === f.id), age = Date.now() - f.t;
+  if(!m || (f.named ? age > NAMED_MS : (age > FRESH_MS || m.preset || m.title))){ S.fresh = null; return null; }
+  return m;
+}
+function nameMarker(m, preset){
+  m.preset = preset || null; m.title = preset || "";
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+}
 function windowState(){
   const abs = S.base + S.t;
   const list = sorted();
@@ -1876,7 +2110,7 @@ function windowState(){
    États : passage en cours (après Début), dans un passage ou sur un repère, juste avant ou après un passage, ailleurs, aucun marqueur. */
 function renderInWin(){
   const el = $("inWin");if(!el || $("view").hidden) return;
-  const w = windowState();
+  const w = windowState(), fresh = freshMarker();
   let key;
   let txt;
   let sub = "";
@@ -1886,15 +2120,25 @@ function renderInWin(){
     txt = `Passage en cours depuis ${clockAbs(S.pending.at)}`;
     sub = `${ms(Math.abs(w.abs - S.pending.at))}, touchez Fin pour le terminer`;
     btns = '<button type="button" class="btn small ghost" data-wa="pcancel">Annuler le début</button>';
+  } else if(fresh){
+    const n0 = sorted().indexOf(fresh) + 1, kn = kindName(fresh).toLowerCase();
+    if(S.fresh.named){ key = `named:${fresh.id}`; txt = `${kindName(fresh)} ${n0} : ${label(fresh)}`; sub = "nommé"; }
+    else {
+      key = `new:${fresh.id}`; txt = `Nommer le ${kn} ${n0}`; sub = fresh.to != null ? `${clockAbs(fresh.at)}, ${len(fresh.to - fresh.at)}` : clockAbs(fresh.at);
+      btns = PRESET_MAIN.map(p => `<button type="button" class="chip" data-wa="name" data-id="${fresh.id}" data-v="${esc(p)}">${esc(p)}</button>`).join("")
+        + `<button type="button" class="btn small ghost" data-wa="edit" data-id="${fresh.id}">Autre...</button>`;
+    }
   } else if(w.cur){
     const m = w.cur.m, n = w.cur.i + 1;
     const ec = effCam(m), shown = track() ? track().lens : null, other = shown && ec !== shown && !!clipAt(track(), S.t);
-    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}`;
+    const named = !!(m.preset || m.title);
+    key = `in:${m.id}:${m.to != null}:${ec}:${shown}:${other}:${named}`;
+    if(!named) btns += nameSelect(m);          // sans nom : la liste des noms est là, sans ouvrir la fiche
     txt = m.to != null ? `Passage ${n}, ${ms(w.abs - m.at)} sur ${ms(m.to - m.at)}` : `Repère ${n}`;
     sub = label(m)+(ec ? `, compilé en ${camName(ec).toLowerCase()}` : "");
     if(other) btns += `<button type="button" class="btn small" data-wa="cam" data-id="${m.id}">Compiler en ${esc(camName(shown).toLowerCase())}</button>`;
     if(m.to != null) btns += `<button type="button" class="btn small" data-wa="debut" data-id="${m.id}">Début ici</button><button type="button" class="btn small" data-wa="fin" data-id="${m.id}">Fin ici</button>`;
-    btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Détails</button>`;
+    btns += `<button type="button" class="btn small ghost" data-wa="edit" data-id="${m.id}">Modifier</button>`;
   } else if(w.after || w.before){
     const o = w.after || w.before, n2 = o.i + 1;
     key = `near:${o.m.id}:${w.after ? "a" : "b"}`;
@@ -1907,8 +2151,10 @@ function renderInWin(){
   if(sub){ const sm = document.createElement("small"); sm.textContent = sub; tx.appendChild(sm); }
   if(key !== inWinKey){
     inWinKey = key; $("inWinBtns").innerHTML = btns;
-    el.classList.toggle("on", !!w.cur && !S.pending);
+    el.classList.toggle("on", !S.pending && (fresh ? !!S.fresh.named : !!w.cur));
     el.classList.toggle("pend", !!S.pending);
+    el.classList.toggle("new", !S.pending && !!fresh && !S.fresh.named);
+    $("inWinBtns").scrollLeft = 0;
     el.classList.toggle("empty", !btns);
     document.querySelector(".stage").classList.toggle("inside", !!(!S.pending && w.cur && w.cur.m.to != null));
   }
@@ -1919,6 +2165,11 @@ $("inWin").addEventListener("click", e => {
   const m = S.markers.find(x => x.id === b.dataset.id); if(!m) return;
   const abs = S.base + S.t, n = sorted().indexOf(m) + 1;
   if(b.dataset.wa === "edit"){ v.pause(); openSheet(m, false); return; }
+  if(b.dataset.wa === "name"){
+    nameMarker(m, b.dataset.v); S.fresh = {id:m.id, t:Date.now(), named:true}; inWinKey = ""; renderInWin();
+    setTimeout(() => { if(S.clips.length){ inWinKey = ""; renderInWin(); } }, NAMED_MS + 60);
+    return;
+  }
   if(b.dataset.wa === "cam"){ setCam(m, track().lens); return; }
   const old = {at:m.at, to:m.to};
   if(b.dataset.wa === "debut"){ if(abs > m.to - 1){ toast("Le début doit rester avant la fin du passage."); return; } m.at = abs; }
@@ -1926,6 +2177,11 @@ $("inWin").addEventListener("click", e => {
   persist(); renderMarkers(); renderSummary();
   toast(`Passage ${n} : ${clockAbs(m.at)} à ${clockAbs(m.to)}.`, "Annuler", () => { m.at = old.at; m.to = old.to; persist(); renderMarkers(); renderSummary(); });
 });
+// souris : la molette fait défiler la rangée de noms quand elle dépasse (pas de barre de défilement visible)
+$("inWinBtns").addEventListener("wheel", function(e){
+  if(this.scrollWidth <= this.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  this.scrollLeft += e.deltaY; e.preventDefault();
+}, {passive:false});
 function drawPending(){
   const b = $("pendBand"); if(!b) return;
   const p = pps(), a = S.pending.at - S.base, z = S.t;
@@ -1991,31 +2247,33 @@ function camsFor(m){
 function renderSummary(){
   const list = sorted();
   let h = "";
+  /* carte compacte : heure et durée, nom et caméra, puis seulement ce qui est renseigné (sensibilité, intérêt, thèmes,
+     texte du carton, retouches), le commentaire interne sur une ligne qui grandit, et les actions sur une rangée */
   list.forEach((m, i) => {
-    const when = clockAbs(m.at) + (m.to != null ? ` à ${clockAbs(m.to)}` : "");
-    const ti = trackIdx(m.cam);
-    const meta = (m.to != null ? `Passage de ${len(m.to-m.at)}` : "Repère") + (m.interest ? `, intérêt ${INTEREST[m.interest-1].toLowerCase()}` : "") + (ti >= 0 ? `, caméra ${S.tracks[ti].name.toLowerCase()}` : "");
-    h += `<li class="card"><div class="idx">${i+1}</div>`;
-    h += `<div class="when">${when}</div>`;
-    h += `<div class="ttl">${nameSelect(m)} <span class="camw"><span class="camlbl">Caméra</span> ${camSelect(m)}</span></div>`;
-    h += `<div class="meta">${esc(meta)}${m.themes && m.themes.length ? `. ${esc(m.themes.join(", "))}` : ''}</div>`;
+    const ec = effCam(m), fxs = fxSummary(m), extra = [];
+    if(m.interest) extra.push(`Intérêt ${INTEREST[m.interest-1].toLowerCase()}`);
+    if(m.themes && m.themes.length) extra.push(m.themes.join(", "));
+    if(fxs) extra.push(`Retouches : ${fxs}`);
+    h += `<li class="card"><div class="chead"><span class="idx${isSens(m) ? " sens" : ""}">${i+1}</span><span class="when">${clockAbs(m.at)}${m.to != null ? ` à ${clockAbs(m.to)}` : ""}</span><span class="cdur">${m.to != null ? len(m.to-m.at) : "repère"}</span></div>`;
+    h += `<div class="ttl">${nameSelect(m)}${camSelect(m)}</div>`;
     if(isSens(m)) h += `<div class="sensbox">Sensibilité : ${esc(m.sens.join(", "))}</div>`;
-    else h += '<div class="meta">Sensibilité : aucune</div>';
+    if(extra.length) h += `<div class="meta">${esc(extra.join(". "))}</div>`;
     if(m.note) h += `<div class="note">Texte du carton : ${esc(m.note)}</div>`;
-    const fxs = fxSummary(m);
-    if(fxs) h += `<div class="meta">Retouches : ${esc(fxs)}</div>`;
-    h += `<label class="icom"><span>Commentaire interne ESAM (sous-titre, jamais publié)</span><textarea class="field" rows="2" data-com="${m.id}" placeholder="Ex. : flouter la plaque à 0:12, bon plan pour Instagram">${esc(m.comment || "")}</textarea></label>`;
+    h += `<label class="icom"><span class="vh">Commentaire interne ESAM du ${kindName(m).toLowerCase()} ${i+1} (sous-titre, jamais publié)</span><textarea class="field" rows="1" data-com="${m.id}" placeholder="Commentaire interne (jamais publié)">${esc(m.comment || "")}</textarea></label>`;
     h += '<div class="cams">';
-    const ec = effCam(m);
-    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button>`;
-    h += `<span class="aux">${ec != null ? `<button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>` : ""}<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></span></div></li>`;
+    if(ec != null) h += `<button class="btn small" data-go="${m.id}" data-i="${trackIdx(ec)}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Voir</button><button class="btn small ghost" data-fx="${m.id}" title="Flous suivis, flèches, cercles, vitesse">Retoucher</button>`;
+    h += `<button class="btn small ghost" data-photo="${m.id}">Photo</button><button class="btn small ghost" data-edit="${m.id}">Modifier</button></div></li>`;
   });
   $("list").innerHTML = h;
+  growComs();
   $("emptyList").hidden = list.length > 0;
   $("cmpOpen").disabled = $("exp").disabled = !list.length;        // sans marqueur, rien à compiler ni à exporter
   renderSideList();
   renderChrono();
 }
+/* commentaire interne : une ligne au repos, la hauteur suit le texte (sans effet tant que l'onglet est masqué) */
+function growCom(t){ if(!t.offsetParent) return; t.style.height = "auto"; t.style.height = `${t.scrollHeight + 4}px`; }
+function growComs(){ $("list").querySelectorAll("textarea[data-com]").forEach(t => { if(t.value) growCom(t); }); }
 function byPreset(p){ return sorted().filter(m => m.preset === p); }
 function chrono(){
   const list = sorted(); if(!list.length) return null;
@@ -2060,11 +2318,13 @@ function renderAll(){ renderHeader(); renderTimeline(); renderTracks(); renderSu
 
 /* ---------- markers ----------
    Un marqueur : {id, at, to (null = repère), preset, title, themes, interest, sens, note, comment, cam}. Heures absolues (S.base + t).
-   La fiche de marqueur (#sheet) édite une copie (draft) validée par Enregistrer. */
-let draft = null, draftIsNew = false;
+   La fiche de marqueur (#sheet) édite une copie (draft) ; la fermer (Terminé, Échap, appui à côté) l'enregistre,
+   et le message qui suit propose Annuler pour revenir à l'état d'avant. Seul Supprimer ferme sans enregistrer. */
+let draft = null, draftIsNew = false, shMoreOpen = null;   // shMoreOpen : dernier choix (ouvert ou replié) pour Thèmes, carton, commentaire
 function addMarker(a, b){
   const m = {id:uid(), at:a, to:b, preset:null, title:"", themes:[], interest:0, sens:[NONE], note:"", cam:track() ? track().lens : null};
-  S.markers.push(m); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  S.markers.push(m); S.fresh = {id:m.id, t:Date.now()};
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
   toast(`${b != null ? `Passage ${clockAbs(a)} à ${clockAbs(b)}` : `Repère ${clockAbs(a)}`} ajouté.`, "Annuler", () => {
     S.markers = S.markers.filter(x => x.id !== m.id); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard(); toast(`${kindName(m)} retiré.`);
   });
@@ -2112,8 +2372,9 @@ function keepFocus(fn){
 }
 function renderSheet(){ keepFocus(renderSheetNow); }
 function renderSheetNow(){
-  const d = draft;
-  $("shTitle").textContent = draftIsNew ? (d.to != null ? "Nouveau passage" : "Nouveau repère") : (d.to != null ? "Modifier le passage" : "Modifier le repère");
+  const d = draft, n = sorted().findIndex(x => x.id === d.id) + 1;
+  $("shTitle").textContent = n ? `${kindName(d)} ${n}` : (d.to != null ? "Nouveau passage" : "Nouveau repère");
+  $("shWhenK").textContent = d.to != null ? "Moment" : "Heure";
   $("shWhen").textContent = d.to != null ? `${clockAbs(d.at)} à ${clockAbs(d.to)} (${len(d.to-d.at)})` : clockAbs(d.at);
   let adj = "";
   if(d.to != null){
@@ -2125,35 +2386,68 @@ function renderSheetNow(){
   $("shPresetsMore").innerHTML = PRESET_MORE.map(g => `<div class="shsub">${g[0]}</div><div class="chips">${g[1].map(t => `<button type="button" class="chip" data-v="${esc(t)}" aria-pressed="${draft.preset === t}">${esc(t)}</button>`).join("")}</div>`).join("");
   const more = PRESET_MORE.reduce((a, g) => a.concat(g[1]), []);
   $("shMoreNamesSum").textContent = more.indexOf(draft.preset) >= 0 ? `Autres noms (${draft.preset})` : `Autres noms (${more.length})`;
-  const nm = d.themes.length + (($("shNote").value || "").trim() ? 1 : 0) + (($("shCom").value || "").trim() ? 1 : 0);
-  $("shMoreSum").textContent = `Ce qu'on voit, texte du carton, commentaire interne${nm ? ` (${nm} renseigné${nm > 1 ? "s" : ""})` : ""}`;
   const cams = camsFor(d);
-  if(cams.length && !cams.some(x => x.tr.lens === d.cam)) d.cam = cams[0].tr.lens;
-  $("shCam").innerHTML = cams.map(x => `<button type="button" class="chip" data-l="${esc(x.tr.lens)}" aria-pressed="${x.tr.lens === d.cam}">${esc(x.tr.name)}</button>`).join("") || '<span class="miss" style="font-size:13px">[aucune image à ce moment]</span>';
+  const cam = effCam(d);   // caméra compilée ; d.cam ne change que sur un choix, jamais à l'ouverture
+  $("shCam").innerHTML = cams.map(x => `<button type="button" class="chip" data-l="${esc(x.tr.lens)}" aria-pressed="${x.tr.lens === cam}">${esc(x.tr.name)}</button>`).join("") || '<span class="miss" style="font-size:13px">[aucune image à ce moment]</span>';
   chipRow($("shThemes"), THEMES, t => d.themes.indexOf(t) >= 0);
   chipRow($("shInt"), INTEREST, (t, i) => d.interest === i+1);
   chipRow($("shSens"), [NONE].concat(SENS), t => d.sens.indexOf(t) >= 0, "s");
   $("shSens").firstElementChild.classList.remove("s");
-  $("shSensMiss").hidden = d.sens.length > 0;
-  $("shSave").disabled = d.sens.length === 0;
+  $("shSensBox").classList.toggle("on", d.sens.some(x => x !== NONE));
   $("shDel").hidden = draftIsNew;
+  sheetSums();
+}
+/* résumés des groupes repliés : nom retenu, et ce qui est renseigné sous Thèmes, carton, commentaire */
+function sheetSums(){
+  const d = draft; if(!d) return;
+  const nm = d.preset ? presetLabel(d) : clean($("shName").value.trim()), ns = $("shNameSum");
+  ns.textContent = nm || "à nommer"; ns.classList.toggle("todo", !nm);
+  const note = clean($("shNote").value.trim()), com = clean($("shCom").value.trim());
+  const parts = (d.themes.length ? [d.themes.length > 2 ? `${d.themes.length} thèmes` : d.themes.join(", ")] : [])
+    .concat(note ? ["carton"] : [], com ? ["commentaire"] : []);
+  $("shMoreSum").textContent = parts.join(", ") || "rien";
 }
 function openSheet(m, isNew){
   draft = JSON.parse(JSON.stringify(m)); draftIsNew = isNew;
   if(!draft.sens || !draft.sens.length) draft.sens = [NONE];
-  $("shName").value = draft.preset ? presetLabel(draft) : draft.title; $("shNote").value = draft.note; $("shCom").value = draft.comment || "";
+  $("shName").value = draft.preset ? presetLabel(draft) : draft.title; $("shNote").value = draft.note || ""; $("shCom").value = draft.comment || "";
+  const named = !!(draft.preset || draft.title);
   $("shWhenBox").open = false;
+  $("shNameBox").open = !named;                                   // déplié seulement quand il reste à nommer
   $("shMoreNames").open = !!draft.preset && PRESET_MAIN.indexOf(draft.preset) < 0;
-  $("shMore").open = !!(draft.themes.length || draft.note || draft.comment);   // ouvert quand un de ses champs est renseigné
+  $("shMore").open = !!shMoreOpen;
   renderSheet();
   const dlg = $("sheet");
   if(typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open","");
   dlg.scrollTop = 0;
-  // focus initial : le nom choisi, sinon Enregistrer pour un titre libre, sinon le premier nom proposé
-  const pick = $("shNames").querySelector('.chip[aria-pressed="true"]') || (draft.title && !draft.preset ? $("shSave") : $("shPresets").querySelector(".chip"));
+  // focus initial : le premier nom proposé s'il reste à nommer, sinon la ligne Nom (en haut de la fiche)
+  const pick = named ? $("shNameBox").querySelector("summary") : $("shPresets").querySelector(".chip");
   if(pick) pick.focus();
 }
-function closeSheet(){ const dlg = $("sheet"); if(dlg.open) dlg.close(); draft = null; }
+/* ferme sans rien enregistrer (Supprimer) */
+function closeSheet(){ draft = null; const dlg = $("sheet"); if(dlg.open) dlg.close(); }
+/* ferme en enregistrant : rien ne se passe si rien n'a changé ; sinon le message propose Annuler */
+function commitSheet(){
+  if(!draft) return;
+  const d = draft;
+  if(!d.sens.length) d.sens = [NONE];
+  if(d.preset) d.title = d.preset;
+  else d.title = clean($("shName").value.trim());                 // vide : le marqueur reste « à nommer »
+  d.note = clean($("shNote").value.trim()); d.comment = clean($("shCom").value.trim());
+  const i = S.markers.findIndex(m => m.id === d.id), before = i >= 0 ? S.markers[i] : null;
+  closeSheet();
+  const K = ["at","to","preset","title","themes","interest","sens","note","comment","cam"], v = (m, k) => JSON.stringify(m[k] == null ? "" : m[k]);
+  if(before && K.every(k => v(before, k) === v(d, k))) return;
+  if(i >= 0) S.markers[i] = d; else S.markers.push(d);
+  persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+  const n = sorted().indexOf(d) + 1;
+  if(!before){ toast(`${label(d)} ajouté à ${clockAbs(d.at)}.`); return; }
+  toast(`${kindName(d)} ${n} enregistré.`, "Annuler", () => {
+    const j = S.markers.findIndex(m => m.id === d.id); if(j < 0) return;
+    S.markers[j] = before; persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
+    toast(`${kindName(before)} ${n} remis comme avant.`);
+  });
+}
 $("shNames").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
   const t = b.dataset.v;
@@ -2163,6 +2457,7 @@ $("shNames").addEventListener("click", e => {
 });
 $("shName").addEventListener("input", function(){
   if(draft && draft.preset && this.value !== presetLabel(draft)){ draft.preset = null; renderSheet(); }
+  else sheetSums();
 });
 $("shThemes").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
@@ -2194,29 +2489,17 @@ $("shAdj").addEventListener("click", e => {
   if(draft.preset) $("shName").value = presetLabel(draft);
   renderSheet();
 });
-$("shCancel").onclick = closeSheet;
-$("shClose").onclick = closeSheet;
-["shNote","shCom"].forEach(id => { $(id).addEventListener("change", () => { if(draft) renderSheet(); }); });
-// un appui sur le fond (hors du cadre de la fiche) ferme sans enregistrer, comme Annuler
+["shNote","shCom"].forEach(id => { $(id).addEventListener("input", sheetSums); });
+$("shMore").addEventListener("toggle", function(){ if(draft) shMoreOpen = this.open; });
+// un appui sur le fond (hors du cadre de la fiche) ferme en enregistrant, comme Terminé
 (() => {
   const dlg = $("sheet");
   let down = false;
   function outside(e){ const r = dlg.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; }
   dlg.addEventListener("pointerdown", e => { down = e.target === dlg && outside(e); });
-  dlg.addEventListener("click", e => { if(down && e.target === dlg && outside(e)) closeSheet(); down = false; });
+  dlg.addEventListener("click", e => { if(down && e.target === dlg && outside(e)) commitSheet(); down = false; });
 })();
-$("shSave").onclick = () => {
-  if(!draft) return;
-  if(!draft.sens.length) draft.sens = [NONE];
-  if(draft.preset) draft.title = draft.preset;
-  else draft.title = clean($("shName").value.trim()) || (draft.themes[0] || "Sans titre");
-  draft.note = clean($("shNote").value.trim()); draft.comment = clean($("shCom").value.trim());
-  const i = S.markers.findIndex(m => m.id === draft.id);
-  if(i >= 0) S.markers[i] = draft; else S.markers.push(draft);
-  const saved = draft;
-  closeSheet(); persist(); renderMarkers(); renderSummary(); if(!$("board").hidden) renderBoard();
-  toast(i >= 0 ? `${kindName(saved)} modifié.` : `${label(saved)} ajouté à ${clockAbs(saved.at)}.`);
-};
+$("shSave").onclick = commitSheet;
 /* suppression annulable : le marqueur et son élément du réel (cadrage, flous, texte) reviennent à leur place */
 $("shDel").onclick = () => {
   if(!draft) return;
@@ -2235,7 +2518,8 @@ $("shDel").onclick = () => {
     toast(`${kindName(m)} ${n} rétabli${rit ? ", avec sa place dans le réel" : ""}.`);
   });
 };
-$("sheet").addEventListener("cancel", () => { draft = null; });
+// Échap ferme comme Terminé : la fiche s'enregistre (Annuler dans le message pour revenir)
+$("sheet").addEventListener("close", () => { if(draft) commitSheet(); });
 
 /* ---------- export / import ----------
    buildMarkdown() : fiche lisible + bloc <!-- derushage-data {...} --> qui permet de la reprendre ; parseFiche/applyFiche. */
@@ -2414,7 +2698,7 @@ async function openDir(dir){
   S.dirHandle = dir; S.verBumped = false;
   if(!(await importFolder(items))){ S.dirHandle = null; return; }
   idb("readwrite", st => st.put(dir, "dossier")).catch(() => {});
-  setSave(`Fiche enregistrée automatiquement dans le dossier « ${dir.name} » à chaque modification`, false, "Enregistrement automatique");
+  setSave(`Fiche enregistrée automatiquement dans le dossier « ${dir.name} » à chaque modification`, false, "Enregistrement auto");
   $("exp").textContent = "Enregistrer la fiche maintenant";
 }
 $("dirOpen").onclick = async () => {
@@ -2498,9 +2782,10 @@ document.addEventListener("pointerdown", e => { if(!$("spdPop").hidden && !e.tar
 })();
 $("r1").onclick = () => { hidePop(); setRate(1); };
 $("zIn").onclick = () => { setZoom(S.zoom*2); };
-$("zOut").onclick = () => { setZoom(S.zoom/2); };
+/* - après un zoom automatique (groupe de pastilles, passage étroit) : retour direct au zoom d'avant */
+$("zOut").onclick = () => { setZoom(TL.back != null && TL.auto === S.zoom ? TL.back : S.zoom/2); };
 function setZoom(z){
-  z = clamp(z, 1, 64); if(z === S.zoom) return;
+  z = clamp(z, 1, zMax()); TL.back = null; TL.auto = 0; hideGroupPop(); if(z === S.zoom) return;
   S.zoom = z; renderTimeline();
   const sc = $("scroller"); sc.scrollLeft = Math.max(0, S.t*pps() - sc.clientWidth/2);
 }
@@ -2535,9 +2820,9 @@ $("scroller").addEventListener("pointermove", e => {
   if(pinch.raf) return;
   pinch.raf = requestAnimationFrame(() => {
     pinch.raf = 0;
-    const [a, b] = [...pinch.pts.values()], z = Math.round(clamp(pinch.z0*Math.abs(a - b)/pinch.d0, 1, 64)*100)/100;
+    const [a, b] = [...pinch.pts.values()], z = Math.round(clamp(pinch.z0*Math.abs(a - b)/pinch.d0, 1, zMax())*100)/100;
     if(Math.abs(z - S.zoom) < 0.02) return;
-    S.zoom = z; renderTimeline();
+    S.zoom = z; TL.back = null; TL.auto = 0; renderTimeline();
     const sc = $("scroller"); sc.scrollLeft = Math.max(0, pinch.t0*pps() - ((a + b)/2 - sc.getBoundingClientRect().left));
   });
 });
@@ -2601,16 +2886,33 @@ $("lanes").addEventListener("pointerleave", () => { $("hov").hidden = true; });
 
 $("mlayer").addEventListener("click", e => {
   const b = e.target.closest(".mh"); if(!b) return;
-  const m = S.markers.find(x => x.id === b.dataset.id); if(!m) return;
-  seek(m.at - S.base, false); openSheet(m, false);
+  if(b.dataset.grp){ const r = b.dataset.grp.split("-"); openGroup(+r[0], +r[1]); return; }
+  const m = S.markers.find(x => x.id === b.dataset.id); if(m) pickMarker(m);
 });
+$("mhPop").addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]"); if(!b) return;
+  const m = S.markers.find(x => x.id === b.dataset.id); if(m) pickMarker(m);
+});
+$("mhPop").addEventListener("keydown", e => {
+  const items = [...$("mhPop").querySelectorAll("button")], i = items.indexOf(document.activeElement);
+  let j = -1;
+  if(e.key === "ArrowDown") j = (i + 1) % items.length;
+  else if(e.key === "ArrowUp") j = (i - 1 + items.length) % items.length;
+  else if(e.key === "Home") j = 0;
+  else if(e.key === "End") j = items.length - 1;
+  else if(e.key === "Escape" || e.key === "Tab"){ e.preventDefault(); e.stopPropagation(); hideGroupPop(true); return; }
+  else if(e.key === "Enter" || e.key === " "){ e.stopPropagation(); return; }
+  else return;
+  e.preventDefault(); e.stopPropagation(); items[j].focus();
+});
+document.addEventListener("pointerdown", e => { if(!$("mhPop").hidden && !e.target.closest("#mhPop,.mh.grp")) hideGroupPop(); });
 $("mlayer").addEventListener("pointerdown", e => { if(e.target.closest(".mh")) e.stopPropagation(); });
 let edrag = null;
 $("mlayer").addEventListener("pointerdown", e => {
   const g = e.target.closest(".eg"); if(!g) return;
   e.stopPropagation(); e.preventDefault();
   const m = S.markers.find(x => x.id === g.dataset.id); if(!m) return;
-  v.pause(); g.setPointerCapture(e.pointerId);
+  v.pause(); g.setPointerCapture(e.pointerId); TL.sel = m.id;
   edrag = {m:m, edge:g.dataset.edge, old:{at:m.at, to:m.to}, band:g.parentNode, t:S.t};
 });
 $("mlayer").addEventListener("pointermove", e => {
@@ -2623,7 +2925,7 @@ $("mlayer").addEventListener("pointermove", e => {
   if(edrag.edge === "l") m.at = Math.min(abs, m.to - 1); else m.to = Math.max(abs, m.at + 1);
   t = (edrag.edge === "l" ? m.at : m.to) - S.base;edrag.t = t;
   const b = edrag.band;b.style.left = `${(m.at - S.base)*p}px`;b.style.width = `${Math.max(3, (m.to - m.at)*p)}px`;
-  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p)}px`;
+  const h = $("mlayer").querySelector(`.mh[data-id="${m.id}"]`);if(h) h.style.left = `${mhX((m.at - S.base)*p, h.offsetWidth)}px`;
   S.t = t;
   const th = thumbAt(track(), t);
   if(th) showPrev(th); else hidePrev();
@@ -2676,7 +2978,7 @@ $("auteur").addEventListener("input", function(){ S.meta.auteur = clean(this.val
 $("list").addEventListener("input", e => {
   const t = e.target; if(!t.dataset || !t.dataset.com) return;
   const m = S.markers.find(x => x.id === t.dataset.com); if(!m) return;
-  m.comment = clean(t.value); persist();
+  m.comment = clean(t.value); persist(); growCom(t);
 });
 
 function setTab(which){
@@ -2707,12 +3009,14 @@ $("sideList").addEventListener("click", e => {
 /* ---------- planche ----------
    Grille d'une vignette par intervalle sur la piste active, dessinée à la demande (IntersectionObserver). */
 const BOARD = {step:0, vis:new Set(), obs:null};
-const BSTEPS = [10,30,60,300], BLABELS = ["10 s","30 s","1 min","5 min"];
+const BSTEPS = [10,30,60,300];
+const BSTEP_OPTS = ["Une toutes les 10 s","Une toutes les 30 s","Une par minute","Une toutes les 5 min"];
 function renderBoard(){
   const tr = track(); if(!tr) return;
-  $("bTracks").innerHTML = S.tracks.map((t, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="${i===S.active}">${esc(t.name)}</button>`).join("");
+  $("bTracks").innerHTML = S.tracks.map((t, i) => `<option value="${i}"${i===S.active ? " selected" : ""}>${esc(t.name)}</option>`).join("");
+  $("bTracks").parentNode.hidden = S.tracks.length < 2;
   if(!BOARD.step){ BOARD.step = BSTEPS.find(x => S.dur/x <= 240) || 300; }
-  chipRow($("bStep"), BLABELS, (t, i) => BSTEPS[i] === BOARD.step);
+  $("bStep").innerHTML = BSTEPS.map((x, i) => `<option value="${x}"${x === BOARD.step ? " selected" : ""}>${BSTEP_OPTS[i]}</option>`).join("");
   const tiles = [], st = BOARD.step;
   for(let t = 0; t < S.dur; t += st){
     const c = clipAt(tr, t);
@@ -2720,13 +3024,17 @@ function renderBoard(){
     if(c) tt = t; else { const n = tr.clips.find(x => x.ok && x.s > t && x.s < t + st); if(n) tt = n.s + 0.05; }
     if(tt != null) tiles.push(tt);
   }
+  $("bCount").textContent = tiles.length ? `${tiles.length} vignette${tiles.length > 1 ? "s" : ""}` : "";
   const list = sorted();
   $("bGrid").innerHTML = tiles.map(tt => {
-    let b = "";
+    const ks = [];
     let say = "";
-    list.forEach((m, k) => { const a = m.at - S.base, z = m.to != null ? m.to - S.base : a; if(z >= tt - 0.01 && a < tt + st){ b += `<b class="${isSens(m)?"sens":""}">${k+1}</b>`; say += `, marqueur ${k+1}${isSens(m) ? " sensible" : ""}`; } });
+    list.forEach((m, k) => { const a = m.at - S.base, z = m.to != null ? m.to - S.base : a; if(z >= tt - 0.01 && a < tt + st){ ks.push(k); say += `, marqueur ${k+1}${isSens(m) ? " sensible" : ""}`; } });
+    // trois numéros au plus, les marqueurs sensibles d'abord ; « +n » pour le reste (tous restent dans l'étiquette vocale)
+    const shown = ks.filter(k => isSens(list[k])).concat(ks.filter(k => !isSens(list[k]))).slice(0, ks.length > 3 ? 2 : 3).sort((x, y) => x - y);
+    const b = shown.map(k => `<b class="${isSens(list[k]) ? "sens" : ""}">${k+1}</b>`).join("") + (ks.length > shown.length ? `<b class="more">+${ks.length - shown.length}</b>` : "");
     const ck = clockAbs(S.base+tt);
-    return `<div class="tile" data-t="${tt}"><button type="button" class="tgo" aria-label="Voir à ${ck}${say}"><canvas width="192" height="108"></canvas><span class="badges" aria-hidden="true">${b}</span></button><div class="tbar"><span>${ck}</span><button type="button" class="btn small ghost" data-mark="${tt}" aria-label="Marquer un repère à ${ck}">Marquer</button></div></div>`;
+    return `<div class="tile" data-t="${tt}"><button type="button" class="tgo" aria-label="Voir à ${ck}${say}"><canvas width="192" height="108"></canvas><span class="badges" aria-hidden="true">${b}</span><span class="tck" aria-hidden="true">${ck}</span></button><button type="button" class="tmk" data-mark="${tt}" aria-label="Marquer un repère à ${ck}" title="Poser un repère à ${ck}"><span aria-hidden="true">+ Repère</span></button></div>`;
   }).join("") || '<p class="emptylist">Aucune image sur cette piste.</p>';
   BOARD.vis.clear();
   if(BOARD.obs) BOARD.obs.disconnect();
@@ -2744,8 +3052,8 @@ function drawTile(el){
   drawThumb(ctx, th, (192-dw)/2, (108-dh)/2, dw, dh); el.dataset.ok = "1";
 }
 function refreshBoard(){ if($("board").hidden) return; BOARD.vis.forEach(drawTile); }
-$("bTracks").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; S.active = +b.dataset.i; S.cur = null; seek(S.t, false); renderBoard(); });
-$("bStep").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return; BOARD.step = BSTEPS[+b.dataset.k]; renderBoard(); });
+$("bTracks").addEventListener("change", e => { S.active = +e.target.value; S.cur = null; seek(S.t, false); renderBoard(); });
+$("bStep").addEventListener("change", e => { BOARD.step = +e.target.value; renderBoard(); });
 $("bGrid").addEventListener("click", e => {
   const mk = e.target.closest("[data-mark]"), tile = e.target.closest(".tile"); if(!tile) return;
   const t = +tile.dataset.t;
@@ -2756,7 +3064,7 @@ $("bGrid").addEventListener("click", e => {
 $("tabView").onclick = () => { setTab("view"); };
 $("tabSum").onclick = () => { setTab("sum"); };
 
-/* retour à l'accueil (navigateur) ou à la liste des interventions (PC) : bouton « Changer d'intervention » et logo de l'en-tête */
+/* retour à l'accueil (navigateur) ou à la liste des interventions (PC) : bouton de retour de l'en-tête (chevron et logo) */
 function goHome(){
   v.pause(); v.removeAttribute("src");
   S.clips.forEach(c => { URL.revokeObjectURL(c.url); });
@@ -2772,7 +3080,6 @@ function goHome(){
   BACKEND.reset();
   renderResume();
 }
-$("reset").onclick = goHome;
 /* en mode navigateur, revenir à l'accueil oblige à rechoisir les vidéos : on demande confirmation */
 $("home").onclick = () => {
   if(!S.clips.length) return;
@@ -3152,8 +3459,8 @@ function renderCmpSetup(){
     return `<li><label><input type="checkbox" data-id="${m.id}"${CMP.off[m.id]?'':' checked'}${it?'':' disabled'}><span><b>${i+1}. ${esc(label(m))}</b><small>${it ? `${clockAbs(it.absA)} à ${clockAbs(it.absZ)}, ${esc(it.tr.name)}${fxs ? `, ${esc(fxs)}` : ""}` : '<span class="miss">[aucune image]</span>'}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? "s" : ""}`) : ""}</span></label>${it ? `<button type="button" class="btn small ghost" data-fx="${m.id}" aria-label="Retoucher le passage ${i+1}">Retoucher</button>` : ""}</li>`;
   }).join("") || '<li><label>Aucun marqueur.</label></li>';
   sensWarn($("cmpSensW"), sens, "« Retoucher » pose un flou qui suit le visage ou la plaque.");
-  $("cmpLead").textContent = hab ? "Les passages cochés sont enchaînés dans l'ordre chronologique, chacun précédé d'un carton sur fond noir (nom, heure de début et de fin, commentaire), à la résolution d'origine des rushs."
-    : "Les passages cochés sortent bruts, à la résolution d'origine : ni carton, ni heure incrustée, ni logo. Seules leurs retouches (flous, flèches, cercles, vitesse) sont appliquées.";
+  $("cmpLead").textContent = hab ? "Les passages cochés s'enchaînent dans l'ordre, chacun précédé d'un carton (nom, heures, texte)."
+    : "Les passages cochés sortent bruts : ni carton, ni heure, ni logo, seulement leurs retouches.";
   chipRow($("cmpHab"), ["Cartons, heure et logo","Aucun : extraits bruts"], (t, i) => hab === !i);
   chipRow($("cmpSep"), ["Une seule vidéo","Un fichier par passage"], (t, i) => !!CMP.sep === !!i);
   $("cmpSepBox").hidden = hab;
@@ -3166,6 +3473,8 @@ function renderCmpSetup(){
   $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait en arrière-plan, sa durée dépend de la puissance de l'ordinateur.` : "Aucun passage à compiler.";
   $("cmpGo").disabled = !pl.items.length;
   $("cmpClock").parentNode.hidden = BACKEND.pc || !hab;        // le PC n'incruste pas l'heure (elle figure sur les cartons)
+  // réglages secondaires repliés : la ligne de résumé dit ce qui sera fait sans les ouvrir
+  $("cmpOptsSum").textContent = `Réglages : ${CMP.fmt === "v" ? "vertical 9:16" : "horizontal 16:9"}, ${CMP.win ? `marge de ${CMP.win} s` : "sans marge"}${BACKEND.pc || !hab ? "" : (CMP.clock ? ", heure incrustée" : ", sans heure")}`;
   if(BACKEND.pc){
     $("cmpResInfo").textContent = `Celle des ${prodSource() ? "vidéos" : "rushs"} d'origine (jusqu'à la 4K)${CMP.fmt === "v" ? ", image recadrée au centre" : ""}`;
     $("cmpEst").textContent = pl.items.length ? `${pl.items.length} passage(s), ${what}. Le calcul se fait sur le PC : vous pourrez fermer l'appli, ${pl.sep ? "les fichiers arriveront" : "la vidéo arrivera"} dans le dossier de l'intervention.` : "Aucun passage à compiler.";
@@ -3722,8 +4031,8 @@ async function openRemote(name, src){
   if(!S.meta.intervention) S.meta.intervention = clean(name.replace(/^\d{4}-\d{2}-\d{2}[ _]*/, ""));
   S.verBumped = false;
   showApp(); seek(0, false);
-  if(SRVS) setSave("Vidéo compilée ouverte pour en extraire des morceaux : vos marqueurs sont enregistrés sur le PC à chaque modification, à part de ceux des rushs", false, "Enregistrement automatique");
-  else setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement automatique");
+  if(SRVS) setSave("Vidéo compilée ouverte pour en extraire des morceaux : vos marqueurs sont enregistrés sur le PC à chaque modification, à part de ceux des rushs", false, "Enregistrement auto");
+  else setSave("Fiche enregistrée automatiquement dans le dossier de l'intervention à chaque modification", false, "Enregistrement auto");
   if(S.markers.length) toast(`${nMarq(S.markers.length)} ${S.markers.length > 1 ? "retrouvés" : "retrouvé"} pour cette ${SRVS ? "vidéo" : "intervention"}.`);
   else if(SRVS) toast("Marquez les morceaux à garder : ils sortiront bruts, sans carton, sans heure et sans logo.");
   loadSheets();
@@ -3928,6 +4237,8 @@ const ra = document.createElement("audio");ra.preload = "auto";
 const rcv = $("rCv"), rctx = rcv.getContext("2d");
 const ICON_UP = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>';
+const ICON_LEFT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"/></svg>';
+const ICON_RIGHT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6l6 6-6 6"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
 function reelData(){
@@ -4640,6 +4951,7 @@ function rGoCadrer(){
 function rSave(){ persist(); renderComp(); }
 function renderReel(){
   const r = reelData(), pl = reelPlan(false), it = rSelItem();
+  $("reel").dataset.mode = REEL.mode;
   REEL.pl = pl;
   // en-tête
   const cuts = storyCuts(pl), nst = cuts.length - 1;
@@ -4652,10 +4964,15 @@ function renderReel(){
   chipRow($("rFmt"), RFMTK.map(k => RFMTS[k].lib), (t, i) => r.fmt === RFMTK[i]);
   $("rFmtHint").textContent = story ? "Instagram et Facebook : réel, ou story découpée en morceaux de 60 s." : r.fmt === "li" ? "Fil LinkedIn : vertical 4:5, la plus grande place sur téléphone sans être recadrée." : "Fil LinkedIn : carré, s'affiche en entier sur téléphone comme sur ordinateur.";
   // montage
+  const ord = !!REEL.order && r.items.length > 0;
+  $("rListHead").hidden = !r.items.length;
+  $("rListLbl").textContent = `Dans le réel (${r.items.length})`;
+  $("rOrder").setAttribute("aria-pressed", ord); $("rOrder").textContent = ord ? "Terminé" : "Ordre et retrait";
+  $("rList").classList.toggle("order", ord);
   $("rList").innerHTML = r.items.map((x, i) => {
     const tr = x.photo ? null : rTrack(x), ph = x.photo ? phGet(x.photo) : null, m = x.photo ? null : rMarker(x), nf = rNbFlous(x), sn = sensTxt(m);
     const src = x.photo ? (ph ? `Photo${x.zoom === false ? '' : ', zoom lent'}` : '<span class="miss">[photo à choisir à nouveau]</span>') : (tr ? esc(tr.name) : '<span class="miss">[aucune image]</span>');
-    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button><button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button></li>`;
+    return `<li class="${x.id === REEL.sel ? 'sel' : ''}"><span class="rn${sn ? ' sens' : ''}">${i+1}</span><button type="button" class="rtx" data-rsel="${x.id}"${x.id === REEL.sel ? ' aria-current="true"' : ''}><b>${esc(x.texte || rLabel(x))}</b><small>${src}, ${len(rItemDur(x))}${x.vit > 1 && !x.photo ? ` (x${x.vit})` : ''}${(x.keys||[]).length ? ', cadre suivi' : ''}${nf && !sn ? `, ${nf} flou${nf > 1 ? 's' : ''}` : ''}</small>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}</button>${ord ? `<button type="button" class="ib" data-rup="${x.id}" aria-label="Monter"${i ? '' : ' disabled'}>${ICON_UP}</button><button type="button" class="ib" data-rdown="${x.id}" aria-label="Descendre"${i < r.items.length - 1 ? '' : ' disabled'}>${ICON_DOWN}</button><button type="button" class="ib" data-rdel="${x.id}" aria-label="Retirer du réel">${ICON_X}</button>` : ''}</li>`;
   }).join("");
   const free = sorted().filter(m => !r.items.some(x => x.id === m.id));
   $("rAdd").innerHTML = free.map(m => {
@@ -4663,11 +4980,12 @@ function renderReel(){
     return `<li><span class="rn${isSens(m) ? ' sens' : ''}">${n}</span><button type="button" class="rtx" data-radd="${m.id}"><b>${esc(label(m))}</b><small>${clockAbs(m.at)}${m.to != null ? `, ${len(z - a)}` : ', repère (6 s autour)'}</small>${sensTag(sensTxt(m))}</button></li>`;
   }).join("");
   $("rAddBox").hidden = !free.length;
-  $("rAddSum").textContent = `Ajouter des passages (${free.length})`;
-  if(!r.items.length && free.length) $("rAddBox").open = true;
+  $("rAddSum").textContent = `Passages à ajouter (${free.length})`;
+  $("rAddAll").hidden = free.length < 2;
   renderPhotos();
   // habillage
   if(document.activeElement !== $("rTitre")) $("rTitre").value = r.titre;
+  $("rTitreOpt").hidden = $("rTitrePlace").hidden = !r.titre;
   chipRow($("rTitreDur"), ["3 s","5 s","8 s","Tout le réel"], (t, i) => (r.titreDur || 0) === RTDURS[i]);
   chipRow($("rLogo"), ["Cartouche ESAM","Logo seul","Aucun"], (t, i) => r.logo.mode === RLOGOS[i]);
   $("rLogoPlace").hidden = r.logo.mode === "non";
@@ -4676,17 +4994,20 @@ function renderReel(){
   if(document.activeElement !== $("rFinTxt")) $("rFinTxt").value = r.fin.texte || "";
   if(document.activeElement !== $("rFinSous")) $("rFinSous").value = r.fin.sous || "";
   renderMusic();
+  $("rHabInfo").textContent = [["Cartouche ESAM","Logo seul","Sans logo"][RLOGOS.indexOf(r.logo.mode)], r.fin.on ? "carton de fin" : "sans carton de fin",
+    r.musique ? `musique « ${r.musique.nom} »` : "sans musique"].join(", ");
   // éditeur du passage
   renderReelEdit();
   // export
   const empty = !pl.segs.length;
   $("rGoReel").disabled = empty; $("rGoStory").disabled = empty; $("rGoStory").hidden = !story;
   $("rGoReel").textContent = story ? "Créer le réel" : "Créer la vidéo LinkedIn";
-  $("rGoStory").textContent = `Créer la story${nst > 1 ? ` (${nst} morceaux)` : ""}`;
+  $("rGoStory").textContent = nst > 1 ? `Créer ${nst} stories` : "Créer la story";     // une ligne : la barre collante reste basse
+  $("rGoStory").title = nst > 1 ? `Story découpée en ${nst} morceaux de 60 s au plus` : "";
   const tips = [];
   if(pl.skipped) tips.push(`${pl.skipped} passage(s) sans image ignoré(s)`);
   if(pl.total > 90) tips.push(`au-delà d'une minute et demie, ${story ? "un réel" : "une vidéo"} est rarement regardé${story ? "" : "e"} jusqu'au bout`);
-  $("rEst").textContent = empty ? "Ajoutez au moins un passage." : (pcOpen() ? "Calcul sur le PC en pleine résolution, vidéo déposée dans le dossier de l'intervention." : "Calcul dans ce navigateur, garder l'onglet ouvert.")+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
+  $("rEst").textContent = empty ? "Ajoutez au moins un passage." : `${F.quoi} de ${len(pl.total)}, ${pcOpen() ? "calculé sur le PC en pleine résolution." : "calculé dans ce navigateur : gardez l'onglet ouvert."}`+(tips.length ? ` Attention : ${tips.join(" ; ")}.` : "");
   sensWarn($("rSensW"), empty ? [] : rSensLines(), "");
   // scène
   const noItem = REEL.mode === "cadrage" && !it, noSeg = REEL.mode === "apercu" && empty;
@@ -4701,7 +5022,7 @@ function renderPhotos(){
     const when = p.t && S.real ? clockAbs(p.t) : phShort(p.name);
     return `<li><button type="button" data-rph="${esc(p.name)}" title="${esc(p.name)}"><img alt="" loading="lazy" data-ph="${esc(p.name)}" src="${esc(phThumbSrc(p))}"><small>${esc(when)}</small></button></li>`;
   }).join("");
-  $("rPhSum").textContent = `Ajouter des photos (${free.length})`;
+  $("rPhSum").textContent = free.length ? `Photos à ajouter (${free.length})` : "Photos";
   $("rPhEmpty").textContent = PH.list.length ? (free.length ? "" : "Toutes les photos sont déjà dans le montage.")
     : pcOpen() ? "Aucune photo JPEG dans le dossier de l'intervention ni dans son sous-dossier Photos." : "Aucune photo chargée.";
   $("rPhEmpty").hidden = !$("rPhEmpty").textContent;
@@ -4719,7 +5040,7 @@ function rTargetCtl(it){
 /* passage vidéo : ses retouches (flous suivis, flèches, cercles, vitesse) se règlent dans le dialogue des retouches */
 function rFxCtl(m){
   const sm = fxSummary(m);
-  return `<div class="rtarget"><span class="lbl">Retouches du passage</span><p class="hint" style="margin:0 0 8px">${sm ? `${esc(sm.charAt(0).toUpperCase() + sm.slice(1))}.` : "Flou qui suit un visage ou une plaque, flèche ou cercle qui suit l'animal, ralenti ou accéléré."} Elles valent aussi pour la vidéo compilée.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small${sm ? " ghost" : ""}" data-rfx="1">${sm ? "Modifier les retouches" : "Flouter, annoter, changer la vitesse"}</button></div></div>`;
+  return `<div class="rtarget"><div class="rbtns ract"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button><button type="button" class="btn small" data-rfx="1" title="Flous suivis, flèches, cercles, ralenti ou accéléré">Retoucher</button></div><p class="hint">${sm ? `Retouches : ${esc(sm)}. Elles valent aussi pour la vidéo compilée.` : "Retoucher : flou sur un visage ou une plaque, flèche, cercle, ralenti."}</p></div>`;
 }
 /* réglages du flou choisi */
 function rFlouCtl(it){
@@ -4728,6 +5049,11 @@ function rFlouCtl(it){
   const near = !it.photo && (z.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
   return `<div class="grp"><span class="lbl">Flou ${fl.indexOf(z) + 1}</span><p class="hint" style="margin:0 0 8px">Glissez-le sur ce qu'il faut cacher${it.photo ? '.' : ' ; pendant la lecture, suivez-le du doigt.'}</p><div class="chips">${RFSIZES.map((s, i) => `<button type="button" class="chip" data-rfsize="${s}" aria-pressed="${Math.abs(z.s - s) < 0.001}">${["Petit","Moyen","Grand"][i]}</button>`).join("")}</div><div class="rbtns">${it.photo ? '' : `<button type="button" class="btn small ghost" data-rfkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button>`}<button type="button" class="btn small ghost" data-rfdel="1">Supprimer ce flou</button></div></div>`;
 }
+/* en-tête du passage choisi : précédent et suivant dans l'ordre du montage (cadrer les passages l'un après l'autre) */
+function rNavHead(it, meta){
+  const items = reelData().items, idx = items.indexOf(it), n = items.length;
+  return `<div class="rsel rnav"><button type="button" class="ib" data-rnav="-1" aria-label="Passage précédent"${idx > 0 ? '' : ' disabled'}>${ICON_LEFT}</button><div><b>${idx + 1}/${n}. ${esc(rLabel(it))}</b><small>${meta}</small></div><button type="button" class="ib" data-rnav="1" aria-label="Passage suivant"${idx < n - 1 ? '' : ' disabled'}>${ICON_RIGHT}</button></div>`;
+}
 function renderReelEdit(){
   const it = rSelItem(), box = $("rEdit");
   // libellé du canevas : ce que les flèches déplacent quand il a le focus
@@ -4735,14 +5061,14 @@ function renderReelEdit(){
     : `Image du passage. ${rZoneSel(it) ? "Flèches : déplacer le flou choisi, Échap : revenir au cadre." : "Flèches gauche et droite : déplacer le cadre."}`);
   if(REEL.mode === "apercu"){ box.innerHTML = rElemsPanel(); return; }
   if(!it){ box.innerHTML = ""; return; }
-  const idx = reelData().items.indexOf(it), z = rZoneSel(it);
+  const z = rZoneSel(it);
   if(it.photo){
-    box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(rLabel(it))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${len(rItemDur(it))} dans le réel</span></div>${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
+    box.innerHTML = `${rNavHead(it, `${len(rItemDur(it))} dans le réel`)}${rTargetCtl(it)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur la photo.</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rpx="center">Cadre au centre</button></div></div>`}<div class="grp"><span class="lbl">Durée</span><div class="chips">${RPDURS.map(d => `<button type="button" class="chip" data-rpdur="${d}" aria-pressed="${rItemDur(it) === d}">${d} s</button>`).join("")}</div></div><div class="grp"><span class="lbl">Zoom lent</span><div class="chips"><button type="button" class="chip" data-rzoom="1" aria-pressed="${it.zoom !== false}">Oui</button><button type="button" class="chip" data-rzoom="0" aria-pressed="${it.zoom === false}">Non</button></div></div>${rTextCtl(it)}`;
     return;
   }
   const m = rMarker(it), cams = S.tracks.filter(tr => rHas(tr, it)), tr = rTrack(it), sn = sensTxt(m), nf = rNbFlous(it);
   const nk = (it.keys || []).length, near = (it.keys || []).some(k => Math.abs(k.t - REEL.t) < 0.5);
-  box.innerHTML = `<div class="rsel"><b>${idx + 1}. ${esc(label(m))}</b><span class="meta" style="font-size:13px;color:var(--muted)">${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel</span></div>${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}<div class="rbtns"><button type="button" class="btn small ghost" data-rtrim="a">Début ici</button><button type="button" class="btn small ghost" data-rtrim="z">Fin ici</button></div>${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.${nk ? ` ${nk} point${nk > 1 ? 's' : ''} de cadrage.` : ' Cadre fixe au centre.'}</p><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear"${nk ? '' : ' disabled'}>Cadre fixe au centre</button></div></div>`}<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div><div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}">${s === 1 ? 'Normale' : `Accéléré x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
+  box.innerHTML = `${rNavHead(it, `${ms(it.a)} à ${ms(it.z)}, ${len(rItemDur(it))} dans le réel`)}${sn ? sensTag(`${sn}, ${nf} flou${nf > 1 ? 's' : ''}`) : ''}${rFxCtl(m)}${z ? rFlouCtl(it) : `<div class="grp"><span class="lbl">Cadrage${nk ? ` (${nk} point${nk > 1 ? 's' : ''})` : ' (fixe, au centre)'}</span><p class="hint" style="margin:0 0 8px">Glissez le cadre sur l'image ; pendant la lecture, suivez l'animal du doigt.</p>${nk ? `<div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rkey="del"${near ? '' : ' disabled'}>Supprimer le point ici</button><button type="button" class="btn small ghost" data-rkey="clear">Cadre fixe au centre</button></div>` : ''}</div>`}${cams.length > 1 ? `<div class="grp"><span class="lbl">Caméra</span><div class="chips">${cams.map(c => `<button type="button" class="chip" data-rcam="${esc(c.lens)}" aria-pressed="${tr === c}">${esc(c.name)}</button>`).join("")}</div></div>` : ''}<div class="grp"><span class="lbl">Vitesse dans le réel</span><div class="chips">${RSPEEDS.map(s => `<button type="button" class="chip" data-rvit="${s}" aria-pressed="${(it.vit||1) === s}"${s > 1 ? ` aria-label="Accéléré x${s}"` : ''}>${s === 1 ? 'Normale' : `x${s}`}</button>`).join("")}</div>${fxGet(m).vits.length ? '<p class="hint">Elle multiplie les vitesses réglées dans les retouches du passage.</p>' : ''}</div>${rTextCtl(it)}`;
 }
 function renderMusic(){
   const r = reelData(), el = $("rMusInfo"), has = !!(REEL.music || r.musique);
@@ -4768,32 +5094,42 @@ function rElemsPanel(){
   if(r.logo.mode !== "non") keys.push(["logo", "Logo"]);
   r.items.forEach((x, i) => { if(x.texte) keys.push([`txt:${x.id}`, `Texte du ${i + 1} : ${x.texte}`]); });
   r.elems.forEach(el => { keys.push([`el:${el.id}`, rElName(el)]); });
-  h += `<div class="grp"><span class="lbl">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="${x[0] === k}">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div><span class="lbl" style="margin-top:10px;display:block">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div></div>`;
   const box = k && rBoxOf(k);
+  // ajouter à l'instant affiché ; rien de choisi : liste de ce qui est posé ; un élément choisi : ses réglages à la place
+  h += `<div class="grp"><span class="lbl">Ajouter à ${ms(REEL.o)}</span><div class="chips">${Object.keys(RKINDS).map(kd => `<button type="button" class="chip" data-radd-el="${kd}">+ ${RKINDS[kd]}</button>`).join("")}</div>`;
   if(!box){
-    return `${h}<p class="hint">Touchez un élément sur l'image ou dans la liste pour le déplacer, changer sa taille ou sa couleur. Cet aperçu est allégé : la vidéo finale sera nette, en ${RW} x ${RH}, tirée des rushs d'origine.</p>`;
+    if(keys.length) h += `<span class="lbl" style="margin-top:12px;display:block">Sur l'image</span><div class="chips relems">${keys.map(x => `<button type="button" class="chip" data-rpick="${esc(x[0])}" aria-pressed="false">${esc(x[1].length > 34 ? `${x[1].slice(0, 32)}...` : x[1])}</button>`).join("")}</div>`;
+    return `${h}</div><p class="hint">Touchez un élément sur l'image pour le déplacer ou le régler. Aperçu allégé : la vidéo finale sera nette.</p>`;
   }
+  h += "</div>";
   const el = k.indexOf("el:") === 0 ? rElem(k.slice(3)) : null, isTxt = k === "titre" || k.indexOf("txt:") === 0 || (el && el.kind === "texte");
   const nm = k === "titre" ? "Titre d'accroche" : k === "logo" ? "Logo ESAM" : el ? rElName(el) : "Texte du passage";
-  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
+  h += `<div class="rsel"><b>${esc(nm.length > 40 ? `${nm.slice(0, 38)}...` : nm)}</b><button type="button" class="btn small" data-runsel="1">Terminé</button></div><p class="hint">Glissez-le sur l'image ; tirez le rond bleu pour la taille.</p>`;
   if(el && el.kind === "texte") h += `<div class="grp"><label class="lbl" for="rElTxt">Texte</label><input class="field" id="rElTxt" maxlength="90" autocomplete="off" value="${esc(el.texte || "")}"></div>`;
   h += `<div class="grp"><label class="lbl" for="rElSize">Taille : <span id="rElSizeV">${Math.round((box.s || 1)*100)} %</span></label><input type="range" class="rrange" id="rElSize" min="40" max="300" step="5" value="${Math.round((box.s || 1)*100)}"></div>`;
   if(el && el.kind !== "texte") h += `<div class="grp"><label class="lbl" for="rElRot">Orientation : <span id="rElRotV">${el.rot || 0}°</span></label><input type="range" class="rrange" id="rElRot" min="-180" max="180" step="5" value="${el.rot || 0}"></div>`;
   if(k !== "logo"){
     const cur = (box.c || (el && el.kind !== "texte" ? "#F9DD10" : "#ffffff")).toUpperCase();
-    h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-rcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}"><i style="background:${c[1]}"></i>${c[0]}</button>`).join("")}</div></div>`;
+    h += `<div class="grp"><span class="lbl">Couleur</span><div class="chips">${RCOLS.map(c => `<button type="button" class="chip rcol" data-rcol="${c[1]}" aria-pressed="${cur === c[1].toUpperCase()}" aria-label="${c[0]}" title="${c[0]}"><i style="background:${c[1]}"></i></button>`).join("")}</div></div>`;
   }
   if(isTxt && k !== "titre") h += `<div class="grp"><span class="lbl">Fond</span><div class="chips"><button type="button" class="chip" data-rfond="1" aria-pressed="${box.fond !== false}">Bandeau</button><button type="button" class="chip" data-rfond="0" aria-pressed="${box.fond === false}">Sans fond</button></div></div>`;
   if(el){
     h += `<div class="grp"><span class="lbl">Affiché à partir de ${ms(el.a)}</span><div class="rbtns" style="margin-top:0"><button type="button" class="btn small ghost" data-rel-start="1">Commencer à ${ms(REEL.o)}</button></div><span class="lbl" style="margin-top:10px;display:block">Durée</span><div class="chips">${REDURS.map(d => `<button type="button" class="chip" data-rel-dur="${d}" aria-pressed="${(el.d || 0) === d}">${d ? `${d} s` : 'Jusqu\'à la fin'}</button>`).join("")}</div></div>`;
   }
-  h += `<div class="rbtns"><button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>${k.indexOf("txt:") === 0 && r.items.filter(x => x.texte).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même réglage pour tous les textes</button>' : ''}${el ? '<button type="button" class="btn small ghost" data-rel-del="1">Supprimer</button>' : ''}<button type="button" class="btn small ghost" data-runsel="1">Terminé</button></div>`;
+  h += `<div class="rbtns"><button type="button" class="btn small ghost" data-rreset="1">Remettre à sa place</button>${k.indexOf("txt:") === 0 && r.items.filter(x => x.texte).length > 1 ? '<button type="button" class="btn small ghost" data-rall="1">Même réglage pour tous les textes</button>' : ''}${el ? '<button type="button" class="btn small ghost" data-rel-del="1">Supprimer</button>' : ''}</div>`;
   return h;
 }
-/* volet affiché sur téléphone : montage, passage (scène et réglages) ou habillage ; sans effet sur PC.
+/* volet affiché sur téléphone : montage, passage (image en cadrage et réglages du passage) ou habillage (titre, aperçu
+   du réel et ce qui est posé dessus) ; sans effet visible sur PC. Le volet et le mode de l'image vont ensemble :
+   Passage = cadrage, Habillage = aperçu (rPane règle le mode, rSetMode le volet), d'où une seule rangée de choix sur téléphone.
    Onglets ARIA (role=tab, aria-selected, flèches gauche et droite) ; créés une fois pour garder le focus. */
-const RPANES = [["montage","Montage","rPaneMontage"],["passage","Passage","rPanePassage"],["habillage","Habillage","rPaneHab"]];
+const RPANES = [["montage","Montage","rPaneMontage"],["passage","Passage","rPanePassage"],["habillage","Habillage","rPaneTitre"]];
 function rPane(name){
+  rPaneUi(name);
+  const want = name === "passage" ? "cadrage" : name === "habillage" ? "apercu" : null;
+  if(want && REEL.mode !== want) rSetMode(want);
+}
+function rPaneUi(name){
   $("reel").dataset.pane = name;
   const box = $("rPanes");
   if(!box.children.length) box.innerHTML = RPANES.map((p, i) => `<button type="button" class="chip" role="tab" id="rTab${i}" data-k="${i}" aria-controls="${p[2]}">${p[1]}</button>`).join("");
@@ -4818,6 +5154,7 @@ function rSelect(id, keepPane){
 function rSetMode(mode){
   if(REEL.playing) rStop();
   REEL.mode = mode; REEL.cur = null;
+  rPaneUi(mode === "apercu" ? "habillage" : "passage");
   if(mode === "cadrage" && !rSelItem() && reelData().items.length) REEL.sel = reelData().items[0].id;
   renderReel();
   if(mode === "apercu") rSeekApercu(REEL.o, false); else { const it = rSelItem(); if(it) rSeekCadrage(it.photo ? 0 : clamp(REEL.t, it.a, it.z), false); }
@@ -4835,8 +5172,7 @@ function rDefBox(key){ const lm = reelData().logo.mode; return rBoxDef(key === "
 function rPlace(key){
   const pl = reelPlan(false), l = rLayers(pl).find(x => x.key === key);
   if(!l){ toast("Rien à placer : l'élément n'apparaît pas dans le réel."); return; }
-  REEL.lsel = key; rPane("passage");
-  if(REEL.mode !== "apercu") rSetMode("apercu");
+  REEL.lsel = key; rPane("habillage");
   rSeekApercu(Math.min(l.b - 0.05, l.a + (l.fi ? 0.6 : 0.1)), false);
   renderReelEdit();
   const rc = $("rStage").getBoundingClientRect();
@@ -4888,6 +5224,21 @@ $("rAdd").addEventListener("click", e => {
   rSave(); rSelect(it.id, true);
   toast(isSens(m) ? "Passage sensible ajouté : pensez au flou." : "Passage ajouté au réel.", "Cadrer", rGoCadrer);
 });
+/* tous les passages marqués restants, dans l'ordre chronologique ; annulable */
+$("rAddAll").onclick = () => {
+  const r = reelData(), free = sorted().filter(m => !r.items.some(x => x.id === m.id)); if(!free.length) return;
+  const added = free.map(m => { const it = rNew(m); rInsert(it, m.at); return it; });
+  if(!rSelItem()) REEL.sel = r.items[0].id;
+  REEL.cur = null; rSave(); renderReel();
+  const ns = free.filter(isSens).length;
+  toast(`${added.length} passages ajoutés au réel${ns ? `, dont ${ns} sensible${ns > 1 ? "s" : ""} : pensez au flou` : ""}.`, "Annuler", () => {
+    const rr = reelData(); rr.items = rr.items.filter(x => added.indexOf(x) < 0);
+    if(REEL.sel && !rItem(REEL.sel)) REEL.sel = rr.items.length ? rr.items[0].id : null;
+    REEL.cur = null; rSave(); renderReel();
+  });
+};
+/* les flèches et la croix de chaque ligne n'apparaissent qu'à la demande */
+$("rOrder").onclick = () => { REEL.order = !REEL.order; renderReel(); $("rOrder").focus({preventScroll:true}); };
 $("rPhList").addEventListener("click", e => {
   const b = e.target.closest("[data-rph]"); if(!b) return;
   const p = phGet(b.dataset.rph); if(!p) return;
@@ -4899,7 +5250,7 @@ $("rPhList").addEventListener("click", e => {
 $("rPhotoIn").addEventListener("change", e => {
   const n = phFiles(e.target.files); e.target.value = "";
   toast(n ? `${n} photo${n > 1 ? "s" : ""} disponible${n > 1 ? "s" : ""} pour le réel.` : "Aucune nouvelle photo JPEG.");
-  renderPhotos(); $("rPhBox").open = true;
+  renderPhotos();
 });
 $("rEdit").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
@@ -4930,6 +5281,12 @@ $("rEdit").addEventListener("click", e => {
     rSave(); renderReelEdit(); rDraw(); return;
   }
   const it = rSelItem(); if(!it) return;
+  if(b.dataset.rnav){
+    const items = reelData().items, nx = items[items.indexOf(it) + +b.dataset.rnav]; if(!nx) return;
+    rSelect(nx.id);
+    const nb = $("rEdit").querySelector(`[data-rnav="${b.dataset.rnav}"]`); if(nb && !nb.disabled) nb.focus({preventScroll:true});
+    return;
+  }
   if(b.dataset.rplace){ rPlace(b.dataset.rplace); return; }
   if(b.dataset.rfx){
     const m = rMarker(it), tr = rTrack(it); if(!m || !tr) return;
@@ -4975,7 +5332,17 @@ $("rEdit").addEventListener("input", e => {
   const li = $("rList").querySelector(`[data-rsel="${it.id}"] b`); if(li) li.textContent = it.texte || rLabel(it);
   if(had !== !!it.texte){ const pos = e.target.selectionStart; renderReelEdit(); const f = $("rTexte"); f.focus(); try { f.setSelectionRange(pos, pos); } catch(x){} }
 });
-$("rTitre").addEventListener("input", function(){ reelData().titre = clean(this.value); rSave(); if(REEL.mode === "apercu") rDraw(); });
+$("rTitre").addEventListener("focus", () => {
+  if(!reelPlan(false).segs.length || REEL.playing) return;
+  if(REEL.mode !== "apercu") rSetMode("apercu");
+  // le titre apparaît en fondu : se placer juste après, tant qu'il est affiché
+  const d = reelData().titreDur; if(REEL.o < 0.6 || (d && REEL.o > d - 0.5)) rSeekApercu(0.6, false);
+});
+$("rTitre").addEventListener("input", function(){
+  const r = reelData(); r.titre = clean(this.value); rSave();
+  $("rTitreOpt").hidden = $("rTitrePlace").hidden = !r.titre;
+  if(REEL.mode === "apercu"){ rDraw(); if(!REEL.lsel) renderReelEdit(); }
+});
 /* format de sortie : le cadrage (position horizontale) et les places des éléments, en fraction de l'image, restent valables */
 $("rFmt").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if(!b) return;
