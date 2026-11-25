@@ -6402,6 +6402,7 @@ async function rColAuto(it, m, tr){
 }
 /* sections du volet Montage : une seule dépliée (attribut name, et ici pour les navigateurs qui l'ignorent) ; la section
    dépliée est retenue (REEL.fold) pour survivre aux redessins. Ouvrir une autre section que celle d'un flou de photo ou d'un élément posé rend la main au cadrage. */
+$("rEdit").addEventListener("click", e => { const sm = e.target.closest("details.rfold > summary"); if(sm) REEL.foldTap = sm.parentNode.dataset.rfold; }, true);
 $("rEdit").addEventListener("toggle", e => {
   const d = e.target; if(!d.dataset || !d.dataset.rfold) return;
   if(d.open){
@@ -6409,7 +6410,9 @@ $("rEdit").addEventListener("toggle", e => {
     $("rEdit").querySelectorAll("details.rfold[open]").forEach(x => { if(x !== d) x.open = false; });
     if(d.dataset.rfold !== "pflou" && REEL.fsel){ REEL.fsel = null; rDraw(); }
     if(d.dataset.rfold !== "elems" && REEL.lsel){ REEL.lsel = null; rDraw(); }
-    if(d.getBoundingClientRect().bottom > window.innerHeight) d.scrollIntoView({block:"nearest"});
+    // ouverte au toucher de son titre : la montrer ; ouverte par un redessin (élément choisi sur l'image) : l'image reste à la vue
+    if(REEL.foldTap === d.dataset.rfold && d.getBoundingClientRect().bottom > window.innerHeight) d.scrollIntoView({block:"nearest"});
+    REEL.foldTap = null;
   } else if(REEL.fold === d.dataset.rfold) REEL.fold = null;
 }, true);
 /* gabarit du format en cours : enregistrer les places, tailles et couleurs du titre, du logo et des textes, ou les appliquer (annulable) */
