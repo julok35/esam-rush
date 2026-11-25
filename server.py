@@ -572,32 +572,128 @@ REEL_FMTS = {"reel": (1080, 1920), "li": (1080, 1350), "carre": (1080, 1080)}
 PHOTO_ZOOM = 0.08      # zoom lent sur les photos : +8 % sur la durée de la photo
 MUSIC_EXT = {".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac"}
 
-def crop_box(w, h, rw=9, rh=16):
-    """Cadre au format rw:rh (9:16 par défaut) le plus grand possible dans l'image source : (largeur, hauteur, course
-    horizontale, y). Miroir de rCrop dans index.html."""
-    if w * rh > h * rw:
-        ch = h - h % 2; cw = ch * rw // rh // 2 * 2
-        return cw, ch, max(0, w - cw), (h - ch) // 2
-    cw = w - w % 2; ch = min(h, cw * rh // rw) // 2 * 2
-    return cw, ch, 0, (h - ch) // 2
+REEL_ZMAX = 4.0        # zoom maximal du cadre (miroir de RZMAX dans index.html)
+# fond « image entière » : image réduite au 1/BG_DIV du format, flou de BG_SIG px à cette taille, luminosité x BG_DARK
+# (miroir de RBGDIV, RBGSIG, RBGDARK et de rBackdrop dans index.html)
+BG_DIV, BG_SIG, BG_DARK = 8, 3, 0.55
 
-def key_expr(keys, f, default=0.5):
-    """Valeur du champ f (0 à 1) en fonction de t (secondes depuis le début du morceau), lissée entre les points
-    (expression ffmpeg entre parenthèses ; miroir de rKeyAt dans index.html, même lissage en S).
+def crop_base(w, h, rw, rh):
+    """Cadre au format rw:rh le plus grand possible dans l'image w x h (zoom 1), en pixels non arrondis, et zoom « image
+    entière » (le plus petit, pour lequel toute l'image tient dans le cadre)."""
+    if w * rh > h * rw: ch0 = float(h); cw0 = h * rw / float(rh)
+    else: cw0 = float(w); ch0 = w * rh / float(rw)
+    return cw0, ch0, min(cw0 / w, ch0 / h)
+
+def crop_box(w, h, rw=9, rh=16, z=1.0):
+    """Cadre au format rw:rh (9:16 par défaut) dans l'image source w x h, au zoom z : 1 = le plus grand cadre tenant dans
+    l'image ; plus de 1 = cadre plus petit (REEL_ZMAX au plus) ; moins de 1 = cadre plus grand que l'image, jusqu'à
+    « image entière ». Rend (largeur, hauteur, course horizontale, course verticale) en pixels pairs ; une course négative :
+    le cadre déborde de l'image dans ce sens (le reste est rempli par l'image floutée). Miroir de rCrop dans index.html."""
+    cw0, ch0, zf = crop_base(w, h, rw, rh)
+    z = min(REEL_ZMAX, max(zf, float(z if z is not None else 1)))
+    cw = int(round(cw0 / z / 2)) * 2; ch = int(round(ch0 / z / 2)) * 2
+    return cw, ch, w - cw, h - ch
+
+def key_at(keys, t, f, default=0.5):
+    """Valeur du champ f à l'instant t, lissée en S entre les points (miroir de rKeyAt dans index.html et de key_expr)."""
+    ks = sorted(keys or [], key=lambda k: float(k["t"]))
+    if not ks: return default
+    v = lambda k: float(k.get(f, default))
+    if t <= float(ks[0]["t"]): return v(ks[0])
+    if t >= float(ks[-1]["t"]): return v(ks[-1])
+    for a, b in zip(ks, ks[1:]):
+        if t < float(b["t"]):
+            s = (t - float(a["t"])) / max(0.001, float(b["t"]) - float(a["t"])); s = s * s * (3 - 2 * s)
+            return v(a) + (v(b) - v(a)) * s
+    return default
+
+def key_expr(keys, f, default=0.5, var="t", lo=0.0, hi=1.0):
+    """Valeur du champ f (entre lo et hi, 0 à 1 par défaut) en fonction de var (secondes depuis le début du morceau), lissée
+    entre les points (expression ffmpeg entre parenthèses ; miroir de rKeyAt dans index.html, même lissage en S).
+    Un point sans ce champ (cadrage d'avant le cadre libre) prend la valeur par défaut.
     Somme à plat, un terme par intervalle : un suivi de plusieurs centaines de points ne s'emboîte pas."""
-    ks = sorted(({"t": float(k["t"]), "v": min(1.0, max(0.0, float(k[f])))} for k in (keys or [])), key=lambda k: k["t"])
+    ks = sorted(({"t": float(k["t"]), "v": min(hi, max(lo, float(k.get(f, default))))} for k in (keys or [])), key=lambda k: k["t"])
     if not ks: return "(%.4f)" % default
     e = "%.4f" % ks[0]["v"]
     for a, b in zip(ks, ks[1:]):
         if abs(b["v"] - a["v"]) < 0.00005: continue
-        sm = "clip((t-(%.3f))/%.3f,0,1)" % (a["t"], max(0.001, b["t"] - a["t"]))
+        sm = "clip((%s-(%.3f))/%.3f,0,1)" % (var, a["t"], max(0.001, b["t"] - a["t"]))
         e += "+(%.4f)*%s*%s*(3-2*%s)" % (b["v"] - a["v"], sm, sm, sm)
     return "(" + e + ")"
 
-def x_expr(keys, course):
-    """Position x du cadre en pixels."""
-    if course <= 0: return "0"
-    return "%s*%d" % (key_expr(keys, "x"), course)
+def reel_backdrop(rw, rh):
+    """Fond « image entière » au format rw x rh : l'image qui couvre le format, réduite, floutée et assombrie, comme le font
+    les réseaux (miroir de rBackdrop dans index.html). Suite de filtre sans étiquette."""
+    bw, bh = max(2, int(round(rw / BG_DIV / 2)) * 2), max(2, int(round(rh / BG_DIV / 2)) * 2)
+    return ("scale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d,gblur=sigma=%g,"
+            "colorchannelmixer=rr=%g:gg=%g:bb=%g,scale=%d:%d:flags=bilinear,setsar=1") % (bw, bh, bw, bh, BG_SIG, BG_DARK, BG_DARK, BG_DARK, rw, rh)
+
+def frame_chain(w, h, cles, rw, rh, dur):
+    """Mise au format rw x rh d'un morceau de w x h pixels selon son cadrage (points {t, x, y, z}, voir rCam dans index.html) :
+    (suite de filtre de l'image source, déjà floutée, vers l'image au format, sans étiquette de fin ; fx, fy : expression de
+    la position en pixels de sortie d'une position en fraction de l'image source ; hauteur de l'image source à l'écran en
+    pixels de sortie, pour la taille des formes).
+    - zoom constant, cadre dans l'image : crop qui suit x et y, puis mise à l'échelle (le cas d'avant le cadre libre) ;
+    - zoom constant, cadre qui déborde : image réduite posée sur le fond flouté (overlay qui suit x et y) ;
+    - zoom qui varie : zoompan sur une toile au format qui contient tous les cadres du morceau (image posée sur fond
+      transparent), puis posée sur le fond flouté. La taille des formes suivies reste celle du début du morceau."""
+    cw0, ch0, zf = crop_base(w, h, rw, rh)
+    ks = cles or []
+    zs = [min(REEL_ZMAX, max(zf, float(k.get("z", 1)))) for k in ks] or [1.0]
+    if max(zs) - min(zs) < 0.002:
+        cw, ch, cx, cy = crop_box(w, h, rw, rh, zs[0])
+        k = rw / float(cw)
+        xe = "%s*(%d)" % (key_expr(ks, "x"), cx) if cx else "0"
+        ye = "%s*(%d)" % (key_expr(ks, "y"), cy) if cy else "0"
+        fx = lambda e: "(%s*%d-(%s))*%.5f" % (e, w, xe, k)
+        fy = lambda e: "(%s*%d-(%s))*%.5f" % (e, h, ye, k)
+        if cx >= 0 and cy >= 0:
+            return "crop=w=%d:h=%d:x='%s':y='%s',scale=%d:%d:flags=lanczos,setsar=1" % (cw, ch, xe, ye, rw, rh), fx, fy, h * k
+        sw2, sh2 = max(2, int(round(w * k / 2)) * 2), max(2, int(round(h * k / 2)) * 2)
+        return ("split[ra][rb];[ra]%s[rg];[rb]scale=%d:%d:flags=lanczos,setsar=1[rf];[rg][rf]overlay=x='-(%s)*%.5f':y='-(%s)*%.5f'"
+                % (reel_backdrop(rw, rh), sw2, sh2, xe, k, ye, k)), fx, fy, h * k
+    # zoom variable : région de la source qui contient tous les cadres du morceau, élargie au format
+    ts = sorted(set([0.0, float(dur)] + [float(q["t"]) for q in ks]))
+    samples = []
+    for a, b in zip(ts, ts[1:]):
+        samples += [a + (b - a) * i / 16.0 for i in range(16)]
+    samples.append(ts[-1])
+    rects = []
+    for t in samples:
+        z = min(REEL_ZMAX, max(zf, key_at(ks, t, "z", 1)))
+        cw, ch = cw0 / z, ch0 / z
+        x, y = min(1, max(0, key_at(ks, t, "x"))), min(1, max(0, key_at(ks, t, "y")))
+        rects.append(((w - cw) * x, (h - ch) * y, cw, ch))
+    x0 = min(r[0] for r in rects); y0 = min(r[1] for r in rects)
+    x1 = max(r[0] + r[2] for r in rects); y1 = max(r[1] + r[3] for r in rects)
+    ar = rw / float(rh); Rw, Rh = x1 - x0, y1 - y0
+    if Rw / Rh < ar: x0 -= (Rh * ar - Rw) / 2; Rw = Rh * ar
+    else: y0 -= (Rw / ar - Rh) / 2; Rh = Rw / ar
+    mincw = min(r[2] for r in rects)
+    f = min(1.0, rw / mincw, 4.0 * rw / Rw)                         # toile au plus de 4 fois la largeur de sortie
+    Cw = max(2, int(round(Rw * f / 2)) * 2); Ch = max(2, int(round(Cw * rh / float(rw) / 2)) * 2)
+    # partie de la source dans la région, réduite de f et posée sur la toile transparente
+    ix0, iy0 = max(0, int(x0)), max(0, int(y0))
+    ix1, iy1 = min(w, int(x0 + Rw + 0.999)), min(h, int(y0 + Rh + 0.999))
+    iw, ih = max(2, (ix1 - ix0) // 2 * 2), max(2, (iy1 - iy0) // 2 * 2)
+    siw, sih = max(2, min(Cw, int(round(iw * f / 2)) * 2)), max(2, min(Ch, int(round(ih * f / 2)) * 2))
+    px, py = min(Cw - siw, max(0, int(round((ix0 - x0) * f)))), min(Ch - sih, max(0, int(round((iy0 - y0) * f))))
+    def cam(var):
+        Z = "clip(%s,%.5f,%g)" % (key_expr(ks, "z", 1, var, 0.0, REEL_ZMAX), zf, REEL_ZMAX)
+        X, Y = key_expr(ks, "x", 0.5, var), key_expr(ks, "y", 0.5, var)
+        sx = "(%d-%.3f/%s)*%s" % (w, cw0, Z, X); sy = "(%d-%.3f/%s)*%s" % (h, ch0, Z, Y)
+        return Z, sx, sy
+    Z, sx, sy = cam("it")
+    zp = "zoompan=z='min(10,%.5f*%s)':x='(%s-(%.3f))*%.5f':y='(%s-(%.3f))*%.5f':d=1:s=%dx%d:fps=30" % (Rw / cw0, Z, sx, x0, f, sy, y0, f, rw, rh)
+    if Rw / mincw > 10: log("Réel : zoom trop fort pour une seule toile (%.1f), limité à 10" % (Rw / mincw))
+    chain = ("fps=30,split[ra][rb];[ra]%s[rg];[rb]crop=%d:%d:%d:%d,scale=%d:%d:flags=lanczos,format=yuva420p,pad=%d:%d:%d:%d:color=black@0,%s,setsar=1[rf];"
+             "[rg][rf]overlay=0:0:shortest=1") % (reel_backdrop(rw, rh), iw, ih, ix0, iy0, siw, sih, Cw, Ch, px, py, zp)
+    Zt, sxt, syt = cam("t")
+    kt = "(%.5f*%s)" % (rw / cw0, Zt)
+    fx = lambda e: "(%s*%d-(%s))*%s" % (e, w, sxt, kt)
+    fy = lambda e: "(%s*%d-(%s))*%s" % (e, h, syt, kt)
+    z0 = min(REEL_ZMAX, max(zf, key_at(ks, 0, "z", 1)))
+    return chain, fx, fy, h * rw / (cw0 / z0)
 
 # flous (comme softBlur dans index.html) : écart type du flou doux en fraction du petit côté de la zone, largeur du fondu de bord
 # (ovale au flou doux, puis rectangle ou mosaïque), nombre de carreaux de la mosaïque sur le petit côté
@@ -816,13 +912,11 @@ def do_reel(job):
                         fc = "[0:v]scale=%d:%d,setsar=1,fps=30[b]" % (RW, RH)
                 else:
                     info = srcs[pc["fichier"]]
-                    cw, ch, course, y = crop_box(info["w"], info["h"], RW, RH)
                     bargs, bfc = blur_chain(pc.get("flous"), info["w"], info["h"], work, 1, pc.get("couleur"), info)
-                    xe = x_expr(pc.get("cles"), course)
-                    # formes suivies : leur place dans l'image source, ramenée au cadre qui se déplace
-                    sargs, sfc = shape_chain(pc.get("formes"), sprites, 1 + len(bargs) // 4,
-                                             lambda e: "(%s*%d-(%s))*%.5f" % (e, info["w"], xe, RW / cw), lambda e: "(%s*%d-%d)*%.5f" % (e, info["h"], y, RH / ch), info["h"] * RH / ch)
-                    fc = bfc + ("crop=w=%d:h=%d:x='%s':y=%d,scale=%d:%d:flags=lanczos,setsar=1" % (cw, ch, xe, y, RW, RH)) + sfc + ",setpts=(PTS-STARTPTS)/%g,fps=30[b]" % vit
+                    # cadre au format (place, taille, zoom pendant le morceau), puis formes suivies ramenées au cadre
+                    mise, fx, fy, hsrc = frame_chain(info["w"], info["h"], pc.get("cles"), RW, RH, dur * vit)
+                    sargs, sfc = shape_chain(pc.get("formes"), sprites, 1 + len(bargs) // 4, fx, fy, hsrc)
+                    fc = bfc + mise + sfc + ",setpts=(PTS-STARTPTS)/%g,fps=30[b]" % vit
                     cmd = [FFMPEG, "-hwaccel", "auto", "-ss", "%.3f" % float(pc["debut"]), "-t", "%.3f" % (dur * vit), "-i", str(d / pc["fichier"])] + bargs + sargs
                     nextra = len(bargs) // 4 + len(sargs) // 2
                 oargs, ofc = over(at, dur, 1 + nextra)
