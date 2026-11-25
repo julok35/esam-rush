@@ -1,9 +1,10 @@
-"""Test de bout en bout de l'onglet Réel en mode PC : montage, cadrage, musique, réel et story.
+"""Test de bout en bout de l'étape Réseaux en mode PC : séquences, montage (cadrage sur l'image du rendu), musique, réel et story.
 
 Usage : python tests/test_reel.py [--garder]
 Prérequis : ffmpeg, playwright (pip install playwright ; playwright install chromium).
 Fabrique de faux rushs, lance server.py (port 8798, config temporaire), pose trois marqueurs,
-monte un réel de plus de 60 s avec cadrage suivi, retouches (flou suivi, cercle, ralenti), accéléré, textes et musique, le fait calculer
+choisit les séquences (volet Séquences), monte un réel de plus de 60 s (volet Montage : une seule image au format,
+qui sert aussi à cadrer) avec cadrage suivi pendant la lecture du réel, retouches (flou suivi, cercle, ralenti), accéléré, textes et musique, le fait calculer
 par le PC puis en story, puis en vidéo LinkedIn 4:5 (un passage pris sur la vidéo de téléphone en portrait, cadre zoomé
 et remonté, puis dupliqué), et vérifie les fichiers produits (1080 x 1920 ou 1080 x 1350, durée, piste son).
 Les captures d'écran sont écrites dans le dossier temporaire affiché.
@@ -37,13 +38,8 @@ async def navigateur(tmp, iv):
         async def at(t):
             await pg.evaluate(f"document.querySelector('#v').currentTime={t}"); await pg.wait_for_timeout(350)
         async def volet(n):
-            # sur téléphone, l'onglet Réel montre un volet à la fois (Montage, Passage, Habillage)
-            if await pg.is_visible("#rPanes"): await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(200)
-        async def apercu():
-            # aperçu du réel : volet Habillage sur téléphone, choix Cadrage / Aperçu sur PC
-            if await pg.is_visible("#rMode"): await pg.click("#rMode .chip >> nth=1")
-            else: await volet(2)
-            await pg.wait_for_timeout(500)
+            # deux temps : 0 = Séquences (choix, ordre, titres, format...), 1 = Montage (image et réglages de la séquence)
+            await pg.click(f"#rPanes .chip >> nth={n}"); await pg.wait_for_timeout(400)
         for a, z in ((3, 80), (40, 55)):
             await at(a); await pg.click("#mkS"); await at(z); await pg.click("#mkE")
             if await pg.is_visible("#sheet"): await pg.click("#shSave")
@@ -54,19 +50,24 @@ async def navigateur(tmp, iv):
         for _ in range(3):
             await pg.click("#rAdd [data-radd] >> nth=0"); await pg.wait_for_timeout(300)
         print("montage :", await pg.inner_text("#rList"))
+        # téléphone : l'image n'est que dans Montage, la liste que dans Séquences ; une case par séquence et le carton de fin
+        assert await pg.is_hidden("#rCv") and await pg.is_visible("#rList")
+        assert await pg.locator("#rStrip [data-rstrip]").count() == 4
         # passage 2 : accéléré x4 et texte
         await volet(0); await pg.click("#rList [data-rsel] >> nth=1"); await pg.wait_for_timeout(500)
+        assert await pg.is_visible("#rCv") and await pg.is_hidden("#rList")
         await pg.click('#rEdit [data-rvit="4"]'); await pg.fill("#rTexte", "Le chien est repéré au bord du torrent")
-        # passage 1 : cadrage suivi pendant la lecture
+        # passage 1 : cadrage sur l'image du rendu, suivi du doigt pendant la lecture du réel
         await volet(0); await pg.click("#rList [data-rsel] >> nth=0"); await pg.wait_for_timeout(1200)
         box = await pg.locator("#rCv").bounding_box()
         cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
         await pg.mouse.move(cx, cy); await pg.mouse.down()
         await pg.mouse.move(cx - 60, cy, steps=5)
-        await pg.click("#rPlay", force=True)
+        await pg.evaluate("document.getElementById('rPlay').click()")
         for i in range(10):
             await pg.mouse.move(cx - 60 + i * 15, cy); await pg.wait_for_timeout(150)
-        await pg.mouse.up(); await pg.click("#rPlay"); await pg.wait_for_timeout(300)
+        await pg.mouse.up(); await pg.evaluate("document.getElementById('rPlay').click()"); await pg.wait_for_timeout(300)
+        assert "1/3" in await pg.inner_text("#rEdit .rnav"), await pg.inner_text("#rEdit .rnav")
         print("cadrage :", await pg.inner_text("#rEdit .grp >> nth=0"))
         # passage 1 : retouches du passage (flou pixelisé suivi du doigt pendant la lecture, cercle, ralenti à mi-passage)
         await pg.click('#rEdit [data-rtrim="a"]'); await pg.wait_for_timeout(200)
@@ -100,7 +101,7 @@ async def navigateur(tmp, iv):
         await pg.click("#rEdit [data-rfadd]"); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1c_photo.png"))
         await pg.screenshot(path=str(tmp / "r1_cadrage.png"))
-        await volet(2); await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
+        await volet(0); await pg.fill("#rTitre", "Perdu depuis trois jours, retrouvé par le drone")
         # logo, carton de fin et musique sont repliés sous le titre et l'aperçu
         if not await pg.is_visible("#rLogo"): await pg.click("#rHabSum"); await pg.wait_for_timeout(200)
         await pg.set_input_files("#rMusIn", str(tmp / "musique.mp3"))
@@ -108,8 +109,9 @@ async def navigateur(tmp, iv):
         await pg.fill("#rMusOff", "2")
         await pg.click('#rTitreDur .chip >> nth=2')
         await pg.click('#rLogo .chip >> nth=0')
-        # titre : déplacé puis agrandi à la souris dans l'aperçu
+        # titre : « Placer » passe au Montage, l'image le montre ; déplacé puis agrandi à la souris
         await pg.click("#rTitrePlace"); await pg.wait_for_timeout(800)
+        assert await pg.is_visible("#rCv") and "Titre" in await pg.inner_text("#rEdit .relsel")
         box = await pg.locator("#rCv").bounding_box()
         tx, ty = box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.27
         await pg.mouse.move(tx, ty); await pg.mouse.down(); await pg.mouse.move(tx, ty + 120, steps=6); await pg.mouse.up()
@@ -128,10 +130,14 @@ async def navigateur(tmp, iv):
         await pg.mouse.move(box["x"] + box["width"] * 0.35, box["y"] + box["height"] * 0.62, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(300)
         await pg.screenshot(path=str(tmp / "r1e_formes.png"))
         await pg.click('#rEdit [data-runsel]')
-        await apercu()
+        # lecture du réel depuis la séquence affichée : elle continue sur les suivantes ; carton de fin à l'image
         await pg.click("#rPlay"); await pg.wait_for_timeout(1800); await pg.click("#rPlay")
         await pg.wait_for_timeout(200)
-        print("aperçu :", (await pg.inner_text("#rTime")).replace("\n", " "), "|", await pg.inner_text("#rInfo"))
+        print("lecture :", (await pg.inner_text("#rTime")).replace("\n", " "), "|", await pg.inner_text("#rInfo"))
+        await pg.click('#rStrip [data-rstrip="fin"]'); await pg.wait_for_timeout(400)
+        assert "Carton de fin" in await pg.inner_text("#rTime")
+        await pg.screenshot(path=str(tmp / "r2b_fin.png"))
+        await pg.click("#rStrip [data-rstrip] >> nth=0"); await pg.wait_for_timeout(800)
         await pg.screenshot(path=str(tmp / "r2_apercu.png"), full_page=False)
         await pg.screenshot(path=str(tmp / "r3_page.png"), full_page=True)
         etat = api("api/etat?d=" + urllib.parse.quote(iv))
@@ -143,6 +149,8 @@ async def navigateur(tmp, iv):
         assert reel["titreBox"]["y"] > 0.3 and reel["titreBox"]["s"] == 1.3 and reel["titreBox"]["c"] == "#F9DD10" and reel["titreDur"] == 8
         assert [e["kind"] for e in reel["elems"]] == ["fleche", "texte"] and reel["elems"][0]["rot"] == 135 and reel["elems"][1]["x"] < 0.45
         assert any(x.get("photo") and x.get("flous") for x in reel["items"])
+        # cadre suivi du doigt pendant la lecture du réel : plusieurs points sur la première séquence
+        assert any(len(x.get("keys") or []) >= 3 for x in reel["items"] if not x.get("photo")), [x.get("keys") for x in reel["items"]]
         # le flou du passage est rangé dans les retouches du marqueur (partagées avec la vidéo compilée), avec ses points de suivi
         assert any(len(z["keys"]) >= 2 and z["mode"] == "pixel" for f in fx for z in (f.get("flous") or []))
         assert any((f.get("formes") or []) and (f.get("vits") or []) and f["vits"][0]["v"] == 0.5 for f in fx)
@@ -165,7 +173,8 @@ async def navigateur(tmp, iv):
         await pg.evaluate("document.getElementById('rStage').scrollIntoView()"); await pg.wait_for_timeout(400)
         box = await pg.locator("#rCv").bounding_box()
         cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
-        await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy - 120, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(600)
+        # l'image suit le doigt : la tirer vers le bas remonte le cadre
+        await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy + 120, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(600)
         await pg.screenshot(path=str(tmp / "r5b_telephone_45.png"))
         await pg.click("#rEdit [data-rdup]"); await pg.wait_for_timeout(800)
         reel = api("api/etat?d=" + urllib.parse.quote(iv))["meta"]["reel"]
